@@ -1,5 +1,6 @@
 "use client";
 
+import { exit } from "process";
 import { useEffect, useState } from "react";
 
 const Piano = () => {
@@ -7,7 +8,7 @@ const Piano = () => {
 	const [octave, setOctave] = useState(2);
 	const [listening, setListening] = useState(false);
 
-	const handleKeyDown = (e: KeyboardEvent) => {
+	const handleKeyDown = (e: KeyboardEvent, octave: number) => {
 		if (selected) {
 			switch (e.key) {
 				case "ArrowUp":
@@ -19,7 +20,13 @@ const Piano = () => {
 					break;
 
 				case "a":
-					const a = new Audio(`/piano_c${octave}.mp3`);
+					console.log("playing c" + octave);
+					const a =
+						octave == 1
+							? new Audio(`/piano_c1.mp3`)
+							: octave == 2
+							? new Audio(`/piano_c2.mp3`)
+							: new Audio(`/piano_c3.mp3`);
 					a.play();
 					break;
 
@@ -91,9 +98,24 @@ const Piano = () => {
 
 	useEffect(() => {
 		if (selected && !listening) {
-			console.log("starting listening ");
-			document.addEventListener("keydown", handleKeyDown, true);
+			console.log("starting listening");
+			document.addEventListener(
+				"keydown",
+				(e) => handleKeyDown(e, octave),
+				true
+			);
+
 			setListening(true);
+		} else if (selected && listening) {
+			console.log("stopping listening");
+			document.removeEventListener("keydown", (e) => handleKeyDown(e, 1), true);
+			document.removeEventListener("keydown", (e) => handleKeyDown(e, 2), true);
+			document.removeEventListener("keydown", (e) => handleKeyDown(e, 3), true);
+			document.addEventListener(
+				"keydown",
+				(e) => handleKeyDown(e, octave),
+				true
+			);
 		}
 	});
 
