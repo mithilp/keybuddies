@@ -1,12 +1,14 @@
 "use client";
 import Piano from "@/components/instruments/Piano";
 import { useState, useEffect } from "react";
+import { FaPause } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const [room, setRoom] = useState();
 	const [bpm, setbpm] = useState("120");
+	const [play, setPlay] = useState("FaPlay");
 
 	useEffect(() => {
 		loadRoom();
@@ -72,21 +74,31 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<span className="leading-8 text-5xl font-black">{studio}</span>
 					</div>
 
-					<div className="flex space-x-2">
+					<div className="flex space-x-2 items-center">
+						<h1 className="text-3xl font-black">BPM:</h1>
 						<select
 							value={bpm}
 							onChange={(e) => setbpm(e.target.value)}
-							className="bg-yellow border-8 px-2 rounded-xl border-black text-xl font-black"
+							className="bg-yellow border-8 px-2 rounded-xl border-black h-16 text-3xl font-black"
 						>
-							<option value="80">80 BPM</option>
-							<option value="120">120 BPM</option>
-							<option value="160">160 BPM</option>
+							<option value="80">80</option>
+							<option value="120">120</option>
+							<option value="160">160</option>
 						</select>
-						<button className="bg-yellow border-8 border-black grid place-items-center h-18 w-16 rounded-xl text-3xl font-black">
+						<button className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black">
 							<FaCircle color="#ff6767" />
 						</button>
-						<button className="bg-yellow border-8 border-black grid place-items-center h-18 w-16 rounded-xl text-3xl font-black">
-							<FaPlay color="#317b00" />
+						<button
+							onClick={() =>
+								play === "FaPlay" ? setPlay("FaPause") : setPlay("FaPlay")
+							}
+							className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+						>
+							{play === "FaPlay" ? (
+								<FaPlay color="#000000" />
+							) : (
+								<FaPause color="#000000" />
+							)}
 						</button>
 					</div>
 				</div>
