@@ -1,3 +1,4 @@
+import Piano from "@/components/instruments/Piano";
 import { db } from "@/utils/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -12,5 +13,11 @@ async function loadRoom(id: string): Promise<Room> {
 export default async function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const room = await loadRoom(studio);
-	return <div>id: {room.id}</div>;
+	return (
+		<div>
+			id: {room.id}
+			<br />
+			<Piano />
+		</div>
+	);
 }
