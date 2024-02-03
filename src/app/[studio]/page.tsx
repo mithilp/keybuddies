@@ -1,12 +1,14 @@
 "use client";
 import Piano from "@/components/instruments/Piano";
 import { useState, useEffect } from "react";
+import { FaPause } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const [room, setRoom] = useState();
 	const [bpm, setbpm] = useState("120");
+	const [play, setPlay] = useState("FaPlay");
 
 	useEffect(() => {
 		loadRoom();
@@ -85,8 +87,17 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<button className="bg-yellow border-8 border-black grid place-items-center h-18 w-16 rounded-xl text-3xl font-black">
 							<FaCircle color="#ff6767" />
 						</button>
-						<button className="bg-yellow border-8 border-black grid place-items-center h-18 w-16 rounded-xl text-3xl font-black">
-							<FaPlay color="#317b00" />
+						<button
+							onClick={() =>
+								play === "FaPlay" ? setPlay("FaPause") : setPlay("FaPlay")
+							}
+							className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+						>
+							{play === "FaPlay" ? (
+								<FaPlay color="#000000" />
+							) : (
+								<FaPause color="#000000" />
+							)}
 						</button>
 					</div>
 				</div>
