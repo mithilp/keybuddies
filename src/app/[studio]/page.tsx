@@ -6,11 +6,11 @@ async function loadRoom(id: string): Promise<Room> {
 	if (!snapshot.exists()) {
 		throw new Error("Room not found");
 	}
-	return { id: id, users: snapshot.data().users } as Room;
+	return { id: id } as Room;
 }
 
 export default async function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const room = await loadRoom(studio);
-	return <div>users: {room.users.toString()}</div>;
+	return <div>id: {room.id}</div>;
 }
