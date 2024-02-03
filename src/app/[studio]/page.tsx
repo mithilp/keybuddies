@@ -6,6 +6,7 @@ import { FaCircle, FaPlay } from "react-icons/fa6";
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const [room, setRoom] = useState();
+	const [bpm, setbpm] = useState("120");
 
 	useEffect(() => {
 		loadRoom();
@@ -27,16 +28,16 @@ export default function Page({ params }: { params: { studio: string } }) {
 					</div>
 					<div className="mt-4">
 						<button
-							className={`px-4 py-2 font-medium text-gray-700 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "loops" && "bg-blue-100"
+							className={`px-4 transition py-2 border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+								selectedOption === "loops" && "bg-yellow/40 border-yellow"
 							}`}
 							onClick={() => setSelectedOption("loops")}
 						>
 							Loops
 						</button>
 						<button
-							className={`px-4 py-2 font-medium text-gray-700 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "sounds" ? "bg-blue-100" : ""
+							className={`px-4 py-2 transition border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+								selectedOption === "sounds" && "bg-yellow/40 border-yellow"
 							}`}
 							onClick={() => setSelectedOption("sounds")}
 						>
@@ -63,6 +64,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 			<main className="col-span-2">
 				{/* Main content will go here */}
 
+				{/* header */}
 				<div className="flex justify-between border-black border-b-8 py-6 px-4">
 					<div>
 						<span className="leading-7 uppercase font-black">Studio Code</span>
@@ -71,6 +73,15 @@ export default function Page({ params }: { params: { studio: string } }) {
 					</div>
 
 					<div className="flex space-x-2">
+						<select
+							value={bpm}
+							onChange={(e) => setbpm(e.target.value)}
+							className="bg-yellow border-8 px-2 rounded-xl border-black text-xl font-black"
+						>
+							<option value="80">80 BPM</option>
+							<option value="120">120 BPM</option>
+							<option value="160">160 BPM</option>
+						</select>
 						<button className="bg-yellow border-8 border-black grid place-items-center h-18 w-16 rounded-xl text-3xl font-black">
 							<FaCircle color="#ff6767" />
 						</button>
@@ -79,6 +90,9 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</button>
 					</div>
 				</div>
+
+				{/* rows content */}
+				<div></div>
 			</main>
 		</div>
 	);
