@@ -61,11 +61,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 			</div>
 
 			{/* Right column (two-thirds of the screen) */}
-			<main className="col-span-2">
+			<main className="col-span-2 h-screen overflow-y-scroll">
 				{/* Main content will go here */}
 
 				{/* header */}
-				<div className="flex justify-between border-black border-b-8 py-6 px-4">
+				<div className="flex sticky top-0 justify-between border-black border-b-8 py-6 px-4">
 					<div>
 						<span className="leading-7 uppercase font-black">Studio Code</span>
 						<br />
@@ -92,7 +92,22 @@ export default function Page({ params }: { params: { studio: string } }) {
 				</div>
 
 				{/* rows content */}
-				<div></div>
+				<div className="py-6 px-4 space-y-2 w-full">
+					<div className="rounded-xl px-4 py-2">
+						<h3 className="text-lg uppercase font-black">Track 1</h3>
+						<div className="overflow-x-scroll flex space-x-2">
+							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
+								fjsdlfjlskdjflksdjflksdjfnsdklfj
+							</div>
+							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
+								fjsdlfjlskdjflksdjflksdjfnsdklfj
+							</div>
+							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
+								fjsdlfjlskdjflksdjflksdjfnsdklfj
+							</div>
+						</div>
+					</div>
+				</div>
 			</main>
 		</div>
 	);
