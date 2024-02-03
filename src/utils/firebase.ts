@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics, isSupported } from "firebase/analytics";
+// import { getAnalytics, isSupported } from "firebase/analytics";
+
+console.log(process.env.FIREBASE_API);
 
 const firebaseConfig = {
 	apiKey: process.env.FIREBASE_API,
@@ -16,6 +18,6 @@ const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 
-export const analytics = isSupported().then((yes) =>
-	yes ? getAnalytics(app) : null
-);
+// export const analytics = isSupported().then((yes) =>
+// 	yes ? getAnalytics(app) : null
+// );
