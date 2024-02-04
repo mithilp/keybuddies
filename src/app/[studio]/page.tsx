@@ -21,6 +21,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 			const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
 			console.log("updating");
 			setTrack1(doc.data()!.track1);
+			setbpm(doc.data()!.bpm);
 		});
 	}, []);
 
@@ -110,7 +111,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<h1 className="text-3xl font-black">BPM:</h1>
 						<select
 							value={bpm}
-							onChange={(e) => setbpm(e.target.value)}
+							onChange={(e) => {
+								updateDoc(doc(db, "studios", studio), {
+									bpm: e.target.value,
+								});
+							}}
 							className="bg-yellow border-8 px-2 rounded-xl border-black h-16 text-3xl font-black"
 						>
 							<option value="80">80</option>
