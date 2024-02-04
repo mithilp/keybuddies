@@ -1,4 +1,5 @@
 "use client";
+import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
 import { useState, useEffect } from "react";
 import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
@@ -12,7 +13,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 
 	const [selectedCell, setSelectedCell] = useState([-1, -1]);
 	const [track1, setTrack1] = useState<Array<any>>([]);
-	const [loops, setLoops] = useState(["Loop 1", "Loop 2"]);
+	const loops = ["singersongwriter"];
 
 	useEffect(() => {
 		loadRoom();
@@ -71,13 +72,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 								}`}
 							>
 								<div>{loop}</div>
-								<button>
-									<FaPlusCircle
-										color={selectedCell[0] != -1 ? "#ff90bc" : "black"}
-										size={32}
-										className="transition"
-									/>
-								</button>
+								<PlayLoop
+									bpm={bpm}
+									selected={selectedCell[0] != -1}
+									id={loop}
+								/>
 							</div>
 						))}
 					</div>
