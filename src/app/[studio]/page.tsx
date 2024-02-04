@@ -1,7 +1,7 @@
 "use client";
 import Piano from "@/components/instruments/Piano";
 import { useState, useEffect } from "react";
-import { FaPause } from "react-icons/fa";
+import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 
 export default function Page({ params }: { params: { studio: string } }) {
@@ -9,6 +9,10 @@ export default function Page({ params }: { params: { studio: string } }) {
 	const [room, setRoom] = useState();
 	const [bpm, setbpm] = useState("120");
 	const [play, setPlay] = useState("FaPlay");
+
+	const [selectedCell, setSelectedCell] = useState([-1, -1]);
+	const [track1, setTrack1] = useState<Array<any>>([]);
+	const [loops, setLoops] = useState(["Loop 1", "Loop 2"]);
 
 	useEffect(() => {
 		loadRoom();
@@ -49,9 +53,33 @@ export default function Page({ params }: { params: { studio: string } }) {
 				</div>
 				{/* Content for the selected option will go here */}
 				{selectedOption === "loops" && (
-					<div className="p-4">
-						<h3 className="text-lg font-medium">Loops content</h3>
-						{/* Loops content goes here */}
+					<div className="p-4 space-y-2">
+						{loops.map((loop, index) => (
+							<div
+								key={index}
+								onClick={() => {
+									if (selectedCell[0] != -1) {
+										const selected = selectedCell;
+										if (selected[0] == 1) {
+											track1[selected[1]] = loop;
+										}
+										setSelectedCell([-1, -1]);
+									}
+								}}
+								className={`transition bg-yellow cursor-pointer flex justify-between p-4 rounded-xl border-8 ${
+									selectedCell[0] != -1 ? "border-pink" : "border-black"
+								}`}
+							>
+								<div>{loop}</div>
+								<button>
+									<FaPlusCircle
+										color={selectedCell[0] != -1 ? "#ff90bc" : "black"}
+										size={32}
+										className="transition"
+									/>
+								</button>
+							</div>
+						))}
 					</div>
 				)}
 				{selectedOption === "sounds" && (
@@ -105,17 +133,29 @@ export default function Page({ params }: { params: { studio: string } }) {
 
 				{/* rows content */}
 				<div className="py-6 px-4 space-y-2 w-full">
-					<div className="rounded-xl px-4 py-2">
-						<h3 className="text-lg uppercase font-black">Track 1</h3>
+					<div className="rounded-xl px-4 py-2 relative">
+						<h3 className="text-lg uppercase font-black ">Track 1</h3>
 						<div className="overflow-x-scroll flex space-x-2">
-							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
-								fjsdlfjlskdjflksdjflksdjfnsdklfj
-							</div>
-							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
-								fjsdlfjlskdjflksdjflksdjfnsdklfj
-							</div>
-							<div className="bg-yellow p-4 rounded-xl border-8 border-black">
-								fjsdlfjlskdjflksdjflksdjfnsdklfj
+							{track1.map((track, index) => (
+								<div
+									key={index}
+									className="bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
+									onClick={() => {
+										setSelectedCell([1, index]);
+									}}
+								>
+									<div className="w-36">
+										{track == -1 ? "Select a loop" : track}
+									</div>
+								</div>
+							))}
+							<div
+								className="bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
+								onClick={() => {
+									setTrack1([...track1, -1]);
+								}}
+							>
+								<FaPlusCircle color="black" size={32} />
 							</div>
 						</div>
 					</div>
