@@ -29,22 +29,24 @@ export default function Page({ params }: { params: { studio: string } }) {
 		<div className="grid grid-cols-3">
 			{/* Left column */}
 			<div className="col-span-1 bg-blue text-black h-screen border-r-8 border-black">
-				<div className="p-4  border-b-8 border-black">
+				<div className="pt-[10px] px-4 pb-[7px]">
 					<div className="flex items-center justify-between">
-						<h3 className="text-lg font-medium">Options</h3>
+						<img src="/keybuddies-logo.png" className="h-[45px]"></img>
 					</div>
-					<div className="mt-4">
+					<div className="mt-[10px] w-[100%]">
 						<button
-							className={`px-4 transition py-2 border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "loops" && "bg-yellow/40 border-yellow"
+							className={`w-[50%] px-4  py-2 rounded-xl font-medium focus:outline-none ${
+								selectedOption === "loops" &&
+								"bg-yellow border-black border-[8px]"
 							}`}
 							onClick={() => setSelectedOption("loops")}
 						>
 							Loops
 						</button>
 						<button
-							className={`px-4 py-2 transition border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "sounds" && "bg-yellow/40 border-yellow"
+							className={`w-[50%] px-4 py-2 rounded-xl font-medium focus:outline-none ${
+								selectedOption === "sounds" &&
+								"bg-yellow border-black border-[8px]"
 							}`}
 							onClick={() => setSelectedOption("sounds")}
 						>
