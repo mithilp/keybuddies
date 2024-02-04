@@ -25,6 +25,38 @@ export default function Page({ params }: { params: { studio: string } }) {
 		});
 	}, []);
 
+	function playTrack(play: string) {
+		const audio: Array<HTMLAudioElement> = [];
+		if (play === "FaPlay") {
+			setPlay("FaPause");
+			let currentTrackIndex = 0;
+			track1.forEach((track, index) => {
+				audio.push(new Audio(`/${track}_${bpm}.mp3`));
+			});
+			const playNextTrack = () => {
+				if (currentTrackIndex < track1.length) {
+					const track = audio[currentTrackIndex];
+					audio[currentTrackIndex].addEventListener("ended", () => {
+						currentTrackIndex++;
+						playNextTrack();
+					});
+					audio[currentTrackIndex].play();
+				} else {
+					currentTrackIndex = 0;
+					setPlay("FaPlay");
+				}
+			};
+
+			// Start playing the first track
+			playNextTrack();
+		} else {
+			audio.forEach((track, index) => {
+				track.pause();
+			});
+			setPlay("FaPlay");
+		}
+	}
+
 	const [selectedOption, setSelectedOption] = useState("loops");
 	return (
 		<div className="grid grid-cols-3">
@@ -126,9 +158,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 							<FaCircle color="#ff6767" />
 						</button>
 						<button
-							onClick={() =>
-								play === "FaPlay" ? setPlay("FaPause") : setPlay("FaPlay")
-							}
+							onClick={() => playTrack(play)}
 							className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
 						>
 							{play === "FaPlay" ? (
