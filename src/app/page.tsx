@@ -25,11 +25,15 @@ export default function Home({
 	}
 	async function createStudio(formData: FormData) {
 		"use server";
-		const name = formData.get("name") as string;
 		const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
 		await setDoc(doc(db, "studios", pin), {
 			createdAt: Timestamp.now(),
+			track1: [-1],
+			track2: [-1],
+			track3: [-1],
+			track4: [-1],
+			bpm: "120",
 		});
 
 		redirect(`/${pin}`);
