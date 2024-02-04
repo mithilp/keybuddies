@@ -1,13 +1,14 @@
 "use client";
 import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
+import { db } from "@/utils/firebase";
+import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
-	const [room, setRoom] = useState();
 	const [bpm, setbpm] = useState("120");
 	const [play, setPlay] = useState("FaPlay");
 
@@ -16,13 +17,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 	const loops = ["singersongwriter"];
 
 	useEffect(() => {
-		loadRoom();
+		const unsub = onSnapshot(doc(db, "studios", studio), (doc) => {
+			const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+			console.log("updating");
+			setTrack1(doc.data()!.track1);
+		});
 	}, []);
-
-	async function loadRoom() {
-		const response = await fetch(`/api/get-page?studio=${studio}`);
-		setRoom(await response.json());
-	}
 
 	const [selectedOption, setSelectedOption] = useState("loops");
 	return (
@@ -60,11 +60,14 @@ export default function Page({ params }: { params: { studio: string } }) {
 						{loops.map((loop, index) => (
 							<div
 								key={index}
-								onClick={() => {
+								onClick={async () => {
 									if (selectedCell[0] != -1) {
 										const selected = selectedCell;
 										if (selected[0] == 1) {
 											track1[selected[1]] = loop;
+											await updateDoc(doc(db, "studios", studio), {
+												track1: track1,
+											});
 										}
 										setSelectedCell([-1, -1]);
 									}
@@ -156,8 +159,10 @@ export default function Page({ params }: { params: { studio: string } }) {
 							))}
 
 							<button
-								onClick={() => {
-									setTrack1([...track1, -1]);
+								onClick={async () => {
+									await updateDoc(doc(db, "studios", studio), {
+										track1: [...track1, -1],
+									});
 								}}
 							>
 								<FaPlusCircle color="black" size={32} />

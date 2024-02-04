@@ -6,7 +6,6 @@ export async function GET(request: NextRequest) {
 	const searchParams = request.nextUrl.searchParams;
 	const studio = searchParams.get("studio") as string;
 	const snapshot = await getDoc(doc(db, "studios", studio));
-	console.log(!snapshot.exists());
 	if (!snapshot.exists()) {
 		return new Response(
 			JSON.stringify({
