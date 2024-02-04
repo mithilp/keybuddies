@@ -1,49 +1,53 @@
 "use client";
+import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
+import { db } from "@/utils/firebase";
+import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { useState, useEffect } from "react";
 import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
-	const [room, setRoom] = useState();
 	const [bpm, setbpm] = useState("120");
 	const [play, setPlay] = useState("FaPlay");
 
 	const [selectedCell, setSelectedCell] = useState([-1, -1]);
 	const [track1, setTrack1] = useState<Array<any>>([]);
-	const [loops, setLoops] = useState(["Loop 1", "Loop 2"]);
+	const loops = ["singersongwriter"];
 
 	useEffect(() => {
-		loadRoom();
+		const unsub = onSnapshot(doc(db, "studios", studio), (doc) => {
+			const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
+			console.log("updating");
+			setTrack1(doc.data()!.track1);
+			setbpm(doc.data()!.bpm);
+		});
 	}, []);
-
-	async function loadRoom() {
-		const response = await fetch(`/api/get-page?studio=${studio}`);
-		setRoom(await response.json());
-	}
 
 	const [selectedOption, setSelectedOption] = useState("loops");
 	return (
 		<div className="grid grid-cols-3">
 			{/* Left column */}
 			<div className="col-span-1 bg-blue text-black h-screen border-r-8 border-black">
-				<div className="p-4  border-b-8 border-black">
+				<div className="pt-[10px] px-4 pb-[7px]">
 					<div className="flex items-center justify-between">
-						<h3 className="text-lg font-medium">Options</h3>
+						<img src="/keybuddies-logo.png" className="h-[45px]"></img>
 					</div>
-					<div className="mt-4">
+					<div className="mt-[10px] w-[100%]">
 						<button
-							className={`px-4 transition py-2 border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "loops" && "bg-yellow/40 border-yellow"
+							className={`w-[50%] px-4  py-2 rounded-xl font-medium focus:outline-none ${
+								selectedOption === "loops" &&
+								"bg-yellow border-black border-[8px]"
 							}`}
 							onClick={() => setSelectedOption("loops")}
 						>
 							Loops
 						</button>
 						<button
-							className={`px-4 py-2 transition border-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-								selectedOption === "sounds" && "bg-yellow/40 border-yellow"
+							className={`w-[50%] px-4 py-2 rounded-xl font-medium focus:outline-none ${
+								selectedOption === "sounds" &&
+								"bg-yellow border-black border-[8px]"
 							}`}
 							onClick={() => setSelectedOption("sounds")}
 						>
@@ -57,11 +61,14 @@ export default function Page({ params }: { params: { studio: string } }) {
 						{loops.map((loop, index) => (
 							<div
 								key={index}
-								onClick={() => {
+								onClick={async () => {
 									if (selectedCell[0] != -1) {
 										const selected = selectedCell;
 										if (selected[0] == 1) {
 											track1[selected[1]] = loop;
+											await updateDoc(doc(db, "studios", studio), {
+												track1: track1,
+											});
 										}
 										setSelectedCell([-1, -1]);
 									}
@@ -71,13 +78,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 								}`}
 							>
 								<div>{loop}</div>
-								<button>
-									<FaPlusCircle
-										color={selectedCell[0] != -1 ? "#ff90bc" : "black"}
-										size={32}
-										className="transition"
-									/>
-								</button>
+								<PlayLoop
+									bpm={bpm}
+									selected={selectedCell[0] != -1}
+									id={loop}
+								/>
 							</div>
 						))}
 					</div>
@@ -106,7 +111,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<h1 className="text-3xl font-black">BPM:</h1>
 						<select
 							value={bpm}
-							onChange={(e) => setbpm(e.target.value)}
+							onChange={(e) => {
+								updateDoc(doc(db, "studios", studio), {
+									bpm: e.target.value,
+								});
+							}}
 							className="bg-yellow border-8 px-2 rounded-xl border-black h-16 text-3xl font-black"
 						>
 							<option value="80">80</option>
@@ -155,8 +164,10 @@ export default function Page({ params }: { params: { studio: string } }) {
 							))}
 
 							<button
-								onClick={() => {
-									setTrack1([...track1, -1]);
+								onClick={async () => {
+									await updateDoc(doc(db, "studios", studio), {
+										track1: [...track1, -1],
+									});
 								}}
 							>
 								<FaPlusCircle color="black" size={32} />
