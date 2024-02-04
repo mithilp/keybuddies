@@ -1,6 +1,7 @@
 import { SubmitButton } from "@/components/SubmitButton";
 import { db } from "@/utils/firebase";
 import { Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaArrowRight } from "react-icons/fa";
@@ -36,9 +37,17 @@ export default function Home({
 
 	return (
 		<main className="p-24 h-screen w-screen grid place-items-center">
-			<div className="w-72 space-y-2">
-				<h1 className="text-3xl font-bold text-center">Keybuddies</h1>
-				<form action={joinStudio} className="w-full space-y-2">
+			<div className="w-96 space-y-2 flex items-center flex-col bg-blue border-8 border-black p-10 rounded-xl">
+				<Image
+					alt={"Keybuddies"}
+					src="/keybuddies-logo.png"
+					width={200}
+					height={0}
+				/>
+				<form
+					action={joinStudio}
+					className="w-full space-y-2 border-b-8 border-black pb-2"
+				>
 					{searchParams.error === "not-found" && (
 						<div>
 							<p className="text-red-300 text-center">Studio not found!</p>
@@ -50,13 +59,12 @@ export default function Home({
 						required
 						minLength={6}
 						name="pin"
-						className="w-full p-2 rounded-md black text-black text-center"
+						className="w-full bg-yellow border-8 border-black p-2 rounded-xl black text-black text-center"
 						placeholder="Studio Code"
 					/>
 					<SubmitButton text="Join a Room!" />
 				</form>
-				<hr />
-				<form action={createStudio} className="w-full space-y-2">
+				<form action={createStudio} className="w-full">
 					<SubmitButton text="Create a Room!" />
 				</form>
 			</div>

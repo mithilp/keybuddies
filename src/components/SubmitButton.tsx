@@ -8,7 +8,7 @@ export function SubmitButton({ text }: { text: string }) {
 	return (
 		<button
 			type="submit"
-			className="w-full bg-blue-800 py-2 rounded-md"
+			className="w-full bg-pink border-black border-8 py-2 rounded-xl"
 			aria-disabled={pending}
 		>
 			{pending ? "Loading..." : text}
