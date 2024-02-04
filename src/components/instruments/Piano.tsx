@@ -3,13 +3,25 @@
 import { exit } from "process";
 import { useEffect, useState } from "react";
 
+var prev_func = [];
 const Piano = () => {
 	const [selected, setSelected] = useState(false);
 	const [octave, setOctave] = useState(2);
 	const [listening, setListening] = useState(false);
+	const [functions, setFunctions] = useState([console.log("bye bye")]);
 
-	const handleKeyDown = (e: KeyboardEvent, octave: number) => {
+	const handleKeyDown = (e: KeyboardEvent) => {
+		// if (enter) {
+		// 	if (functions.length > 0) {
+		// 		functions.pop();
+		// 		functions.pop();
+		// 	}
+		// 	setFunctions([...functions, handleKeyDown(e, false)]);
+		// }
+		// else if (selected) {
 		if (selected) {
+			console.log("entered");
+
 			switch (e.key) {
 				case "ArrowUp":
 					setOctave((prev) => (prev === 3 ? 3 : prev + 1));
@@ -21,12 +33,7 @@ const Piano = () => {
 
 				case "a":
 					console.log("playing c" + octave);
-					const a =
-						octave == 1
-							? new Audio(`/piano_c1.mp3`)
-							: octave == 2
-							? new Audio(`/piano_c2.mp3`)
-							: new Audio(`/piano_c3.mp3`);
+					const a = new Audio(`/piano_c${octave}.mp3`);
 					a.play();
 					break;
 
@@ -97,25 +104,29 @@ const Piano = () => {
 	};
 
 	useEffect(() => {
-		if (selected && !listening) {
-			console.log("starting listening");
-			document.addEventListener(
-				"keydown",
-				(e) => handleKeyDown(e, octave),
-				true
-			);
+		if (selected) {
+			// if (selected && !listening) {
+			// 	console.log("starting listening");
+			// 	document.addEventListener(
+			// 		"keydown",
+			// 		(e) => handleKeyDown(e, octave),
+			// 		true
+			// 	);
 
-			setListening(true);
-		} else if (selected && listening) {
-			console.log("stopping listening");
-			document.removeEventListener("keydown", (e) => handleKeyDown(e, 1), true);
-			document.removeEventListener("keydown", (e) => handleKeyDown(e, 2), true);
-			document.removeEventListener("keydown", (e) => handleKeyDown(e, 3), true);
-			document.addEventListener(
-				"keydown",
-				(e) => handleKeyDown(e, octave),
-				true
-			);
+			// 	setListening(true);
+			// } else if (selected && listening) {
+			//console.log("stopping listening");
+			// document.removeEventListener("keydown", (e) => handleKeyDown(e, 1), true);
+			// document.removeEventListener("keydown", (e) => handleKeyDown(e, 2), true);
+			// document.removeEventListener("keydown", (e) => handleKeyDown(e, 3), true);
+			console.log("removed lsitenres");
+			// if (functions.length > 0) {
+			// 	functions.forEach((func) => {
+			// 		document.removeEventListener("keydown", (event) => func, true);
+			// 	});
+			// }
+			document.removeEventListener("keydown", (e) => handleKeyDown, true);
+			document.addEventListener("keydown", handleKeyDown, true);
 		}
 	});
 
