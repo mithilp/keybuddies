@@ -19,7 +19,17 @@ export default function Page({ params }: { params: { studio: string } }) {
 	const [track4, setTrack4] = useState<Array<any>>([]);
 	const [track5, setTrack5] = useState<Array<any>>([]);
 	const [track6, setTrack6] = useState<Array<any>>([]);
-	const loops = ["singersongwriter", "pianofs3"];
+	const loops = [
+		"singersongwriter",
+		"bass_1",
+		"bass_2",
+		"bass_3",
+		"bass_4",
+		"piano_1",
+		"piano_2",
+		"piano_3",
+		"piano_4",
+	];
 
 	useEffect(() => {
 		const unsub = onSnapshot(doc(db, "studios", studio), (doc) => {
