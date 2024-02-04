@@ -135,12 +135,16 @@ export default function Page({ params }: { params: { studio: string } }) {
 				<div className="py-6 px-4 space-y-2 w-full">
 					<div className="rounded-xl px-4 py-2 relative">
 						<h3 className="text-lg uppercase font-black ">Track 1</h3>
-						<div className="overflow-x-scroll flex space-x-2">
+						<div className="overflow-x-scroll flex items-center space-x-2">
 							{track1.map((track, index) => (
 								<div
 									key={index}
 									className="bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
 									onClick={() => {
+										if (selectedCell[0] == 1 && selectedCell[1] == index) {
+											setSelectedCell([-1, -1]);
+										}
+
 										setSelectedCell([1, index]);
 									}}
 								>
@@ -149,14 +153,14 @@ export default function Page({ params }: { params: { studio: string } }) {
 									</div>
 								</div>
 							))}
-							<div
-								className="bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
+
+							<button
 								onClick={() => {
 									setTrack1([...track1, -1]);
 								}}
 							>
 								<FaPlusCircle color="black" size={32} />
-							</div>
+							</button>
 						</div>
 					</div>
 				</div>
