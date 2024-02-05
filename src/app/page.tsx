@@ -44,7 +44,7 @@ export default function Home({
 			<div className="w-96 space-y-2 flex items-center flex-col bg-blue border-8 border-black p-10 rounded-xl">
 				<Image
 					alt={"Keybuddies"}
-					src="/keybuddies-logo.png"
+					src="/images/keybuddies-logo.png"
 					width={200}
 					height={0}
 				/>

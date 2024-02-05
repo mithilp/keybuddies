@@ -3,6 +3,7 @@ import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
 import { db } from "@/utils/firebase";
 import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
@@ -44,13 +45,13 @@ export default function Page({ params }: { params: { studio: string } }) {
 
 	function playTrack(play: string) {
 		const audios1: Array<HTMLAudioElement> = track1.map(
-			(track) => new Audio(`/${track}_${bpm}.mp3`)
+			(track) => new Audio(`/loops/${track}_${bpm}.mp3`)
 		);
 		const audios2: Array<HTMLAudioElement> = track2.map(
-			(track) => new Audio(`/${track}_${bpm}.mp3`)
+			(track) => new Audio(`/loops/${track}_${bpm}.mp3`)
 		);
 		const audios3: Array<HTMLAudioElement> = track3.map(
-			(track) => new Audio(`/${track}_${bpm}.mp3`)
+			(track) => new Audio(`/loops/${track}_${bpm}.mp3`)
 		);
 
 		if (play === "FaPlay") {
@@ -115,7 +116,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 			<div className="col-span-1 bg-blue text-black h-screen border-r-8 border-black">
 				<div className="pt-[10px] px-4 pb-[7px]">
 					<div className="flex items-center justify-between">
-						<img src="/keybuddies-logo.png" className="h-[45px]"></img>
+						<Image
+							alt="KeyBuddies Logo"
+							src="/images/keybuddies-logo.png"
+							width={200}
+							height={45}
+						/>
 					</div>
 					<div className="mt-[10px] w-[100%]">
 						<button

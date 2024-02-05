@@ -33,67 +33,67 @@ const Piano = () => {
 
 				case "a":
 					console.log("playing c" + octave);
-					const a = new Audio(`/piano_c${octave}.mp3`);
+					const a = new Audio(`/sounds/piano/piano_c${octave}.mp3`);
 					a.play();
 					break;
 
 				case "w":
-					const w = new Audio(`/piano_cs${octave}.mp3`);
+					const w = new Audio(`/sounds/piano/piano_cs${octave}.mp3`);
 					w.play();
 					break;
 
 				case "s":
-					const s = new Audio(`/piano_d${octave}.mp3`);
+					const s = new Audio(`/sounds/piano/piano_d${octave}.mp3`);
 					s.play();
 					break;
 
 				case "e":
-					const e = new Audio(`/piano_ds${octave}.mp3`);
+					const e = new Audio(`/sounds/piano/piano_ds${octave}.mp3`);
 					e.play();
 					break;
 
 				case "d":
-					const d = new Audio(`/piano_e${octave}.mp3`);
+					const d = new Audio(`/sounds/piano/piano_e${octave}.mp3`);
 					d.play();
 					break;
 
 				case "f":
-					const f = new Audio(`/piano_f${octave}.mp3`);
+					const f = new Audio(`/sounds/piano/piano_f${octave}.mp3`);
 					f.play();
 					break;
 
 				case "t":
-					const t = new Audio(`/piano_fs${octave}.mp3`);
+					const t = new Audio(`/sounds/piano/piano_fs${octave}.mp3`);
 					t.play();
 					break;
 
 				case "g":
-					const g = new Audio(`/piano_g${octave}.mp3`);
+					const g = new Audio(`/sounds/piano/piano_g${octave}.mp3`);
 					g.play();
 					break;
 
 				case "y":
-					const y = new Audio(`/piano_gs${octave}.mp3`);
+					const y = new Audio(`/sounds/piano/piano_gs${octave}.mp3`);
 					y.play();
 					break;
 
 				case "h":
-					const h = new Audio(`/piano_a${octave}.mp3`);
+					const h = new Audio(`/sounds/piano/piano_a${octave}.mp3`);
 					h.play();
 					break;
 
 				case "u":
-					const u = new Audio(`/piano_as${octave}.mp3`);
+					const u = new Audio(`/sounds/piano/piano_as${octave}.mp3`);
 					u.play();
 					break;
 
 				case "j":
-					const j = new Audio(`/piano_b${octave}.mp3`);
+					const j = new Audio(`/sounds/piano/piano_b${octave}.mp3`);
 					j.play();
 					break;
 
 				case "k":
-					const k = new Audio(`/piano_c${octave + 1}.mp3`);
+					const k = new Audio(`/sounds/piano/piano_c${octave + 1}.mp3`);
 					k.play();
 					break;
 
