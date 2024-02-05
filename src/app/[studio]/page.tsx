@@ -2,11 +2,12 @@
 import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
 import { db } from "@/utils/firebase";
-import { doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
+import { FaPause, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
+import logo from "../../../public/images/keybuddies-logo.png";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -88,7 +89,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 				audios3[k].play();
 				k++;
 				if (k == audios3.length) {
-					clearInterval(interval2);
+					clearInterval(interval3);
 				}
 				if (i > audios1.length && j > audios2.length && k > audios3.length) {
 					setPlay("FaPause");
@@ -116,12 +117,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 			<div className="col-span-1 bg-blue text-black h-screen border-r-8 border-black">
 				<div className="pt-[10px] px-4 pb-[7px]">
 					<div className="flex items-center justify-between">
-						<Image
-							alt="KeyBuddies Logo"
-							src="/images/keybuddies-logo.png"
-							width={200}
-							height={45}
-						/>
+						<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
 					</div>
 					<div className="mt-[10px] w-[100%]">
 						<button

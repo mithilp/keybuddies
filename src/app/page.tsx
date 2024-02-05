@@ -2,9 +2,8 @@ import { SubmitButton } from "@/components/SubmitButton";
 import { db } from "@/utils/firebase";
 import { Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
 import Image from "next/image";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FaArrowRight } from "react-icons/fa";
+import logo from "../../public/images/keybuddies-logo.png";
 
 export default function Home({
 	searchParams,
@@ -42,12 +41,7 @@ export default function Home({
 	return (
 		<main className="p-24 h-screen w-screen grid place-items-center">
 			<div className="w-96 space-y-2 flex items-center flex-col bg-blue border-8 border-black p-10 rounded-xl">
-				<Image
-					alt={"Keybuddies"}
-					src="/images/keybuddies-logo.png"
-					width={200}
-					height={0}
-				/>
+				<Image alt={"Keybuddies"} src={logo} width={200} height={0} />
 				<form
 					action={joinStudio}
 					className="w-full space-y-2 border-b-8 border-black pb-2"
