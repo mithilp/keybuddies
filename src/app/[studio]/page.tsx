@@ -114,7 +114,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 	return (
 		<div className="grid grid-cols-3">
 			{/* Left column */}
-			<div className="col-span-1 bg-blue text-black h-screen border-r-8 border-black">
+			<div className="col-span-1 bg-blue text-black overflow-y-scroll h-screen border-r-8 border-black">
 				<div className="pt-[10px] px-4 pb-[7px]">
 					<div className="flex items-center justify-between">
 						<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
