@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { FaPause, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 import logo from "../../../public/images/keybuddies-logo.png";
+import Guitar from "@/components/instruments/Guitar";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -131,12 +132,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</button>
 						<button
 							className={`w-[50%] px-4 py-2 rounded-xl font-medium focus:outline-none ${
-								selectedOption === "sounds" &&
+								selectedOption === "instruments" &&
 								"bg-yellow border-black border-[8px]"
 							}`}
-							onClick={() => setSelectedOption("sounds")}
+							onClick={() => setSelectedOption("instruments")}
 						>
-							Sounds
+							Instruments
 						</button>
 					</div>
 				</div>
@@ -182,10 +183,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 						))}
 					</div>
 				)}
-				{selectedOption === "sounds" && (
-					<div className="p-4">
-						<h3 className="text-lg font-medium">Sounds content</h3>
+				{selectedOption === "instruments" && (
+					<div className="p-4 space-y-2">
+						<h3 className="text-lg font-medium">Record a New Sound</h3>
 						<Piano />
+						<Guitar />
+						<h3 className="text-lg font-medium">Recorded Sounds</h3>
 					</div>
 				)}
 			</div>
