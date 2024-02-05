@@ -13,11 +13,6 @@ const config: Config = {
 				yellow: "#ffde90",
 				blue: "#8acdd7",
 			},
-			backgroundImage: {
-				"gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-				"gradient-conic":
-					"conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-			},
 		},
 	},
 	plugins: [],
