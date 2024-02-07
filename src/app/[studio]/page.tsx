@@ -220,8 +220,32 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<h3 className="text-lg font-medium">Recorded Sounds</h3>
 						{sounds.map((sound, index) => (
 							<div
-								onClick={() => alert("work in progress!")}
-								className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
+								key={index}
+								onClick={async () => {
+									if (selectedCell[0] != -1) {
+										const selected = selectedCell;
+										if (selected[0] == 1) {
+											track1[selected[1]] = sound.name;
+											await updateDoc(doc(db, "studios", studio), {
+												track1: track1,
+											});
+										} else if (selected[0] == 2) {
+											track2[selected[1]] = sound.name;
+											await updateDoc(doc(db, "studios", studio), {
+												track2: track2,
+											});
+										} else if (selected[0] == 3) {
+											track3[selected[1]] = sound.name;
+											await updateDoc(doc(db, "studios", studio), {
+												track3: track3,
+											});
+										}
+										setSelectedCell([-1, -1]);
+									}
+								}}
+								className={`transition bg-yellow cursor-pointer flex justify-between p-4 rounded-xl border-8 ${
+									selectedCell[0] != -1 ? "border-pink" : "border-black"
+								}`}
 							>
 								<div className="flex items-center space-x-2">
 									{sound.type == "piano" ? (
