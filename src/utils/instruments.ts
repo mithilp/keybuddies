@@ -1,3 +1,4 @@
+"use client";
 import { Soundfont } from "smplr";
 import {
 	MidiNumbers,
