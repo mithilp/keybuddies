@@ -13,19 +13,44 @@ import { useState, useEffect } from "react";
 const Guitar = () => {
 	let music = [
 		{
-			note: 14,
-			start: 1,
-			end: 4,
+			note: 88,
+			start: 0,
+			end: 1,
 		},
 		{
-			note: 100,
-			start: 1,
-			end: 1.5,
+			note: 88,
+			start: 1.25,
+			end: 1.75,
 		},
 		{
-			note: 20,
+			note: 88,
+			start: 2.5,
+			end: 3.5,
+		},
+		{
+			note: 76,
+			start: 4,
+			end: 4.5,
+		},
+		{
+			note: 87,
+			start: 5.5,
+			end: 6.5,
+		},
+		{
+			note: 87,
+			start: 6.75,
+			end: 7.25,
+		},
+		{
+			note: 87,
 			start: 8,
 			end: 9,
+		},
+		{
+			note: 75,
+			start: 9.5,
+			end: 10,
 		},
 	];
 	const context = new AudioContext();
