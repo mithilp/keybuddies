@@ -15,11 +15,12 @@ export default function Home({
 		const pin = formData.get("pin") as string;
 
 		const snapshot = await getDoc(doc(db, "studios", pin));
-
+		console.log(snapshot);
+		console.log(snapshot.exists());
 		if (snapshot.exists()) {
 			redirect(`/${pin}`);
 		} else {
-			redirect(`/join?error=not-found`);
+			redirect(`/?error=not-found`);
 		}
 	}
 	async function createStudio(formData: FormData) {
@@ -48,7 +49,7 @@ export default function Home({
 				>
 					{searchParams.error === "not-found" && (
 						<div>
-							<p className="text-red-300 text-center">Studio not found!</p>
+							<p className="text-red-500 text-center">Studio not found!</p>
 						</div>
 					)}
 					<input
