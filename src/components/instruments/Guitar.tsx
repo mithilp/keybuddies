@@ -1,14 +1,11 @@
 "use client";
 
+import { playPiano } from "@/utils/instruments";
 import { FaGuitar } from "react-icons/fa";
 import {
-	Piano as ReactPiano,
-	KeyboardShortcuts,
 	MidiNumbers,
 	//@ts-ignore
 } from "react-piano";
-import { Soundfont } from "smplr";
-import { useState, useEffect } from "react";
 
 const Guitar = () => {
 	let music = [
@@ -53,43 +50,10 @@ const Guitar = () => {
 			end: 10,
 		},
 	];
-	const context = new AudioContext();
-	const piano = new Soundfont(context, { instrument: "acoustic_grand_piano" });
-
-	const [loaded, setLoaded] = useState(false);
-
-	useEffect(() => {
-		piano.load.then(() => {
-			setLoaded(true);
-		});
-	}, []);
-	console.log(MidiNumbers);
-	// let play = () => {
-	// 	piano.start({
-	// 		note: MidiNumbers.getAttributes(14).note,
-	// 	});
-	// };
-	let play = () => {
-		for (let i = 0; i < music.length; i++) {
-			let note = music[i].note;
-			let start = music[i].start;
-			let end = music[i].end;
-			setTimeout(() => {
-				console.log("started" + i);
-				piano.start({
-					note: MidiNumbers.getAttributes(note).note,
-				});
-			}, start * 1000);
-			setTimeout(() => {
-				console.log("Stooped" + i);
-				piano.stop(note);
-			}, end * 1000);
-		}
-	};
 
 	return (
 		<button
-			onClick={play}
+			onClick={() => playPiano(music)}
 			className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
 		>
 			<div className="flex items-center space-x-2">

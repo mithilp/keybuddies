@@ -2,14 +2,16 @@
 import PlayLoop from "@/components/PlayLoop";
 import Piano from "@/components/instruments/Piano";
 import { db } from "@/utils/firebase";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { FaPause, FaPlusCircle } from "react-icons/fa";
+import { FaGuitar, FaPause, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 import logo from "../../../public/images/keybuddies-logo.png";
 import Guitar from "@/components/instruments/Guitar";
 import { IoMdTrash } from "react-icons/io";
+import { piano } from "@/utils/instruments";
+import { MdPiano } from "react-icons/md";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -35,15 +37,41 @@ export default function Page({ params }: { params: { studio: string } }) {
 		"piano_4",
 	];
 
+	const [sounds, setSounds] = useState<
+		Array<{
+			name: string;
+			type: string;
+			sequence: { note: number; start: number; end: number };
+		}>
+	>([]);
+
 	useEffect(() => {
 		const unsub = onSnapshot(doc(db, "studios", studio), (doc) => {
 			const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-			console.log("updating");
 			setTrack1(doc.data()!.track1);
 			setTrack2(doc.data()!.track2);
 			setTrack3(doc.data()!.track3);
 			setbpm(doc.data()!.bpm);
 		});
+
+		const unsubscribe = onSnapshot(
+			collection(db, `studios/${studio}/sounds`),
+			(querySnapshot) => {
+				const freshSounds: Array<{
+					name: string;
+					type: string;
+					sequence: { note: number; start: number; end: number };
+				}> = [];
+				querySnapshot.forEach((doc) => {
+					freshSounds.push({
+						name: doc.data().name,
+						type: doc.data().type,
+						sequence: doc.data().sequence,
+					});
+				});
+				setSounds(freshSounds);
+			}
+		);
 	}, []);
 
 	function playTrack(play: string) {
@@ -187,9 +215,25 @@ export default function Page({ params }: { params: { studio: string } }) {
 				{selectedOption === "instruments" && (
 					<div className="p-4 space-y-2">
 						<h3 className="text-lg font-medium">Record a New Sound</h3>
-						<Piano />
+						<Piano piano={piano} studio={studio} />
 						<Guitar />
 						<h3 className="text-lg font-medium">Recorded Sounds</h3>
+						{sounds.map((sound, index) => (
+							<div
+								onClick={() => alert("work in progress!")}
+								className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
+							>
+								<div className="flex items-center space-x-2">
+									{sound.type == "piano" ? (
+										<MdPiano size={32} />
+									) : (
+										<FaGuitar size={32} />
+									)}
+
+									<div className="text-xl">{sound.name}</div>
+								</div>
+							</div>
+						))}
 					</div>
 				)}
 			</div>
