@@ -9,6 +9,7 @@ import { FaPause, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 import logo from "../../../public/images/keybuddies-logo.png";
 import Guitar from "@/components/instruments/Guitar";
+import { IoMdTrash } from "react-icons/io";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -244,18 +245,31 @@ export default function Page({ params }: { params: { studio: string } }) {
 							{track1.map((track, index) => (
 								<div
 									key={index}
-									className="bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
-									onClick={() => {
-										if (selectedCell[0] == 1 && selectedCell[1] == index) {
-											setSelectedCell([-1, -1]);
-										}
-
-										setSelectedCell([1, index]);
-									}}
+									className="flex bg-yellow p-4 rounded-xl border-8 border-black cursor-pointer"
 								>
-									<div className="w-36">
+									<div
+										className="w-36"
+										onClick={() => {
+											if (selectedCell[0] == 1 && selectedCell[1] == index) {
+												setSelectedCell([-1, -1]);
+											}
+
+											setSelectedCell([1, index]);
+										}}
+									>
 										{track == -1 ? "Select a loop" : track}
 									</div>
+									<button
+										className="text-2xl"
+										onClick={async () => {
+											track1.splice(index, 1);
+											await updateDoc(doc(db, "studios", studio), {
+												track1: track1,
+											});
+										}}
+									>
+										<IoMdTrash />
+									</button>
 								</div>
 							))}
 
