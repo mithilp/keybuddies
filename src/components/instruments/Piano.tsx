@@ -25,6 +25,8 @@ const Piano = ({
 	studio: string;
 	bpm: number;
 }) => {
+	const multiplier = 7500 / bpm;
+
 	const [open, setOpen] = useState(false);
 
 	const [firstNote, setFirstNote] = useState(MidiNumbers.fromNote("c3"));
@@ -49,7 +51,6 @@ const Piano = ({
 		if (!recording) {
 			for (let i = 3; i > -1; i--) {
 				setCountdown(i);
-				console.log("updated countdown", i);
 				if (i != 0) {
 					await new Promise((resolve) => setTimeout(resolve, 1000));
 				}
@@ -282,22 +283,38 @@ const Piano = ({
 											note: MidiNumbers.getAttributes(midiNumber).note,
 										});
 										if (recording) {
-											setSequence([
-												...sequence,
-												{
-													note: midiNumber,
-													start: Date.now() - startTime,
-													end: 0,
-												},
-											]);
+											const endTime = Math.round(
+												(Date.now() - startTime) / multiplier
+											);
+
+											if (endTime >= 64) {
+												setRecording(false);
+											} else {
+												setSequence([
+													...sequence,
+													{
+														note: midiNumber,
+														start: Math.round(
+															(Date.now() - startTime) / multiplier
+														),
+														end: 0,
+													},
+												]);
+											}
 										}
 									}}
 									stopNote={(midiNumber: number) => {
 										piano.stop(midiNumber);
 										if (recording) {
-											setSequence(
-												updateArray(midiNumber, Date.now() - startTime)
+											const endTime = Math.round(
+												(Date.now() - startTime) / multiplier
 											);
+											setSequence(
+												updateArray(midiNumber, endTime >= 64 ? 63 : endTime)
+											);
+											if (endTime > 63) {
+												setRecording(false);
+											}
 										}
 									}}
 									keyboardShortcuts={keyboardShortcuts}
@@ -327,6 +344,14 @@ const Piano = ({
 										Reset Recording
 									</button>
 								)}
+							</div>
+
+							<div>
+								{sequence.map((key) => (
+									<>
+										{key.note} - {key.start} - {key.end},{" "}
+									</>
+								))}
 							</div>
 
 							{sequence.length > 0 && !recording && (
