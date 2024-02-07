@@ -16,7 +16,15 @@ import {
 import "react-piano/dist/styles.css";
 import { Soundfont } from "smplr";
 
-const Piano = ({ piano, studio }: { piano: Soundfont; studio: string }) => {
+const Piano = ({
+	piano,
+	studio,
+	bpm,
+}: {
+	piano: Soundfont;
+	studio: string;
+	bpm: number;
+}) => {
 	const [open, setOpen] = useState(false);
 
 	const [firstNote, setFirstNote] = useState(MidiNumbers.fromNote("c3"));
@@ -326,7 +334,7 @@ const Piano = ({ piano, studio }: { piano: Soundfont; studio: string }) => {
 									<div className="text-xl">Done Recording?</div>
 									<div className="space-x-4 flex">
 										<button
-											onClick={() => playPiano(sequence)}
+											onClick={() => playPiano(sequence, bpm)}
 											className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 										>
 											<div>Listen to Recording</div>

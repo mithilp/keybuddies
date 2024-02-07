@@ -7,7 +7,7 @@ import {
 	//@ts-ignore
 } from "react-piano";
 
-const Guitar = () => {
+const Guitar = ({ bpm }: { bpm: number }) => {
 	let music = [
 		{
 			note: 88,
@@ -53,7 +53,7 @@ const Guitar = () => {
 
 	return (
 		<button
-			onClick={() => playPiano(music)}
+			onClick={() => playPiano(music, bpm)}
 			className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
 		>
 			<div className="flex items-center space-x-2">

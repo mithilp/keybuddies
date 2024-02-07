@@ -215,8 +215,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 				{selectedOption === "instruments" && (
 					<div className="p-4 space-y-2">
 						<h3 className="text-lg font-medium">Record a New Sound</h3>
-						<Piano piano={piano} studio={studio} />
-						<Guitar />
+						<Piano piano={piano} studio={studio} bpm={Number(bpm)} />
+						<Guitar bpm={Number(bpm)} />
 						<h3 className="text-lg font-medium">Recorded Sounds</h3>
 						{sounds.map((sound, index) => (
 							<div

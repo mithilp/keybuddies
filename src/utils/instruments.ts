@@ -12,19 +12,21 @@ export const piano = new Soundfont(context, {
 });
 
 export const playPiano = (
-	music: Array<{ note: number; start: number; end: number }>
+	music: Array<{ note: number; start: number; end: number }>,
+	bpm: number
 ) => {
+	const time = 7500 / bpm;
 	for (let i = 0; i < music.length; i++) {
-		let note = music[i].note;
-		let start = music[i].start;
-		let end = music[i].end;
+		const note = music[i].note;
+		const start = music[i].start;
+		const end = music[i].end;
 		setTimeout(() => {
 			piano.start({
 				note: MidiNumbers.getAttributes(note).note,
 			});
-		}, start);
+		}, start * time);
 		setTimeout(() => {
 			piano.stop(note);
-		}, end);
+		}, end * time);
 	}
 };

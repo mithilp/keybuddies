@@ -15,8 +15,6 @@ export default function Home({
 		const pin = formData.get("pin") as string;
 
 		const snapshot = await getDoc(doc(db, "studios", pin));
-		console.log(snapshot);
-		console.log(snapshot.exists());
 		if (snapshot.exists()) {
 			redirect(`/${pin}`);
 		} else {
