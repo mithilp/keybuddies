@@ -2,10 +2,11 @@
 
 import { db } from "@/utils/firebase";
 import { playPiano } from "@/utils/instruments";
+import { set } from "firebase/database";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { useState } from "react";
-import { FaCheck, FaVolumeUp } from "react-icons/fa";
-import { FaCircleXmark } from "react-icons/fa6";
+import { FaArrowLeft, FaArrowRight, FaCheck, FaVolumeUp } from "react-icons/fa";
+import { FaCircleXmark, FaXmark } from "react-icons/fa6";
 import { MdPiano } from "react-icons/md";
 import {
 	Piano as ReactPiano,
@@ -157,6 +158,8 @@ const Piano = ({
 		{ value: 127, text: "G9" },
 	];
 
+	const [tooltip, setTooltip] = useState([-1, -1]);
+
 	return (
 		<>
 			<button
@@ -246,6 +249,7 @@ const Piano = ({
 									)}
 								</div>
 							</div>
+
 							<div className="w-full h-12">
 								<ReactPiano
 									noteRange={{ first: firstNote, last: lastNote }}
@@ -292,7 +296,7 @@ const Piano = ({
 								/>
 							</div>
 
-							<div id="grid" className="overflow-scroll relative h-80 bg-pink">
+							<div className="overflow-scroll relative h-80 bg-pink">
 								<div className="relative flex w-max sticky top-0 z-30 border-b-2 border-black">
 									<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
 										Note
@@ -331,7 +335,7 @@ const Piano = ({
 													i === 0 ? (
 														<div
 															key={i}
-															className="bg-white sticky left-0 z-20 w-10 h-8 grid place-items-center border-r-2 border-black"
+															className="bg-white sticky grid place-items-center left-0 z-20 w-10 h-8 border-r-2 border-black"
 														>
 															{key.text}
 														</div>
@@ -339,21 +343,79 @@ const Piano = ({
 															(note) =>
 																note.note === key.value && note.start === i - 1
 													  ).length > 0 ? (
-														<button
-															onClick={() => {
-																setSequence(
-																	sequence.filter(
-																		(note) =>
-																			!(
-																				note.note === key.value &&
-																				note.start === i - 1
-																			)
-																	)
-																);
-															}}
+														<div
 															key={i}
-															className="bg-yellow border-r-2 border-black w-10 h-8 grid place-items-center"
-														></button>
+															className="bg-yellow cursor-pointer relative border-r-2 border-black w-10 h-8"
+														>
+															<button
+																className="w-10 h-8"
+																onClick={(e) => {
+																	if (e.altKey) {
+																		setTooltip([index, i]);
+																	} else {
+																		setSequence(
+																			sequence.filter(
+																				(note) =>
+																					!(
+																						note.note === key.value &&
+																						note.start === i - 1
+																					)
+																			)
+																		);
+																	}
+																}}
+															></button>
+															{index == tooltip[0] && i == tooltip[1] && (
+																<div className="absolute flex space-x-2 bottom-10 z-50 bg-yellow border-8 border-black rounded-xl p-2 left-0">
+																	{i != 1 && (
+																		<button
+																			onClick={() => {
+																				setSequence(
+																					sequence.map((note) =>
+																						note.note === key.value &&
+																						note.start === i - 1
+																							? {
+																									...note,
+																									start: i - 2,
+																									end: note.end - 1,
+																							  }
+																							: note
+																					)
+																				);
+																			}}
+																		>
+																			<FaArrowLeft size={24} />
+																		</button>
+																	)}
+																	{i != 64 && (
+																		<button
+																			onClick={() => {
+																				setSequence(
+																					sequence.map((note) =>
+																						note.note === key.value &&
+																						note.start === i - 1
+																							? {
+																									...note,
+																									start: i,
+																									end:
+																										note.end + 1 > 64
+																											? 64
+																											: note.end + 1,
+																							  }
+																							: note
+																					)
+																				);
+																			}}
+																		>
+																			<FaArrowRight size={24} />
+																		</button>
+																	)}
+																	<button onClick={() => setTooltip([-1, -1])}>
+																		<FaXmark size={24} />
+																	</button>
+																</div>
+															)}
+														</div>
 													) : (
 														<button
 															onClick={() => {
@@ -367,7 +429,7 @@ const Piano = ({
 																]);
 															}}
 															key={i}
-															className="bg-black border-r-2 border-black w-10 h-8 grid place-items-center"
+															className="bg-pink border-r-2 border-black w-10 h-8"
 														></button>
 													)
 												)}
