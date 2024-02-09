@@ -86,6 +86,77 @@ const Piano = ({
 		setOpen(false);
 	};
 
+	const MIDI = [
+		{ value: 12, text: "C0" },
+		{ value: 14, text: "D0" },
+		{ value: 16, text: "E0" },
+		{ value: 17, text: "F0" },
+		{ value: 19, text: "G0" },
+		{ value: 21, text: "A0" },
+		{ value: 23, text: "B0" },
+		{ value: 24, text: "C1" },
+		{ value: 26, text: "D1" },
+		{ value: 28, text: "E1" },
+		{ value: 29, text: "F1" },
+		{ value: 31, text: "G1" },
+		{ value: 33, text: "A1" },
+		{ value: 35, text: "B1" },
+		{ value: 36, text: "C2" },
+		{ value: 38, text: "D2" },
+		{ value: 40, text: "E2" },
+		{ value: 41, text: "F2" },
+		{ value: 43, text: "G2" },
+		{ value: 45, text: "A2" },
+		{ value: 47, text: "B2" },
+		{ value: 48, text: "C3" },
+		{ value: 50, text: "D3" },
+		{ value: 52, text: "E3" },
+		{ value: 53, text: "F3" },
+		{ value: 55, text: "G3" },
+		{ value: 57, text: "A3" },
+		{ value: 59, text: "B3" },
+		{ value: 60, text: "C4" },
+		{ value: 62, text: "D4" },
+		{ value: 64, text: "E4" },
+		{ value: 65, text: "F4" },
+		{ value: 67, text: "G4" },
+		{ value: 69, text: "A4" },
+		{ value: 71, text: "B4" },
+		{ value: 72, text: "C5" },
+		{ value: 74, text: "D5" },
+		{ value: 76, text: "E5" },
+		{ value: 77, text: "F5" },
+		{ value: 79, text: "G5" },
+		{ value: 81, text: "A5" },
+		{ value: 83, text: "B5" },
+		{ value: 84, text: "C6" },
+		{ value: 86, text: "D6" },
+		{ value: 88, text: "E6" },
+		{ value: 89, text: "F6" },
+		{ value: 91, text: "G6" },
+		{ value: 93, text: "A6" },
+		{ value: 95, text: "B6" },
+		{ value: 96, text: "C7" },
+		{ value: 98, text: "D7" },
+		{ value: 100, text: "E7" },
+		{ value: 101, text: "F7" },
+		{ value: 103, text: "G7" },
+		{ value: 105, text: "A7" },
+		{ value: 107, text: "B7" },
+		{ value: 108, text: "C8" },
+		{ value: 110, text: "D8" },
+		{ value: 112, text: "E8" },
+		{ value: 113, text: "F8" },
+		{ value: 115, text: "G8" },
+		{ value: 117, text: "A8" },
+		{ value: 119, text: "B8" },
+		{ value: 120, text: "C9" },
+		{ value: 122, text: "D9" },
+		{ value: 124, text: "E9" },
+		{ value: 125, text: "F9" },
+		{ value: 127, text: "G9" },
+	];
+
 	return (
 		<>
 			<button
@@ -99,8 +170,8 @@ const Piano = ({
 			</button>
 
 			{open && (
-				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-24">
-					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-4">
+				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
+					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Piano Sound</h3>
 							<button onClick={() => setOpen(false)}>
@@ -109,173 +180,73 @@ const Piano = ({
 						</div>
 
 						<div className="space-y-4">
-							<div className="flex space-x-4">
-								<div className="flex items-center space-x-2">
-									<label className="text-xl" htmlFor="firstNote">
-										First Note:
-									</label>
-									<select
-										className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
-										value={firstNote.toString()}
-										onChange={(e) => {
-											setFirstNote(Number(e.target.value));
-										}}
-									>
-										<option value="12">C0</option>
-										<option value="14">D0</option>
-										<option value="16">E0</option>
-										<option value="17">F0</option>
-										<option value="19">G0</option>
-										<option value="21">A0</option>
-										<option value="23">B0</option>
-										<option value="24">C1</option>
-										<option value="26">D1</option>
-										<option value="28">E1</option>
-										<option value="29">F1</option>
-										<option value="31">G1</option>
-										<option value="33">A1</option>
-										<option value="35">B1</option>
-										<option value="36">C2</option>
-										<option value="38">D2</option>
-										<option value="40">E2</option>
-										<option value="41">F2</option>
-										<option value="43">G2</option>
-										<option value="45">A2</option>
-										<option value="47">B2</option>
-										<option value="48">C3</option>
-										<option value="50">D3</option>
-										<option value="52">E3</option>
-										<option value="53">F3</option>
-										<option value="55">G3</option>
-										<option value="57">A3</option>
-										<option value="59">B3</option>
-										<option value="60">C4</option>
-										<option value="62">D4</option>
-										<option value="64">E4</option>
-										<option value="65">F4</option>
-										<option value="67">G4</option>
-										<option value="69">A4</option>
-										<option value="71">B4</option>
-										<option value="72">C5</option>
-										<option value="74">D5</option>
-										<option value="76">E5</option>
-										<option value="77">F5</option>
-										<option value="79">G5</option>
-										<option value="81">A5</option>
-										<option value="83">B5</option>
-										<option value="84">C6</option>
-										<option value="86">D6</option>
-										<option value="88">E6</option>
-										<option value="89">F6</option>
-										<option value="91">G6</option>
-										<option value="93">A6</option>
-										<option value="95">B6</option>
-										<option value="96">C7</option>
-										<option value="98">D7</option>
-										<option value="100">E7</option>
-										<option value="101">F7</option>
-										<option value="103">G7</option>
-										<option value="105">A7</option>
-										<option value="107">B7</option>
-										<option value="108">C8</option>
-										<option value="110">D8</option>
-										<option value="112">E8</option>
-										<option value="113">F8</option>
-										<option value="115">G8</option>
-										<option value="117">A8</option>
-										<option value="119">B8</option>
-										<option value="120">C9</option>
-										<option value="122">D9</option>
-										<option value="124">E9</option>
-										<option value="125">F9</option>
-										<option value="127">G9</option>
-									</select>
+							<div className="flex items-center justify-between">
+								<div className="flex space-x-4">
+									<div className="flex items-center space-x-2">
+										<label className="text-lg" htmlFor="firstNote">
+											First Note:
+										</label>
+										<select
+											className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
+											value={firstNote.toString()}
+											onChange={(e) => {
+												setFirstNote(Number(e.target.value));
+											}}
+										>
+											{MIDI.map((note, index) => (
+												<option key={index} value={note.value}>
+													{note.text}
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div className="flex items-center space-x-2">
+										<label className="text-lg" htmlFor="firstNote">
+											Last Note:
+										</label>
+										<select
+											className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
+											value={lastNote.toString()}
+											onChange={(e) => {
+												setLastNote(Number(e.target.value));
+											}}
+										>
+											{MIDI.map((note, index) => (
+												<option key={index} value={note.value}>
+													{note.text}
+												</option>
+											))}
+										</select>
+									</div>
 								</div>
 
-								<div className="flex items-center space-x-2">
-									<label className="text-xl" htmlFor="firstNote">
-										Last Note:
-									</label>
-									<select
-										className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
-										value={lastNote.toString()}
-										onChange={(e) => {
-											setLastNote(Number(e.target.value));
-										}}
+								<div className="flex space-x-4">
+									<button
+										onClick={record}
+										className="bg-yellow border-8 border-black p-2 rounded-xl"
 									>
-										<option value="12">C0</option>
-										<option value="14">D0</option>
-										<option value="16">E0</option>
-										<option value="17">F0</option>
-										<option value="19">G0</option>
-										<option value="21">A0</option>
-										<option value="23">B0</option>
-										<option value="24">C1</option>
-										<option value="26">D1</option>
-										<option value="28">E1</option>
-										<option value="29">F1</option>
-										<option value="31">G1</option>
-										<option value="33">A1</option>
-										<option value="35">B1</option>
-										<option value="36">C2</option>
-										<option value="38">D2</option>
-										<option value="40">E2</option>
-										<option value="41">F2</option>
-										<option value="43">G2</option>
-										<option value="45">A2</option>
-										<option value="47">B2</option>
-										<option value="48">C3</option>
-										<option value="50">D3</option>
-										<option value="52">E3</option>
-										<option value="53">F3</option>
-										<option value="55">G3</option>
-										<option value="57">A3</option>
-										<option value="59">B3</option>
-										<option value="60">C4</option>
-										<option value="62">D4</option>
-										<option value="64">E4</option>
-										<option value="65">F4</option>
-										<option value="67">G4</option>
-										<option value="69">A4</option>
-										<option value="71">B4</option>
-										<option value="72">C5</option>
-										<option value="74">D5</option>
-										<option value="76">E5</option>
-										<option value="77">F5</option>
-										<option value="79">G5</option>
-										<option value="81">A5</option>
-										<option value="83">B5</option>
-										<option value="84">C6</option>
-										<option value="86">D6</option>
-										<option value="88">E6</option>
-										<option value="89">F6</option>
-										<option value="91">G6</option>
-										<option value="93">A6</option>
-										<option value="95">B6</option>
-										<option value="96">C7</option>
-										<option value="98">D7</option>
-										<option value="100">E7</option>
-										<option value="101">F7</option>
-										<option value="103">G7</option>
-										<option value="105">A7</option>
-										<option value="107">B7</option>
-										<option value="108">C8</option>
-										<option value="110">D8</option>
-										<option value="112">E8</option>
-										<option value="113">F8</option>
-										<option value="115">G8</option>
-										<option value="117">A8</option>
-										<option value="119">B8</option>
-										<option value="120">C9</option>
-										<option value="122">D9</option>
-										<option value="124">E9</option>
-										<option value="125">F9</option>
-										<option value="127">G9</option>
-									</select>
+										{countdown > 0
+											? `Starting in ${countdown}s`
+											: recording
+											? "Stop Recording"
+											: "Start Recording"}
+									</button>
+
+									{sequence.length > 0 && (
+										<button
+											onClick={() => {
+												setSequence([]);
+												setStartTime(Date.now());
+											}}
+											className="bg-yellow border-8 border-black p-2 rounded-xl"
+										>
+											Reset Recording
+										</button>
+									)}
 								</div>
 							</div>
-
-							<div className="w-full h-24">
+							<div className="w-full h-12">
 								<ReactPiano
 									noteRange={{ first: firstNote, last: lastNote }}
 									playNote={(midiNumber: number) => {
@@ -321,42 +292,69 @@ const Piano = ({
 								/>
 							</div>
 
-							<div className="w-full flex items-end space-x-4">
-								<button
-									onClick={record}
-									className="bg-yellow border-8 border-black p-2 rounded-xl"
-								>
-									{countdown > 0
-										? `Starting in ${countdown}s`
-										: recording
-										? "Stop Recording"
-										: "Start Recording"}
-								</button>
-
-								{sequence.length > 0 && (
-									<button
-										onClick={() => {
-											setSequence([]);
-											setStartTime(Date.now());
-										}}
-										className="bg-yellow border-8 border-black p-2 rounded-xl"
-									>
-										Reset Recording
-									</button>
+							<div id="grid" className="overflow-scroll relative h-80 bg-pink">
+								<div className="relative flex w-max sticky top-0 z-30 border-b-2 border-black">
+									<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
+										Note
+									</div>
+									{Array.from(Array(65)).map((_, i) => (
+										<div
+											key={i}
+											className="bg-white w-10 h-12 grid place-items-center border-r-2 border-black"
+										>
+											{i % 8 != 0 ? (
+												i > 8 ? (
+													<div>
+														{Math.floor(i / 8)} <sup>{i % 8}</sup>&frasl;
+														<sub>8</sub>
+													</div>
+												) : (
+													<div>
+														<sup>{i}</sup>&frasl;<sub>8</sub>
+													</div>
+												)
+											) : (
+												i / 8
+											)}
+										</div>
+									))}
+								</div>
+								{MIDI.map(
+									(key, index) =>
+										key.value >= firstNote &&
+										key.value <= lastNote && (
+											<div className="relative flex w-max border-b-2 border-black">
+												{Array.from(Array(66)).map((_, i) =>
+													i === 0 ? (
+														<div
+															key={i}
+															className="bg-white sticky left-0 z-20 w-10 h-8 grid place-items-center border-r-2 border-black"
+														>
+															{key.text}
+														</div>
+													) : sequence.filter(
+															(note) =>
+																note.note === key.value && note.start === i - 1
+													  ).length > 0 ? (
+														<div
+															key={i}
+															className="bg-yellow border-r-2 border-black w-10 h-8 grid place-items-center"
+														></div>
+													) : (
+														<div
+															key={i}
+															className="bg-black border-r-2 border-black w-10 h-8 grid place-items-center"
+														></div>
+													)
+												)}
+											</div>
+										)
 								)}
-							</div>
-
-							<div>
-								{sequence.map((key) => (
-									<>
-										{key.note} - {key.start} - {key.end},{" "}
-									</>
-								))}
 							</div>
 
 							{sequence.length > 0 && !recording && (
 								<div className="space-y-2">
-									<div className="text-xl">Done Recording?</div>
+									<div className="text-lg">Done Recording?</div>
 									<div className="space-x-4 flex">
 										<button
 											onClick={() => playPiano(sequence, bpm)}
