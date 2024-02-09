@@ -339,15 +339,36 @@ const Piano = ({
 															(note) =>
 																note.note === key.value && note.start === i - 1
 													  ).length > 0 ? (
-														<div
+														<button
+															onClick={() => {
+																setSequence(
+																	sequence.filter(
+																		(note) =>
+																			!(
+																				note.note === key.value &&
+																				note.start === i - 1
+																			)
+																	)
+																);
+															}}
 															key={i}
 															className="bg-yellow border-r-2 border-black w-10 h-8 grid place-items-center"
-														></div>
+														></button>
 													) : (
-														<div
+														<button
+															onClick={() => {
+																setSequence([
+																	...sequence,
+																	{
+																		note: key.value,
+																		start: i - 1,
+																		end: i,
+																	},
+																]);
+															}}
 															key={i}
 															className="bg-black border-r-2 border-black w-10 h-8 grid place-items-center"
-														></div>
+														></button>
 													)
 												)}
 											</div>
