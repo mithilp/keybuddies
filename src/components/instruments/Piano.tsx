@@ -323,7 +323,10 @@ const Piano = ({
 									(key, index) =>
 										key.value >= firstNote &&
 										key.value <= lastNote && (
-											<div className="relative flex w-max border-b-2 border-black">
+											<div
+												key={index}
+												className="relative flex w-max border-b-2 border-black"
+											>
 												{Array.from(Array(66)).map((_, i) =>
 													i === 0 ? (
 														<div
