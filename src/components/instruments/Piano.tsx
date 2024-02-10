@@ -22,6 +22,7 @@ import {
 } from "react-piano";
 import "react-piano/dist/styles.css";
 import { Soundfont } from "smplr";
+import Metronome from "../Metronome";
 
 const Piano = ({
 	piano,
@@ -231,6 +232,7 @@ const Piano = ({
 								</div>
 
 								<div className="flex space-x-4">
+									<Metronome mspb={multiplier} />
 									<button
 										onClick={record}
 										className="bg-yellow border-8 border-black p-2 rounded-xl"
@@ -241,7 +243,6 @@ const Piano = ({
 											? "Stop Recording"
 											: "Start Recording"}
 									</button>
-
 									{sequence.length > 0 && (
 										<button
 											onClick={() => {
