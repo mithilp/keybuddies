@@ -5,7 +5,13 @@ import { playPiano } from "@/utils/instruments";
 import { set } from "firebase/database";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { useState } from "react";
-import { FaArrowLeft, FaArrowRight, FaCheck, FaVolumeUp } from "react-icons/fa";
+import {
+	FaArrowLeft,
+	FaArrowRight,
+	FaCheck,
+	FaTrash,
+	FaVolumeUp,
+} from "react-icons/fa";
 import { FaCircleXmark, FaXmark } from "react-icons/fa6";
 import { MdPiano } from "react-icons/md";
 import {
@@ -340,12 +346,27 @@ const Piano = ({
 															{key.text}
 														</div>
 													) : sequence.filter(
-															(note) =>
-																note.note === key.value && note.start === i - 1
+															(note, j, array) =>
+																(note.note === key.value &&
+																	note.start === i - 1) ||
+																(note.note === key.value &&
+																	note.end > i - 1 &&
+																	note.start < i - 1)
 													  ).length > 0 ? (
 														<div
 															key={i}
-															className="bg-yellow cursor-pointer relative border-r-2 border-black w-10 h-8"
+															className={`bg-yellow cursor-pointer relative border-r-2 w-10 h-8 ${
+																sequence.filter(
+																	(note) =>
+																		(note.note === key.value &&
+																			note.start === i - 1) ||
+																		(note.note === key.value &&
+																			note.end > i - 1 &&
+																			note.start < i - 1)
+																)[0].end == i
+																	? "border-black"
+																	: "border-yellow"
+															}`}
 														>
 															<button
 																className="w-10 h-8"
@@ -366,17 +387,22 @@ const Piano = ({
 																}}
 															></button>
 															{index == tooltip[0] && i == tooltip[1] && (
-																<div className="absolute flex space-x-2 bottom-10 z-50 bg-yellow border-8 border-black rounded-xl p-2 left-0">
+																// tooltip
+																<div className="absolute flex items-center space-x-4 bottom-10 z-50 bg-yellow border-8 border-black rounded-xl p-2 left-0">
 																	{i != 1 && (
 																		<button
 																			onClick={() => {
 																				setSequence(
 																					sequence.map((note) =>
-																						note.note === key.value &&
-																						note.start === i - 1
+																						(note.note === key.value &&
+																							note.start === i - 1) ||
+																						(note.note === key.value &&
+																							note.end > i - 1 &&
+																							note.start < i - 1)
 																							? {
 																									...note,
-																									start: i - 2,
+																									start:
+																										note.start == 0 ? 0 : -1,
 																									end: note.end - 1,
 																							  }
 																							: note
@@ -384,7 +410,7 @@ const Piano = ({
 																				);
 																			}}
 																		>
-																			<FaArrowLeft size={24} />
+																			<FaArrowLeft size={20} />
 																		</button>
 																	)}
 																	{i != 64 && (
@@ -392,13 +418,16 @@ const Piano = ({
 																			onClick={() => {
 																				setSequence(
 																					sequence.map((note) =>
-																						note.note === key.value &&
-																						note.start === i - 1
+																						(note.note === key.value &&
+																							note.start === i - 1) ||
+																						(note.note === key.value &&
+																							note.end > i - 1 &&
+																							note.start < i - 1)
 																							? {
 																									...note,
-																									start: i,
+																									start: note.start + 1,
 																									end:
-																										note.end + 1 > 64
+																										note.end > 63
 																											? 64
 																											: note.end + 1,
 																							  }
@@ -407,11 +436,86 @@ const Piano = ({
 																				);
 																			}}
 																		>
-																			<FaArrowRight size={24} />
+																			<FaArrowRight size={20} />
 																		</button>
 																	)}
+																	<button
+																		onClick={() => {
+																			setSequence(
+																				sequence.map((note) =>
+																					(note.note === key.value &&
+																						note.start === i - 1) ||
+																					(note.note === key.value &&
+																						note.end > i - 1 &&
+																						note.start < i - 1)
+																						? {
+																								...note,
+																								end: note.end + 1,
+																						  }
+																						: note
+																				)
+																			);
+																		}}
+																	>
+																		<div>
+																			+<sup>1</sup>&frasl;<sub>8</sub>
+																		</div>
+																	</button>
+																	{sequence.filter(
+																		(note) =>
+																			((note.note === key.value &&
+																				note.start === i - 1) ||
+																				(note.note === key.value &&
+																					note.end > i - 1 &&
+																					note.start < i - 1)) &&
+																			note.note === key.value &&
+																			note.end - note.start > 1
+																	).length > 0 && (
+																		<button
+																			onClick={() => {
+																				setSequence(
+																					sequence.map((note) =>
+																						(note.note === key.value &&
+																							note.start === i - 1) ||
+																						(note.note === key.value &&
+																							note.end > i - 1 &&
+																							note.start < i - 1)
+																							? {
+																									...note,
+																									end: note.end - 1,
+																							  }
+																							: note
+																					)
+																				);
+																			}}
+																		>
+																			<div>
+																				-<sup>1</sup>&frasl;<sub>8</sub>
+																			</div>
+																		</button>
+																	)}
+
+																	<button
+																		onClick={() => {
+																			setSequence(
+																				sequence.filter(
+																					(note) =>
+																						!(
+																							(note.note === key.value &&
+																								note.start === i - 1) ||
+																							(note.note === key.value &&
+																								note.end > i - 1 &&
+																								note.start < i - 1)
+																						)
+																				)
+																			);
+																			setTooltip([-1, -1]);
+																		}}
+																	>
+																		<FaTrash size={20} />
+																	</button>
 																	<button onClick={() => setTooltip([-1, -1])}>
-																		<FaXmark size={24} />
+																		<FaXmark size={12} />
 																	</button>
 																</div>
 															)}
