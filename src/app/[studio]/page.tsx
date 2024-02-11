@@ -12,6 +12,8 @@ import Guitar from "@/components/instruments/Guitar";
 import { IoMdTrash } from "react-icons/io";
 import { piano } from "@/utils/instruments";
 import { MdPiano } from "react-icons/md";
+import { drum } from "@/utils/instruments";
+import Drum from "@/components/instruments/Drum";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -217,6 +219,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<h3 className="text-lg font-medium">Record a New Sound</h3>
 						<Piano piano={piano} studio={studio} bpm={Number(bpm)} />
 						<Guitar bpm={Number(bpm)} />
+						<Drum bpm={Number(bpm)} studio={studio} drum={drum} />
 						<h3 className="text-lg font-medium">Recorded Sounds</h3>
 						{sounds.map((sound, index) => (
 							<div
