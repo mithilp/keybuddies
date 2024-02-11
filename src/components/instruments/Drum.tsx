@@ -65,11 +65,15 @@ const Drum = ({
 						</div>
 						<div className="space-y-4">
 							<div className="w-4/6">
-								{sounds.map((sound, i) => (
-									<div className="flex items-center justify-between">
+								{sounds.map((sound, index) => (
+									<div
+										key={index}
+										className="flex items-center justify-between"
+									>
 										<div className="w-40">{sound}</div>
 										{Array.from(Array(8)).map((_, i) => (
 											<button
+												key={i}
 												onClick={() => {
 													if (
 														sequence.filter(
