@@ -1,6 +1,13 @@
 import { SubmitButton } from "@/components/SubmitButton";
 import { db } from "@/utils/firebase";
-import { Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+	Timestamp,
+	addDoc,
+	collection,
+	doc,
+	getDoc,
+	setDoc,
+} from "firebase/firestore";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";
@@ -21,17 +28,42 @@ export default function Home({
 			redirect(`/?error=not-found`);
 		}
 	}
+
 	async function createStudio(formData: FormData) {
 		"use server";
 		const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
 		await setDoc(doc(db, "studios", pin), {
 			createdAt: Timestamp.now(),
-			track1: [-1],
-			track2: [-1],
-			track3: [-1],
-			track4: [-1],
 			bpm: "120",
+		});
+
+		await addDoc(collection(db, `studios/${pin}/tracks`), {
+			createdAt: Timestamp.now(),
+			name: "Track 1",
+			order: 0,
+			notes: [-1, -1, -1, -1],
+		});
+
+		await addDoc(collection(db, `studios/${pin}/tracks`), {
+			createdAt: Timestamp.now(),
+			name: "Track 2",
+			order: 1,
+			notes: [-1, -1, -1, -1],
+		});
+
+		await addDoc(collection(db, `studios/${pin}/tracks`), {
+			createdAt: Timestamp.now(),
+			name: "Track 3",
+			order: 2,
+			notes: [-1, -1, -1, -1],
+		});
+
+		await addDoc(collection(db, `studios/${pin}/tracks`), {
+			createdAt: Timestamp.now(),
+			name: "Track 4",
+			order: 3,
+			notes: [-1, -1, -1, -1],
 		});
 
 		redirect(`/${pin}`);
