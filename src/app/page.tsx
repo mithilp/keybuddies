@@ -1,4 +1,4 @@
-import { SubmitButton } from "@/components/SubmitButton";
+import PendingButton from "@/components/PendingButton";
 import { db } from "@/utils/firebase";
 import {
 	Timestamp,
@@ -77,10 +77,10 @@ export default function Home({
 						className="w-full bg-yellow border-8 border-black p-2 rounded-xl black text-black text-center"
 						placeholder="Studio Code"
 					/>
-					<SubmitButton text="Join a Room!" />
+					<PendingButton text="Join a Room!" />
 				</form>
 				<form action={createStudio} className="w-full">
-					<SubmitButton text="Create a Room!" />
+					<PendingButton text="Create a Room!" />
 				</form>
 			</div>
 		</main>

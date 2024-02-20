@@ -17,12 +17,14 @@ const Drum = ({
 	studio: string;
 	bpm: number;
 }) => {
-	const [open, setOpen] = useState(true);
+	const [open, setOpen] = useState(false);
+
 	const [sequence, setSequence] = useState<
 		Array<{ note: string; start: number }>
 	>([{ note: "kick", start: 1 }]);
+
 	const [playing, setPlaying] = useState(false);
-	const notes = 8;
+
 	const sounds = [
 		"clap",
 		"kick",
@@ -31,6 +33,7 @@ const Drum = ({
 		"snare",
 		"tom-low",
 	];
+
 	function playDrums(
 		sequence: Array<{ note: string; start: number }>,
 		bpm: number
@@ -41,6 +44,7 @@ const Drum = ({
 		console.log("done");
 		setPlaying(false);
 	}
+
 	return (
 		<>
 			<button

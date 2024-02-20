@@ -1,6 +1,6 @@
-import { Note } from "./types";
+import { Cell } from "./types";
 
-const loops: Note[] = [
+const loops: Cell[] = [
 	{
 		type: "loop",
 		id: "bass_1",
@@ -44,12 +44,6 @@ const loops: Note[] = [
 	{
 		type: "loop",
 		id: "love_story_drums",
-		name: "Love Story Drums",
-	},
-
-	{
-		type: "loop",
-		id: "singer",
 		name: "Love Story Drums",
 	},
 ];

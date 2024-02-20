@@ -2,8 +2,7 @@
 
 import { db } from "@/utils/firebase";
 import { playPiano } from "@/utils/instruments";
-import { set } from "firebase/database";
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
 import {
 	FaArrowLeft,
@@ -12,8 +11,7 @@ import {
 	FaTrash,
 	FaVolumeUp,
 } from "react-icons/fa";
-import { FaCircleXmark, FaXmark } from "react-icons/fa6";
-import { MdPiano } from "react-icons/md";
+import { FaXmark } from "react-icons/fa6";
 import {
 	Piano as ReactPiano,
 	KeyboardShortcuts,
@@ -22,7 +20,11 @@ import {
 } from "react-piano";
 import "react-piano/dist/styles.css";
 import { Soundfont } from "smplr";
-import Metronome from "../Metronome";
+import OpenPiano from "./OpenPiano";
+import PianoModalHeader from "./PianoModalHeader";
+import PianoOptions from "./PianoOptions";
+import MIDI from "@/utils/MIDI";
+import { Key } from "@/utils/types";
 
 const Piano = ({
 	piano,
@@ -46,31 +48,10 @@ const Piano = ({
 		keyboardConfig: KeyboardShortcuts.HOME_ROW,
 	});
 
-	const [sequence, setSequence] = useState<
-		Array<{ note: number; start: number; end: number }>
-	>([]);
+	const [sequence, setSequence] = useState<Array<Key>>([]);
 	const [recording, setRecording] = useState(false);
 
 	const [startTime, setStartTime] = useState<number>(Date.now());
-
-	const [countdown, setCountdown] = useState(0);
-
-	const record = async () => {
-		if (!recording) {
-			for (let i = 3; i > -1; i--) {
-				setCountdown(i);
-				if (i != 0) {
-					await new Promise((resolve) => setTimeout(resolve, 1000));
-				}
-			}
-
-			setSequence([]);
-			setStartTime(Date.now());
-			setRecording(true);
-		} else {
-			setRecording(false);
-		}
-	};
 
 	const updateArray = (noteNumber: number, endTime: number) => {
 		for (let i = sequence.length - 1; i >= 0; i--) {
@@ -94,168 +75,30 @@ const Piano = ({
 		setOpen(false);
 	};
 
-	const MIDI = [
-		{ value: 12, text: "C0" },
-		{ value: 14, text: "D0" },
-		{ value: 16, text: "E0" },
-		{ value: 17, text: "F0" },
-		{ value: 19, text: "G0" },
-		{ value: 21, text: "A0" },
-		{ value: 23, text: "B0" },
-		{ value: 24, text: "C1" },
-		{ value: 26, text: "D1" },
-		{ value: 28, text: "E1" },
-		{ value: 29, text: "F1" },
-		{ value: 31, text: "G1" },
-		{ value: 33, text: "A1" },
-		{ value: 35, text: "B1" },
-		{ value: 36, text: "C2" },
-		{ value: 38, text: "D2" },
-		{ value: 40, text: "E2" },
-		{ value: 41, text: "F2" },
-		{ value: 43, text: "G2" },
-		{ value: 45, text: "A2" },
-		{ value: 47, text: "B2" },
-		{ value: 48, text: "C3" },
-		{ value: 50, text: "D3" },
-		{ value: 52, text: "E3" },
-		{ value: 53, text: "F3" },
-		{ value: 55, text: "G3" },
-		{ value: 57, text: "A3" },
-		{ value: 59, text: "B3" },
-		{ value: 60, text: "C4" },
-		{ value: 62, text: "D4" },
-		{ value: 64, text: "E4" },
-		{ value: 65, text: "F4" },
-		{ value: 67, text: "G4" },
-		{ value: 69, text: "A4" },
-		{ value: 71, text: "B4" },
-		{ value: 72, text: "C5" },
-		{ value: 74, text: "D5" },
-		{ value: 76, text: "E5" },
-		{ value: 77, text: "F5" },
-		{ value: 79, text: "G5" },
-		{ value: 81, text: "A5" },
-		{ value: 83, text: "B5" },
-		{ value: 84, text: "C6" },
-		{ value: 86, text: "D6" },
-		{ value: 88, text: "E6" },
-		{ value: 89, text: "F6" },
-		{ value: 91, text: "G6" },
-		{ value: 93, text: "A6" },
-		{ value: 95, text: "B6" },
-		{ value: 96, text: "C7" },
-		{ value: 98, text: "D7" },
-		{ value: 100, text: "E7" },
-		{ value: 101, text: "F7" },
-		{ value: 103, text: "G7" },
-		{ value: 105, text: "A7" },
-		{ value: 107, text: "B7" },
-		{ value: 108, text: "C8" },
-		{ value: 110, text: "D8" },
-		{ value: 112, text: "E8" },
-		{ value: 113, text: "F8" },
-		{ value: 115, text: "G8" },
-		{ value: 117, text: "A8" },
-		{ value: 119, text: "B8" },
-		{ value: 120, text: "C9" },
-		{ value: 122, text: "D9" },
-		{ value: 124, text: "E9" },
-		{ value: 125, text: "F9" },
-		{ value: 127, text: "G9" },
-	];
-
 	const [tooltip, setTooltip] = useState([-1, -1]);
 
 	return (
 		<>
-			<button
-				onClick={() => setOpen(!open)}
-				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
-			>
-				<div className="flex items-center space-x-2">
-					<MdPiano size={32} />
-					<div className="text-xl">Piano</div>
-				</div>
-			</button>
+			<OpenPiano setOpen={setOpen} />
 
 			{open && (
 				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
-						<div className="flex justify-between items-center">
-							<h3 className="text-2xl font-bold">Record a Piano Sound</h3>
-							<button onClick={() => setOpen(false)}>
-								<FaCircleXmark size={32} />
-							</button>
-						</div>
+						<PianoModalHeader setOpen={setOpen} />
 
 						<div className="space-y-4">
-							<div className="flex items-center justify-between">
-								<div className="flex space-x-4">
-									<div className="flex items-center space-x-2">
-										<label className="text-lg" htmlFor="firstNote">
-											First Note:
-										</label>
-										<select
-											className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
-											value={firstNote.toString()}
-											onChange={(e) => {
-												setFirstNote(Number(e.target.value));
-											}}
-										>
-											{MIDI.map((note, index) => (
-												<option key={index} value={note.value}>
-													{note.text}
-												</option>
-											))}
-										</select>
-									</div>
-
-									<div className="flex items-center space-x-2">
-										<label className="text-lg" htmlFor="firstNote">
-											Last Note:
-										</label>
-										<select
-											className="w-32 bg-yellow border-8 border-black p-2 rounded-xl"
-											value={lastNote.toString()}
-											onChange={(e) => {
-												setLastNote(Number(e.target.value));
-											}}
-										>
-											{MIDI.map((note, index) => (
-												<option key={index} value={note.value}>
-													{note.text}
-												</option>
-											))}
-										</select>
-									</div>
-								</div>
-
-								<div className="flex space-x-4">
-									<Metronome mspb={multiplier} />
-									<button
-										onClick={record}
-										className="bg-yellow border-8 border-black p-2 rounded-xl"
-									>
-										{countdown > 0
-											? `Starting in ${countdown}s`
-											: recording
-											? "Stop Recording"
-											: "Start Recording"}
-									</button>
-									{sequence.length > 0 && (
-										<button
-											onClick={() => {
-												setSequence([]);
-												setStartTime(Date.now());
-											}}
-											className="bg-yellow border-8 border-black p-2 rounded-xl"
-										>
-											Reset Recording
-										</button>
-									)}
-								</div>
-							</div>
+							<PianoOptions
+								firstNote={firstNote}
+								setFirstNote={setFirstNote}
+								lastNote={lastNote}
+								setLastNote={setLastNote}
+								multiplier={multiplier}
+								recording={recording}
+								sequence={sequence}
+								setSequence={setSequence}
+								setStartTime={setStartTime}
+								setRecording={setRecording}
+							/>
 
 							<div className="w-full h-12">
 								<ReactPiano

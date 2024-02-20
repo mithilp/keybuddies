@@ -4,11 +4,11 @@ export type Track = {
 	createdAt: Timestamp;
 	name: string;
 	order: number;
-	notes: Note[];
+	notes: Cell[];
 	id: string;
 };
 
-export type Note = {
+export type Cell = {
 	type: "sound" | "empty" | "loop";
 	name: string;
 	id: string;
