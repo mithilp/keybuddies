@@ -304,7 +304,7 @@ const Piano = ({
 							</div>
 
 							<div className="overflow-scroll relative h-80 bg-pink">
-								<div className="relative flex w-max sticky top-0 z-30 border-b-2 border-black">
+								<div className="flex w-max sticky top-0 z-30 border-b-2 border-black">
 									<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
 										Note
 									</div>

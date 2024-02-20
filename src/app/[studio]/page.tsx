@@ -309,10 +309,10 @@ export default function Page({ params }: { params: { studio: string } }) {
 				</div>
 
 				{/* rows content */}
-				<div className="py-6 px-4 space-y-2 w-full">
+				<div className="py-6 px-4 space-y-2 w-full overflow-x-scroll">
 					<div className="rounded-xl px-4 py-2 relative">
-						<h3 className="text-lg uppercase font-black ">Track 1</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<h3 className="text-lg uppercase font-black">Track 1</h3>
+						<div className="flex items-center space-x-2">
 							{track1.map((track, index) => (
 								<div
 									key={index}
@@ -356,7 +356,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</div>
 
 						<h3 className="text-lg uppercase font-black ">Track 2</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<div className="flex items-center space-x-2">
 							{track2.map((track, index) => (
 								<div
 									key={index}
@@ -387,7 +387,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</div>
 
 						<h3 className="text-lg uppercase font-black ">Track 3</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<div className="flex items-center space-x-2">
 							{track3.map((track, index) => (
 								<div
 									key={index}
@@ -418,7 +418,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</div>
 
 						<h3 className="text-lg uppercase font-black ">Track 4</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<div className="flex items-center space-x-2">
 							{track4.map((track, index) => (
 								<div
 									key={index}
@@ -449,7 +449,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</div>
 
 						<h3 className="text-lg uppercase font-black ">Track 5</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<div className="flex items-center space-x-2">
 							{track5.map((track, index) => (
 								<div
 									key={index}
@@ -480,7 +480,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						</div>
 
 						<h3 className="text-lg uppercase font-black ">Track 6</h3>
-						<div className="overflow-x-scroll flex items-center space-x-2">
+						<div className="flex items-center space-x-2">
 							{track6.map((track, index) => (
 								<div
 									key={index}
