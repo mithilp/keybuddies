@@ -1,9 +1,9 @@
 import { MdPiano } from "react-icons/md";
 
-const OpenPiano = ({ setOpen }: { setOpen: Function }) => {
+const OpenPiano = ({ onClick }: { onClick: () => void }) => {
 	return (
 		<button
-			onClick={() => setOpen(!open)}
+			onClick={onClick}
 			className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
 		>
 			<div className="flex items-center space-x-2">

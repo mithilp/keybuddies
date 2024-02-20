@@ -5,6 +5,7 @@ import {
 	MidiNumbers,
 	//@ts-ignore
 } from "react-piano";
+import { Key } from "./types";
 
 const context = typeof window !== "undefined" ? new AudioContext() : null;
 
@@ -18,10 +19,7 @@ export const drum = context
 	? new DrumMachine(context!, { instrument: "TR-808" })
 	: null;
 
-export const playPiano = (
-	music: Array<{ note: number; start: number; end: number }>,
-	bpm: number
-) => {
+export const playPiano = (music: Array<Key>, bpm: number) => {
 	if (context && piano) {
 		const time = 7500 / bpm;
 		for (let i = 0; i < music.length; i++) {

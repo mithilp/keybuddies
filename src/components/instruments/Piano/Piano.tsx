@@ -79,12 +79,12 @@ const Piano = ({
 
 	return (
 		<>
-			<OpenPiano setOpen={setOpen} />
+			<OpenPiano onClick={() => setOpen(!open)} />
 
 			{open && (
 				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
-						<PianoModalHeader setOpen={setOpen} />
+						<PianoModalHeader close={() => setOpen(false)} />
 
 						<div className="space-y-4">
 							<PianoOptions

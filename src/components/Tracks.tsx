@@ -74,7 +74,10 @@ const Tracks = ({
 								await updateDoc(
 									doc(db, "studios", studio, "tracks", track.id),
 									{
-										notes: [...track.notes, -1],
+										notes: [
+											...track.notes,
+											{ type: "empty", name: "", id: "" },
+										],
 									}
 								);
 							}}
