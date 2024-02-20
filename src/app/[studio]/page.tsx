@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
+import { FaGuitar, FaPause, FaPlus, FaPlusCircle } from "react-icons/fa";
 import { FaCircle, FaPlay } from "react-icons/fa6";
 import logo from "../../../public/images/keybuddies-logo.png";
 import Guitar from "@/components/instruments/Guitar";
@@ -23,7 +23,8 @@ import { piano } from "@/utils/instruments";
 import { MdPiano } from "react-icons/md";
 import { drum } from "@/utils/instruments";
 import Drum from "@/components/instruments/Drum";
-import { Track } from "@/utils/types";
+import { Sound, Track } from "@/utils/types";
+import loops from "@/utils/loops";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -31,31 +32,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 	const [play, setPlay] = useState("FaPlay");
 
 	const [selectedCell, setSelectedCell] = useState<Array<any>>([-1, -1]);
-	const [track1, setTrack1] = useState<Array<any>>([]);
-	const [track2, setTrack2] = useState<Array<any>>([]);
-	const [track3, setTrack3] = useState<Array<any>>([]);
-	const [track4, setTrack4] = useState<Array<any>>([]);
-	const [track5, setTrack5] = useState<Array<any>>([]);
-	const [track6, setTrack6] = useState<Array<any>>([]);
-	const loops = [
-		"singersongwriter",
-		"bass_1",
-		"bass_2",
-		"bass_3",
-		"bass_4",
-		"piano_1",
-		"piano_2",
-		"piano_3",
-		"piano_4",
-	];
 
-	const [sounds, setSounds] = useState<
-		Array<{
-			name: string;
-			type: string;
-			sequence: { note: number; start: number; end: number };
-		}>
-	>([]);
+	const [sounds, setSounds] = useState<Array<Sound>>([]);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
 
@@ -68,16 +46,13 @@ export default function Page({ params }: { params: { studio: string } }) {
 		const soundsUnsub = onSnapshot(
 			collection(db, `studios/${studio}/sounds`),
 			(querySnapshot) => {
-				const freshSounds: Array<{
-					name: string;
-					type: string;
-					sequence: { note: number; start: number; end: number };
-				}> = [];
+				const freshSounds: Array<Sound> = [];
 				querySnapshot.forEach((doc) => {
 					freshSounds.push({
 						name: doc.data().name,
 						type: doc.data().type,
 						sequence: doc.data().sequence,
+						id: doc.id,
 					});
 				});
 				setSounds(freshSounds);
@@ -222,11 +197,11 @@ export default function Page({ params }: { params: { studio: string } }) {
 									selectedCell[0] != -1 ? "border-pink" : "border-black"
 								}`}
 							>
-								<div>{loop}</div>
+								<div>{loop.name}</div>
 								<PlayLoop
 									bpm={bpm}
 									selected={selectedCell[0] != -1}
-									id={loop}
+									id={loop.id}
 								/>
 							</div>
 						))}
@@ -240,27 +215,26 @@ export default function Page({ params }: { params: { studio: string } }) {
 						<Guitar bpm={Number(bpm)} />
 						<Drum bpm={Number(bpm)} studio={studio} drum={drum} />
 						<h3 className="text-lg font-medium">Recorded Sounds</h3>
-						{/* {sounds.map((sound, index) => (
+						{sounds.map((sound, index) => (
 							<div
 								key={index}
 								onClick={async () => {
 									if (selectedCell[0] != -1) {
-										const selected = selectedCell;
-										if (selected[0] == 1) {
-											track1[selected[1]] = sound.name;
-											await updateDoc(doc(db, "studios", studio), {
-												track1: track1,
-											});
-										} else if (selected[0] == 2) {
-											track2[selected[1]] = sound.name;
-											await updateDoc(doc(db, "studios", studio), {
-												track2: track2,
-											});
-										} else if (selected[0] == 3) {
-											track3[selected[1]] = sound.name;
-											await updateDoc(doc(db, "studios", studio), {
-												track3: track3,
-											});
+										const track = tracks.find(
+											(track) => track.id === selectedCell[0]
+										);
+										if (track) {
+											track.notes[selectedCell[1]] = {
+												name: sound.name,
+												id: sound.id,
+												type: "sound",
+											};
+											await updateDoc(
+												doc(db, "studios", studio, "tracks", selectedCell[0]),
+												{
+													notes: track.notes,
+												}
+											);
 										}
 										setSelectedCell([-1, -1]);
 									}
@@ -279,7 +253,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 									<div className="text-xl">{sound.name}</div>
 								</div>
 							</div>
-						))} */}
+						))}
 					</div>
 				)}
 			</div>
@@ -355,15 +329,18 @@ export default function Page({ params }: { params: { studio: string } }) {
 												setSelectedCell([track.id, index]);
 											}}
 										>
-											{note == -1 ? "Select a loop" : note}
+											{note.type == "empty" ? "Select a loop" : note.name}
 										</div>
 										<button
 											className="text-2xl"
 											onClick={async () => {
 												track.notes.splice(index, 1);
-												await updateDoc(doc(db, "studios", studio, track.id), {
-													notes: track.notes,
-												});
+												await updateDoc(
+													doc(db, "studios", studio, "tracks", track.id),
+													{
+														notes: track.notes,
+													}
+												);
 											}}
 										>
 											<IoMdTrash />
@@ -374,9 +351,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 								<button
 									className="pr-4"
 									onClick={async () => {
-										await updateDoc(doc(db, "studios", studio, track.id), {
-											notes: [...track.notes, -1],
-										});
+										await updateDoc(
+											doc(db, "studios", studio, "tracks", track.id),
+											{
+												notes: [...track.notes, -1],
+											}
+										);
 									}}
 								>
 									<FaPlusCircle color="black" size={32} />
@@ -392,7 +372,12 @@ export default function Page({ params }: { params: { studio: string } }) {
 									createdAt: Timestamp.now(),
 									name: `Track ${tracks.length + 1}`,
 									order: tracks.length,
-									notes: [-1, -1, -1, -1],
+									notes: [
+										{ type: "empty", name: "", id: "" },
+										{ type: "empty", name: "", id: "" },
+										{ type: "empty", name: "", id: "" },
+										{ type: "empty", name: "", id: "" },
+									],
 								});
 							}}
 							className="bg-yellow border-8 p-2 border-black flex items-center space-x-2 rounded-xl text-xl font-bold"

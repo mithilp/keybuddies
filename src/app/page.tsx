@@ -38,33 +38,19 @@ export default function Home({
 			bpm: "120",
 		});
 
-		await addDoc(collection(db, `studios/${pin}/tracks`), {
-			createdAt: Timestamp.now(),
-			name: "Track 1",
-			order: 0,
-			notes: [-1, -1, -1, -1],
-		});
-
-		await addDoc(collection(db, `studios/${pin}/tracks`), {
-			createdAt: Timestamp.now(),
-			name: "Track 2",
-			order: 1,
-			notes: [-1, -1, -1, -1],
-		});
-
-		await addDoc(collection(db, `studios/${pin}/tracks`), {
-			createdAt: Timestamp.now(),
-			name: "Track 3",
-			order: 2,
-			notes: [-1, -1, -1, -1],
-		});
-
-		await addDoc(collection(db, `studios/${pin}/tracks`), {
-			createdAt: Timestamp.now(),
-			name: "Track 4",
-			order: 3,
-			notes: [-1, -1, -1, -1],
-		});
+		for (let i = 0; i < 4; i++) {
+			await addDoc(collection(db, `studios/${pin}/tracks`), {
+				createdAt: Timestamp.now(),
+				name: `Track ${i + 1}`,
+				order: i,
+				notes: [
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+				],
+			});
+		}
 
 		redirect(`/${pin}`);
 	}
