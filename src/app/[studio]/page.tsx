@@ -16,7 +16,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import crunker from "@/utils/crunker";
-import { playPiano } from "@/utils/instruments";
+import { playDrum, playPiano } from "@/utils/instruments";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -55,7 +55,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 		for await (const track of tracks) {
 			if (crunker) {
 				const loopsToPlay: string[] = [];
-				const sequences: { start: number; sequence: Key[] }[] = [];
+				const sequences: { start: number; type: string; sequence: Key[] }[] =
+					[];
 
 				let i = 0;
 				for await (const cell of track.notes) {
@@ -68,6 +69,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 						);
 						sequences.push({
 							start: (480000 * i) / Number(bpm),
+							type: snap.data()!.type,
 							sequence: snap.data()!.sequence,
 						});
 						loopsToPlay.push(`/loops/silent_${bpm}.mp3`);
@@ -83,10 +85,16 @@ export default function Page({ params }: { params: { studio: string } }) {
 				const audio = new Audio(exported.url);
 				audio.play();
 
-				sequences.forEach(({ start, sequence }) => {
-					setTimeout(() => {
-						playPiano(sequence, Number(bpm));
-					}, start);
+				sequences.forEach(({ start, type, sequence }) => {
+					if (type == "piano") {
+						setTimeout(() => {
+							playPiano(sequence, Number(bpm));
+						}, start);
+					} else if (type == "drum") {
+						setTimeout(() => {
+							playDrum(sequence, Number(bpm));
+						}, start);
+					}
 				});
 
 				setTimeout(() => onFinish(), concat.duration * 1000);

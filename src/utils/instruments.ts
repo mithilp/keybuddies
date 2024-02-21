@@ -6,6 +6,7 @@ import {
 	//@ts-ignore
 } from "react-piano";
 import { Key } from "./types";
+import sounds from "./drum-sounds";
 
 const context = typeof window !== "undefined" ? new AudioContext() : null;
 
@@ -38,22 +39,26 @@ export const playPiano = (music: Array<Key>, bpm: number) => {
 	}
 };
 
-export const playDrum = (
-	music: Array<{ note: string; start: number }>,
-	bpm: number
-) => {
+export const playDrum = (music: Array<Key>, bpm: number) => {
 	if (context && drum) {
-		const now = context!.currentTime;
-		console.log(music);
+		const now = context.currentTime;
 		const time = 30 / bpm;
-		for (let i = 0; i < music.length; i++) {
-			const note = music[i].note;
-			const start = music[i].start;
-			console.log(`playing ${music[i].note}`);
-			drum.start({
-				note: note,
-				time: now + start * time,
-			});
+		for (let j = 0; j < 1; j++) {
+			for (let i = 0; i < music.length; i++) {
+				const note = sounds[music[i].note].note;
+				const start = music[i].start;
+				drum.start({
+					note: note,
+					time: now + j * 16 * time + start * time,
+				});
+			}
 		}
+	}
+	return true;
+};
+
+export const stopDrum = () => {
+	if (drum) {
+		drum.stop();
 	}
 };

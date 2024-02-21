@@ -2,11 +2,14 @@
 
 import { DrumMachine } from "smplr";
 import { db } from "@/utils/firebase";
-import { playDrum } from "@/utils/instruments";
+import { playDrum, stopDrum } from "@/utils/instruments";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { FaDrum, FaCheck, FaVolumeUp } from "react-icons/fa";
 import { FaCircleXmark } from "react-icons/fa6";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { clear } from "console";
+import { Key } from "@/utils/types";
+import sounds from "@/utils/drum-sounds";
 
 const Drum = ({
 	drum,
@@ -19,31 +22,29 @@ const Drum = ({
 }) => {
 	const [open, setOpen] = useState(false);
 
-	const [sequence, setSequence] = useState<
-		Array<{ note: string; start: number }>
-	>([{ note: "kick", start: 1 }]);
+	const [sequence, setSequence] = useState<Array<Key>>([]);
+	const [isPlaying, setIsPlaying] = useState(false);
 
-	const [playing, setPlaying] = useState(false);
+	const notes = 8;
+	const playMusic = (isPlaying: boolean) => {
+		if (!isPlaying) {
+			playDrum(sequence, bpm);
+		} else {
+			stopDrum();
+		}
+	};
 
-	const sounds = [
-		"clap",
-		"kick",
-		"hihat-open",
-		"hihat-close",
-		"snare",
-		"tom-low",
-	];
+	const save = async () => {
+		const name = prompt("Name your beat");
 
-	function playDrums(
-		sequence: Array<{ note: string; start: number }>,
-		bpm: number
-	) {
-		setPlaying(true);
-		console.log("started");
-		playDrum(sequence, bpm);
-		console.log("done");
-		setPlaying(false);
-	}
+		await addDoc(collection(db, `studios/${studio}/sounds`), {
+			name: name,
+			type: "drum",
+			sequence: sequence,
+		});
+
+		setOpen(false);
+	};
 
 	return (
 		<>
@@ -60,7 +61,7 @@ const Drum = ({
 			</button>
 			{open && (
 				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-24">
-					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-4">
+					<div className="bg-blue border-8 border-black h-5/6 rounded-xl p-8 space-y-4">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
 							<button onClick={() => setOpen(false)}>
@@ -68,39 +69,41 @@ const Drum = ({
 							</button>
 						</div>
 						<div className="space-y-4">
-							<div className="w-4/6">
+							<div className="w-full">
 								{sounds.map((sound, index) => (
 									<div
 										key={index}
 										className="flex items-center justify-between"
 									>
-										<div className="w-40">{sound}</div>
-										{Array.from(Array(8)).map((_, i) => (
+										<div className="w-40">{sound.note}</div>
+										{Array.from(Array(16)).map((_, i) => (
 											<button
 												key={i}
 												onClick={() => {
 													if (
 														sequence.filter(
 															(note) =>
-																note.note == sound && note.start == i + 1
+																note.note == sound.value && note.start == i + 1
 														).length > 0
 													) {
 														setSequence(
 															sequence.filter(
 																(note) =>
-																	note.note != sound || note.start != i + 1
+																	note.note != sound.value ||
+																	note.start != i + 1
 															)
 														);
 													} else {
 														setSequence([
 															...sequence,
-															{ note: sound, start: i + 1 },
+															{ note: sound.value, start: i + 1, end: i + 2 },
 														]);
 													}
 												}}
 												className={`w-10 h-8 rounded-sm text-white my-1 ${
 													sequence.filter(
-														(note) => note.note == sound && note.start == i + 1
+														(note) =>
+															note.note == sound.value && note.start == i + 1
 													).length > 0
 														? "bg-yellow"
 														: "bg-pink"
@@ -112,19 +115,23 @@ const Drum = ({
 							</div>
 							<div className="space-x-4 flex">
 								<button
-									onClick={() => playDrum(sequence, bpm)}
+									onClick={() => {
+										setIsPlaying(!isPlaying);
+
+										playMusic(isPlaying);
+									}}
 									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
-									<div>Listen to Recording</div>
+									<div id="ButtonListen">Listen to Recording</div>
 									<FaVolumeUp size={32} />
 								</button>
-								{/* <button
+								<button
 									onClick={save}
 									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
 									<div>Save Recording</div>
 									<FaCheck size={32} />
-								</button> */}
+								</button>
 							</div>
 						</div>
 					</div>
