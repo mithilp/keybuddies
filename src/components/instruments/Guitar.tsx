@@ -2,10 +2,6 @@
 
 import { playPiano } from "@/utils/instruments";
 import { FaGuitar } from "react-icons/fa";
-import {
-	MidiNumbers,
-	//@ts-ignore
-} from "react-piano";
 
 const Guitar = ({ bpm }: { bpm: number }) => {
 	let music = [

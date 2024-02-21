@@ -10,6 +10,7 @@ const PlayLoop = ({
 	bpm: string;
 }) => {
 	const play = () => {
+		console.log(id);
 		const a = new Audio(`/loops/${id}_${bpm}.mp3`);
 		a.play();
 	};

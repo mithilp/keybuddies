@@ -1,6 +1,13 @@
-import { SubmitButton } from "@/components/SubmitButton";
+import PendingButton from "@/components/PendingButton";
 import { db } from "@/utils/firebase";
-import { Timestamp, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+	Timestamp,
+	addDoc,
+	collection,
+	doc,
+	getDoc,
+	setDoc,
+} from "firebase/firestore";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";
@@ -21,18 +28,29 @@ export default function Home({
 			redirect(`/?error=not-found`);
 		}
 	}
+
 	async function createStudio(formData: FormData) {
 		"use server";
 		const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
 		await setDoc(doc(db, "studios", pin), {
 			createdAt: Timestamp.now(),
-			track1: [-1],
-			track2: [-1],
-			track3: [-1],
-			track4: [-1],
 			bpm: "120",
 		});
+
+		for (let i = 0; i < 4; i++) {
+			await addDoc(collection(db, `studios/${pin}/tracks`), {
+				createdAt: Timestamp.now(),
+				name: `Track ${i + 1}`,
+				order: i,
+				notes: [
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+					{ type: "empty", name: "", id: "" },
+				],
+			});
+		}
 
 		redirect(`/${pin}`);
 	}
@@ -59,10 +77,10 @@ export default function Home({
 						className="w-full bg-yellow border-8 border-black p-2 rounded-xl black text-black text-center"
 						placeholder="Studio Code"
 					/>
-					<SubmitButton text="Join a Room!" />
+					<PendingButton text="Join a Room!" />
 				</form>
 				<form action={createStudio} className="w-full">
-					<SubmitButton text="Create a Room!" />
+					<PendingButton text="Create a Room!" />
 				</form>
 			</div>
 		</main>
