@@ -59,6 +59,6 @@ export const playDrum = (music: Array<Key>, bpm: number) => {
 
 export const stopDrum = () => {
 	if (drum) {
-		drum.stop();
+		drum.stop({});
 	}
 };
