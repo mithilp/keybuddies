@@ -22,6 +22,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
 	const [bpm, setbpm] = useState("120");
 
+	const [loading, setLoading] = useState(true);
+
 	const [selectedCell, setSelectedCell] = useState<Array<any>>([-1, -1]);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
@@ -47,6 +49,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 					});
 				});
 				setTracks(freshTracks);
+
+				setLoading(false);
 			}
 		);
 	}, []);
@@ -126,6 +130,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 					selectedCell={selectedCell}
 					tracks={tracks}
 					bpm={bpm}
+					loading={loading}
 					studio={studio}
 				/>
 			</main>
