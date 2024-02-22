@@ -77,10 +77,10 @@ export default function Home({
 						className="w-full bg-yellow border-8 border-black p-2 rounded-xl black text-black text-center"
 						placeholder="Studio Code"
 					/>
-					<PendingButton text="Join a Room!" />
+					<PendingButton text="Join a Studio!" />
 				</form>
 				<form action={createStudio} className="w-full">
-					<PendingButton text="Create a Room!" />
+					<PendingButton text="Create a Studio!" />
 				</form>
 			</div>
 		</main>
