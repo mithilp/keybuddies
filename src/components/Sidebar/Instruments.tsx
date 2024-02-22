@@ -3,10 +3,16 @@ import Piano from "../instruments/Piano/Piano";
 import Guitar from "../instruments/Guitar";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
-import { FaGuitar } from "react-icons/fa";
+import { FaGuitar, FaTrash } from "react-icons/fa";
 import { Sound, Track } from "@/utils/types";
 import { drum, piano } from "@/utils/instruments";
-import { collection, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import {
+	collection,
+	deleteDoc,
+	doc,
+	onSnapshot,
+	updateDoc,
+} from "firebase/firestore";
 import { db } from "@/utils/firebase";
 
 const Instruments = ({
@@ -77,14 +83,27 @@ const Instruments = ({
 						selectedCell[0] != -1 ? "border-pink" : "border-black"
 					}`}
 				>
-					<div className="flex items-center space-x-2">
-						{sound.type == "piano" ? (
-							<MdPiano size={32} />
-						) : (
-							<FaGuitar size={32} />
-						)}
+					<div className="w-full flex items-center justify-between space-x-2">
+						<div className="flex items-center space-x-2">
+							{sound.type == "piano" ? (
+								<MdPiano size={32} />
+							) : (
+								<FaGuitar size={32} />
+							)}
 
-						<div className="text-xl">{sound.name}</div>
+							<div className="text-xl">{sound.name}</div>
+						</div>
+
+						<button
+							className="text-2xl"
+							onClick={() => {
+								if (confirm("Are you sure you want to delete this sound?")) {
+									deleteDoc(doc(db, `studios/${studio}/sounds`, sound.id));
+								}
+							}}
+						>
+							<FaTrash />
+						</button>
 					</div>
 				</div>
 			))}
