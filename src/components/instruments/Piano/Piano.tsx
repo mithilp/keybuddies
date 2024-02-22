@@ -146,7 +146,7 @@ const Piano = ({
 								/>
 							</div>
 
-							<div className="overflow-scroll relative h-80 bg-pink">
+							<div className="overflow-scroll relative h-80 bg-pink text-sm">
 								<div className="flex w-max sticky top-0 z-30 border-b-2 border-black">
 									<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
 										Note
@@ -190,7 +190,7 @@ const Piano = ({
 															{key.text}
 														</div>
 													) : sequence.filter(
-															(note, j, array) =>
+															(note) =>
 																(note.note === key.value &&
 																	note.start === i - 1) ||
 																(note.note === key.value &&
