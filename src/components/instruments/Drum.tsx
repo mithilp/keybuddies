@@ -60,9 +60,10 @@ const Drum = ({
 					<div className="text-xl">Drums</div>
 				</div>
 			</button>
+
 			{open && (
-				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-24">
-					<div className="bg-blue border-8 border-black h-5/6 rounded-xl p-8 space-y-4">
+				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
+					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
 							<button onClick={() => setOpen(false)}>
