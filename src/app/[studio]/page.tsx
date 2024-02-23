@@ -53,7 +53,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 				setLoading(false);
 			}
 		);
-	}, []);
+	}, [studio]);
 
 	const play = async (onFinish: Function) => {
 		for await (const track of tracks) {

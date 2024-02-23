@@ -46,7 +46,7 @@ const Instruments = ({
 				setSounds(freshSounds);
 			}
 		);
-	}, []);
+	}, [studio]);
 
 	function playSound(sound: Sound) {
 		if (sound.type == "piano") {
