@@ -10,17 +10,19 @@ const PlayLoop = ({
 	selected: boolean;
 	bpm: string;
 }) => {
-	const [audio] = useState(new Audio(`/loops/${id}_${bpm}.mp3`));
+	const [audio] = useState(
+		typeof window !== "undefined" ? new Audio(`/loops/${id}_${bpm}.mp3`) : null
+	);
 
 	const [playing, setPlaying] = useState(false);
 
 	const play = () => {
 		if (!playing) {
 			setPlaying(true);
-			audio.play();
+			audio!.play();
 			setTimeout(() => {
 				setPlaying(false);
-			}, audio.duration * 1000);
+			}, audio!.duration * 1000);
 		}
 	};
 
