@@ -31,6 +31,27 @@ const Tracks = ({
 				</div>
 			) : (
 				<>
+					<div className="flex border-b-8 border-black w-max">
+						{new Array(
+							Math.max(...tracks.map((track) => track.notes.length)) > 0
+								? Math.max(...tracks.map((track) => track.notes.length))
+								: 0
+						)
+							.fill(0)
+							.map((_: any, i: number) => (
+								<div className="relative">
+									<div key={i} className="w-56 font-bold pl-1">
+										{i * 8 + 1}
+									</div>
+									<div className="absolute flex">
+										{new Array(8).fill(0).map((_: any, i: number) => (
+											<div className="h-4 w-7 border-l-2"></div>
+										))}
+									</div>
+								</div>
+							))}
+					</div>
+
 					{tracks.map((track, index) => (
 						<div key={index}>
 							<h3 className="text-lg uppercase font-black">{track.name}</h3>
