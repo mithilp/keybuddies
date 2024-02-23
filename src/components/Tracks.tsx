@@ -43,7 +43,10 @@ const Tracks = ({
 									<div className="w-56 font-bold pl-1">{i * 8 + 1}</div>
 									<div className="absolute flex">
 										{new Array(8).fill(0).map((_: any, i: number) => (
-											<div key={i} className="h-4 w-7 border-l-2"></div>
+											<div
+												key={i}
+												className="h-4 w-7 border-l-2 border-black"
+											></div>
 										))}
 									</div>
 								</div>
