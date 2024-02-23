@@ -94,6 +94,7 @@ const Drum = ({
 															)
 														);
 													} else {
+														drum.start({ note: sound.note });
 														setSequence([
 															...sequence,
 															{ note: sound.value, start: i + 1, end: i + 2 },
