@@ -40,7 +40,7 @@ const Loops = ({
 							setSelectedCell([-1, -1]);
 						}
 					}}
-					className={`bg-yellow cursor-pointer flex justify-between p-4 rounded-xl border-8 ${
+					className={`bg-yellow cursor-pointer flex justify-between items-center p-4 rounded-xl border-8 ${
 						selectedCell[0] != -1 ? "border-pink" : "border-black"
 					}`}
 				>
