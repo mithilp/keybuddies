@@ -35,6 +35,7 @@ const Piano = ({
 	studio: string;
 	bpm: number;
 }) => {
+	const [listening, setListening] = useState(false);
 	const multiplier = 7500 / bpm;
 
 	const [open, setOpen] = useState(false);
@@ -392,11 +393,27 @@ const Piano = ({
 									<div className="text-lg">Done Recording?</div>
 									<div className="space-x-4 flex">
 										<button
-											onClick={() => playPiano(sequence, bpm)}
-											className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+											onClick={() => {
+												console.log(listening);
+
+												if (!listening) {
+													setListening(true);
+													playPiano(sequence, bpm);
+													setTimeout(() => {
+														setListening(false);
+													}, multiplier * 64);
+												}
+											}}
+											disabled={listening}
+											className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 										>
 											<div>Listen to Recording</div>
-											<FaVolumeUp size={32} />
+
+											{listening ? (
+												<div className="animate-spin w-6 h-6 border-4 border-black border-b-transparent rounded-full"></div>
+											) : (
+												<FaVolumeUp size={32} />
+											)}
 										</button>
 										<button
 											onClick={save}

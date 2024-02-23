@@ -4,10 +4,9 @@ import { DrumMachine } from "smplr";
 import { db } from "@/utils/firebase";
 import { playDrum, stopDrum } from "@/utils/instruments";
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
-import { FaDrum, FaCheck, FaVolumeUp } from "react-icons/fa";
+import { FaDrum, FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { FaCircleXmark } from "react-icons/fa6";
-import { useEffect, useState } from "react";
-import { clear } from "console";
+import { useState } from "react";
 import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
 
@@ -25,10 +24,12 @@ const Drum = ({
 	const [sequence, setSequence] = useState<Array<Key>>([]);
 	const [isPlaying, setIsPlaying] = useState(false);
 
-	const notes = 8;
 	const playMusic = (isPlaying: boolean) => {
 		if (!isPlaying) {
 			playDrum(sequence, bpm);
+			setTimeout(() => {
+				setIsPlaying(false);
+			}, 480000 / Number(bpm));
 		} else {
 			stopDrum();
 		}
@@ -123,8 +124,10 @@ const Drum = ({
 									}}
 									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
-									<div id="ButtonListen">Listen to Recording</div>
-									<FaVolumeUp size={32} />
+									<div id="ButtonListen">
+										{isPlaying ? "Stop Playback" : "Listen to Recording"}
+									</div>
+									{isPlaying ? <FaPause size={32} /> : <FaVolumeUp size={32} />}
 								</button>
 								<button
 									onClick={save}

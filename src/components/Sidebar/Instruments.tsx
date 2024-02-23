@@ -56,6 +56,8 @@ const Instruments = ({
 		}
 	}
 
+	const [playing, setPlaying] = useState(false);
+
 	return (
 		<div className="p-4 space-y-2">
 			<h3 className="text-lg font-medium">Record a New Sound</h3>
@@ -106,18 +108,33 @@ const Instruments = ({
 						</div>
 
 						<div className="flex items-center space-x-2">
-							<button className="text-2xl" onClick={() => playSound(sound)}>
-								<FaVolumeUp />
+							<button
+								className="h-6 w-6"
+								onClick={() => {
+									if (!playing) {
+										setPlaying(true);
+										playSound(sound);
+										setTimeout(() => {
+											setPlaying(false);
+										}, 480000 / Number(bpm));
+									}
+								}}
+							>
+								{playing ? (
+									<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
+								) : (
+									<FaVolumeUp className="w-full h-full" />
+								)}
 							</button>
 							<button
-								className="text-2xl"
+								className="h-6 w-6"
 								onClick={() => {
 									if (confirm("Are you sure you want to delete this sound?")) {
 										deleteDoc(doc(db, `studios/${studio}/sounds`, sound.id));
 									}
 								}}
 							>
-								<FaTrash />
+								<FaTrash className="w-full h-full" />
 							</button>
 						</div>
 					</div>
