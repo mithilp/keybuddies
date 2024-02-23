@@ -52,7 +52,7 @@ const Instruments = ({
 		<div className="p-4 space-y-2">
 			<h3 className="text-lg font-medium">Record a New Sound</h3>
 			<Piano piano={piano!} studio={studio} bpm={Number(bpm)} />
-			<Guitar bpm={Number(bpm)} />
+			{/* <Guitar bpm={Number(bpm)} /> */}
 			<Drum bpm={Number(bpm)} studio={studio} drum={drum!} />
 			<h3 className="text-lg font-medium">Recorded Sounds</h3>
 			{sounds.map((sound, index) => (
