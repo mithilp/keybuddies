@@ -28,6 +28,7 @@ const Loops = ({
 								(track) => track.id === selectedCell[0]
 							);
 							if (track) {
+								new Audio(`/loops/${loop.id}_${bpm}.mp3`).play();
 								track.notes[selectedCell[1]] = loop;
 								await updateDoc(
 									doc(db, "studios", studio, "tracks", selectedCell[0]),
