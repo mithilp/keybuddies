@@ -367,6 +367,7 @@ const Piano = ({
 													) : (
 														<button
 															onClick={() => {
+																piano.start(key.value);
 																setSequence([
 																	...sequence,
 																	{
