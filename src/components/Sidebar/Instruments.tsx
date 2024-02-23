@@ -3,9 +3,9 @@ import Piano from "../instruments/Piano/Piano";
 import Guitar from "../instruments/Guitar";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
-import { FaGuitar, FaTrash } from "react-icons/fa";
+import { FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
 import { Sound, Track } from "@/utils/types";
-import { drum, piano } from "@/utils/instruments";
+import { drum, piano, playDrum, playPiano } from "@/utils/instruments";
 import {
 	collection,
 	deleteDoc,
@@ -48,6 +48,14 @@ const Instruments = ({
 		);
 	}, []);
 
+	function playSound(sound: Sound) {
+		if (sound.type == "piano") {
+			playPiano(sound.sequence, Number(bpm));
+		} else if (sound.type == "drum") {
+			playDrum(sound.sequence, Number(bpm));
+		}
+	}
+
 	return (
 		<div className="p-4 space-y-2">
 			<h3 className="text-lg font-medium">Record a New Sound</h3>
@@ -69,6 +77,9 @@ const Instruments = ({
 									id: sound.id,
 									type: "sound",
 								};
+
+								playSound(sound);
+
 								await updateDoc(
 									doc(db, "studios", studio, "tracks", selectedCell[0]),
 									{
@@ -94,16 +105,21 @@ const Instruments = ({
 							<div className="text-xl">{sound.name}</div>
 						</div>
 
-						<button
-							className="text-2xl"
-							onClick={() => {
-								if (confirm("Are you sure you want to delete this sound?")) {
-									deleteDoc(doc(db, `studios/${studio}/sounds`, sound.id));
-								}
-							}}
-						>
-							<FaTrash />
-						</button>
+						<div className="flex items-center space-x-2">
+							<button className="text-2xl" onClick={() => playSound(sound)}>
+								<FaVolumeUp />
+							</button>
+							<button
+								className="text-2xl"
+								onClick={() => {
+									if (confirm("Are you sure you want to delete this sound?")) {
+										deleteDoc(doc(db, `studios/${studio}/sounds`, sound.id));
+									}
+								}}
+							>
+								<FaTrash />
+							</button>
+						</div>
 					</div>
 				</div>
 			))}
