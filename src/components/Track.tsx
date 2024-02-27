@@ -1,6 +1,6 @@
 import { db } from "@/utils/firebase";
 import { Track } from "@/utils/types";
-import { doc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { useState } from "react";
 import {
 	FaPlusCircle,
@@ -33,7 +33,11 @@ const Track = ({
 					{muted ? <FaVolumeMute /> : <FaVolumeUp />}
 				</button>
 
-				<button>
+				<button
+					onClick={() => {
+						deleteDoc(doc(db, "studios", studio, "tracks", track.id));
+					}}
+				>
 					<FaTrash />
 				</button>
 			</div>
