@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Piano from "../instruments/Piano/Piano";
-import Guitar from "../instruments/Guitar";
+import SoundButtons from "./SoundButtons";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
 import { FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
@@ -51,14 +51,6 @@ const Instruments = ({
 			}
 		);
 	}, [studio]);
-
-	function playSound(sound: Sound) {
-		if (sound.type == "piano") {
-			playPiano(sound.sequence, Number(bpm));
-		} else if (sound.type == "drum") {
-			playDrum(sound.sequence, Number(bpm));
-		}
-	}
 
 	const [playing, setPlaying] = useState<number>(-1);
 
@@ -111,38 +103,14 @@ const Instruments = ({
 						</div>
 
 						<div className="flex items-center space-x-2">
-							<button
-								disabled={playing != index && playing != -1}
-								className="h-6 w-6"
-								onClick={() => {
-									if (playing == -1) {
-										setPlaying(index);
-										playSound(sound);
-										setTimeout(() => {
-											setPlaying(-1);
-										}, 480000 / Number(bpm));
-									}
-								}}
-							>
-								{playing == index ? (
-									<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-								) : (
-									<FaVolumeUp className="w-full h-full" />
-								)}
-							</button>
-							<button
-								className="h-6 w-6"
-								disabled={playing != index && playing != -1}
-								onClick={() => {
-									if (confirm("Are you sure you want to delete this sound?")) {
-										updateDoc(doc(db, `sounds`, sound.id), {
-											in: arrayRemove(studio),
-										});
-									}
-								}}
-							>
-								<FaTrash className="w-full h-full" />
-							</button>
+							<SoundButtons
+								index={index}
+								playing={playing}
+								setPlaying={setPlaying}
+								sound={sound}
+								bpm={bpm}
+								studio={studio}
+							/>
 						</div>
 					</div>
 				</div>
