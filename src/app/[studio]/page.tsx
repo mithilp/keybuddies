@@ -56,11 +56,16 @@ export default function Page({ params }: { params: { studio: string } }) {
 		);
 	}, [studio]);
 
-	const [audios, setAudios] = useState<HTMLAudioElement[]>([]);
+	const [audios, setAudios] = useState<
+		{ audio: HTMLAudioElement; track: string }[]
+	>([]);
+
+	const [muted, setMuted] = useState<boolean[]>([]);
 
 	const play = async (onFinish: Function) => {
-		const newAudios: HTMLAudioElement[] = [];
+		const newAudios: { audio: HTMLAudioElement; track: string }[] = [];
 
+		let j = 0;
 		for await (const track of tracks) {
 			if (crunker) {
 				const loopsToPlay: string[] = [];
@@ -127,21 +132,40 @@ export default function Page({ params }: { params: { studio: string } }) {
 				const audio = new Audio(exported.url);
 				audio.play();
 
-				newAudios.push(audio);
+				if (muted[j]) {
+					audio.volume = 0;
+				}
+
+				newAudios.push({ audio: audio, track: track.id });
 
 				setTimeout(() => onFinish(), concat.duration * 1000);
 			}
+			j++;
 		}
 
 		setAudios(newAudios);
 	};
 
 	const stop = () => {
-		for (const audio of audios) {
-			audio.pause();
+		for (const track of audios) {
+			track.audio.pause();
 		}
 
 		setAudios([]);
+	};
+
+	const mute = (track: Track, index: number) => {
+		setMuted((prev) => {
+			const newMuted = [...prev];
+			newMuted[index] = !newMuted[index];
+			return newMuted;
+		});
+
+		audios.forEach((audio, index) => {
+			if (audio.track === track.id) {
+				audio.audio.volume = muted[index] ? 1 : 0;
+			}
+		});
 	};
 
 	return (
@@ -170,6 +194,8 @@ export default function Page({ params }: { params: { studio: string } }) {
 					bpm={bpm}
 					loading={loading}
 					studio={studio}
+					mute={mute}
+					muted={muted}
 				/>
 			</main>
 		</div>
