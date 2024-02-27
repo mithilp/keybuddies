@@ -71,8 +71,6 @@ const Instruments = ({
 				type: "sound",
 			};
 
-			playSound(sound);
-
 			await updateDoc(doc(db, "studios", studio, "tracks", selectedCell[0]), {
 				notes: track.notes,
 			});
