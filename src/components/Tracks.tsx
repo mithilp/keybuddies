@@ -1,5 +1,5 @@
 import { db } from "@/utils/firebase";
-import { Track } from "@/utils/types";
+import { Track as TrackType } from "@/utils/types";
 import {
 	Timestamp,
 	addDoc,
@@ -7,7 +7,8 @@ import {
 	doc,
 	updateDoc,
 } from "firebase/firestore";
-import { FaPlus, FaPlusCircle, FaTrash } from "react-icons/fa";
+import { FaPlus, FaPlusCircle, FaTrash, FaVolumeMute } from "react-icons/fa";
+import Track from "./Track";
 
 const Tracks = ({
 	tracks,
@@ -15,13 +16,17 @@ const Tracks = ({
 	setSelectedCell,
 	studio,
 	loading,
+	mute,
+	muted,
 }: {
 	setSelectedCell: Function;
 	selectedCell: any[];
-	tracks: Track[];
+	tracks: TrackType[];
 	bpm: string;
 	studio: string;
 	loading: boolean;
+	mute: (track: TrackType, index: number) => void;
+	muted: boolean[];
 }) => {
 	return (
 		<div className="p-10 space-y-4 w-full overflow-x-scroll">
@@ -54,68 +59,17 @@ const Tracks = ({
 					</div>
 
 					{tracks.map((track, index) => (
-						<div key={index}>
-							<h3 className="text-lg uppercase font-black">{track.name}</h3>
-							<div className="flex items-center space-x-2">
-								{track.notes.map((note, index) => (
-									<div
-										key={index}
-										className={`flex bg-yellow p-4 rounded-xl border-8 cursor-pointer ${
-											track.id == selectedCell[0] && index == selectedCell[1]
-												? "border-blue"
-												: "border-black"
-										}`}
-									>
-										<div
-											className="w-36"
-											onClick={() => {
-												if (
-													selectedCell[0] == track.id &&
-													selectedCell[1] == index
-												) {
-													setSelectedCell([-1, -1]);
-												}
-
-												setSelectedCell([track.id, index]);
-											}}
-										>
-											{note.type == "empty" ? "Select a loop" : note.name}
-										</div>
-										<button
-											className="text-2xl"
-											onClick={async () => {
-												track.notes.splice(index, 1);
-												await updateDoc(
-													doc(db, "studios", studio, "tracks", track.id),
-													{
-														notes: track.notes,
-													}
-												);
-											}}
-										>
-											<FaTrash />
-										</button>
-									</div>
-								))}
-
-								<button
-									className="pr-4"
-									onClick={async () => {
-										await updateDoc(
-											doc(db, "studios", studio, "tracks", track.id),
-											{
-												notes: [
-													...track.notes,
-													{ type: "empty", name: "", id: "" },
-												],
-											}
-										);
-									}}
-								>
-									<FaPlusCircle color="black" size={32} />
-								</button>
-							</div>
-						</div>
+						<Track
+							key={index}
+							track={track}
+							selectedCell={selectedCell}
+							setSelectedCell={setSelectedCell}
+							studio={studio}
+							onMute={() => {
+								mute(track, index);
+							}}
+							muted={muted[index]}
+						/>
 					))}
 
 					<div className="border-t-8 border-black pt-4 sticky left-0">
