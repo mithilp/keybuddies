@@ -1,5 +1,4 @@
 import { db } from "@/utils/firebase";
-import { piano } from "@/utils/instruments";
 import { doc, updateDoc } from "firebase/firestore";
 import { useState } from "react";
 import { FaCircle, FaPause, FaPlay } from "react-icons/fa";
@@ -8,10 +7,12 @@ const Header = ({
 	studio,
 	bpm,
 	play,
+	stop,
 }: {
 	studio: string;
 	bpm: string;
 	play: (onFinish: Function) => void;
+	stop: () => void;
 }) => {
 	const [playing, setPlaying] = useState(false);
 
@@ -22,8 +23,7 @@ const Header = ({
 				setPlaying(false);
 			});
 		} else {
-			piano?.stop();
-			console.log(document.querySelectorAll("audio"));
+			stop();
 		}
 	};
 

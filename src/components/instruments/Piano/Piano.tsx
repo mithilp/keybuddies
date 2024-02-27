@@ -26,15 +26,7 @@ import PianoOptions from "./PianoOptions";
 import MIDI from "@/utils/MIDI";
 import { Key } from "@/utils/types";
 
-const Piano = ({
-	piano,
-	studio,
-	bpm,
-}: {
-	piano: Soundfont;
-	studio: string;
-	bpm: number;
-}) => {
+const Piano = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const [listening, setListening] = useState(false);
 	const multiplier = 7500 / bpm;
 
@@ -78,6 +70,10 @@ const Piano = ({
 
 	const [tooltip, setTooltip] = useState([-1, -1]);
 
+	const [audios, setAudios] = useState<
+		{ audio: HTMLAudioElement; midiNumber: number }[]
+	>([]);
+
 	return (
 		<>
 			<OpenPiano onClick={() => setOpen(!open)} />
@@ -105,9 +101,16 @@ const Piano = ({
 								<ReactPiano
 									noteRange={{ first: firstNote, last: lastNote }}
 									playNote={(midiNumber: number) => {
-										piano.start({
-											note: MidiNumbers.getAttributes(midiNumber).note,
-										});
+										const audio = new Audio(
+											`/sounds/piano/${
+												MIDI.filter((midi) => midi.value === midiNumber)[0].text
+											}.ogg`
+										);
+										audio.play();
+										const newAudios = audios;
+										newAudios.push({ audio: audio, midiNumber: midiNumber });
+										setAudios(newAudios);
+
 										if (recording) {
 											const endTime = Math.round(
 												(Date.now() - startTime) / multiplier
@@ -130,7 +133,12 @@ const Piano = ({
 										}
 									}}
 									stopNote={(midiNumber: number) => {
-										piano.stop(midiNumber);
+										audios
+											.filter((audio) => audio.midiNumber === midiNumber)
+											.forEach((audio) => {
+												audio.audio.pause();
+											});
+
 										if (recording) {
 											const endTime = Math.round(
 												(Date.now() - startTime) / multiplier
@@ -368,7 +376,19 @@ const Piano = ({
 													) : (
 														<button
 															onClick={() => {
-																piano.start(key.value);
+																const audio = new Audio(
+																	`/sounds/piano/${
+																		MIDI.filter(
+																			(midi) => midi.value === key.value
+																		)[0].text
+																	}.ogg`
+																);
+																audio.play();
+
+																setTimeout(() => {
+																	audio.pause();
+																}, (7500 * 32) / bpm);
+
 																setSequence([
 																	...sequence,
 																	{
@@ -394,9 +414,8 @@ const Piano = ({
 									<div className="space-x-4 flex">
 										<button
 											onClick={() => {
-												console.log(listening);
-
 												if (!listening) {
+													console.log(listening);
 													setListening(true);
 													playPiano(sequence, bpm);
 													setTimeout(() => {

@@ -1,42 +1,49 @@
 "use client";
 
-import { Soundfont, DrumMachine } from "smplr";
-import {
-	MidiNumbers,
-	//@ts-ignore
-} from "react-piano";
+import { DrumMachine } from "smplr";
 import { Key } from "./types";
 import sounds from "./drum-sounds";
+import crunker from "./crunker";
+import MIDI from "./MIDI";
 
 const context = typeof window !== "undefined" ? new AudioContext() : null;
-
-export const piano = context
-	? new Soundfont(context!, {
-			instrument: "acoustic_grand_piano",
-	  })
-	: null;
 
 export const drum = context
 	? new DrumMachine(context!, { instrument: "TR-808" })
 	: null;
 
-export const playPiano = (music: Array<Key>, bpm: number) => {
-	if (context && piano) {
-		const time = 7500 / bpm;
-		for (let i = 0; i < music.length; i++) {
-			const note = music[i].note;
-			const start = music[i].start;
-			const end = music[i].end;
-			setTimeout(() => {
-				piano.start({
-					note: MidiNumbers.getAttributes(note).note,
-				});
-			}, start * time);
-			setTimeout(() => {
-				piano.stop(note);
-			}, end * time);
+export const playPiano = async (music: Array<Key>, bpm: number) => {
+	const time = 7500 / bpm;
+
+	const audios: AudioBuffer[] = [];
+
+	for await (const key of music) {
+		const note: any = MIDI.filter((midi) => midi.value === key.note)[0].text;
+		const start = key.start;
+		const end = key.end;
+
+		const buffers = await crunker?.fetchAudio(`/sounds/piano/${note}.ogg`);
+
+		if (buffers) {
+			const trimmed = crunker?.sliceAudio(
+				buffers[0],
+				0,
+				((end - start) * time) / 1000
+			);
+			const padded = crunker?.padAudio(trimmed!, 0, (start * time) / 1000);
+
+			audios.push(padded!);
+		} else {
+			console.log("Something went wrong loading key", note);
 		}
 	}
+
+	const merged = crunker?.mergeAudio(audios);
+
+	const exported = crunker?.export(merged!, "audio/mp3");
+
+	const audio = new Audio(exported!.url);
+	audio.play();
 };
 
 export const playDrum = (music: Array<Key>, bpm: number) => {
