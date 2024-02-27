@@ -9,7 +9,7 @@ import {
 	getDoc,
 	updateDoc,
 } from "firebase/firestore";
-import React from "react";
+import React, { useState } from "react";
 import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
 
 import {
@@ -18,6 +18,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import EditPianoSound from "./EditPianoSound";
 
 const SoundThumbnail = ({
 	playing,
@@ -34,6 +35,8 @@ const SoundThumbnail = ({
 	bpm: string;
 	studio: string;
 }) => {
+	const [open, setOpen] = useState(false);
+
 	function playSound(sound: Sound) {
 		if (sound.type == "piano") {
 			playPiano(sound.sequence, Number(bpm));
@@ -42,7 +45,9 @@ const SoundThumbnail = ({
 		}
 	}
 
-	const edit = () => {};
+	const edit = () => {
+		setOpen(true);
+	};
 
 	const share = async () => {
 		const soundData = await getDoc(doc(db, `sounds`, sound.id));
@@ -65,100 +70,113 @@ const SoundThumbnail = ({
 	};
 
 	return (
-		<TooltipProvider>
-			<Tooltip>
-				<TooltipTrigger>
-					<button
-						disabled={playing != index && playing != -1}
-						className="h-5 w-5"
-						onClick={() => {
-							if (playing == -1) {
-								setPlaying(index);
-								playSound(sound);
-								setTimeout(() => {
-									setPlaying(-1);
-								}, 480000 / Number(bpm));
-							}
-						}}
-					>
-						{playing == index ? (
-							<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-						) : (
-							<FaVolumeUp className="w-full h-full" />
-						)}
-					</button>
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>Play Audio</p>
-				</TooltipContent>
-			</Tooltip>
+		<>
+			{/* buttons */}
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger>
+						<button
+							disabled={playing != index && playing != -1}
+							className="h-5 w-5"
+							onClick={() => {
+								if (playing == -1) {
+									setPlaying(index);
+									playSound(sound);
+									setTimeout(() => {
+										setPlaying(-1);
+									}, 480000 / Number(bpm));
+								}
+							}}
+						>
+							{playing == index ? (
+								<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
+							) : (
+								<FaVolumeUp className="w-full h-full" />
+							)}
+						</button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Play Audio</p>
+					</TooltipContent>
+				</Tooltip>
 
-			<Tooltip>
-				<TooltipTrigger>
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						onClick={edit}
-					>
-						<FaEdit className="w-full h-full" />
-					</button>
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>Edit Audio</p>
-				</TooltipContent>
-			</Tooltip>
+				<Tooltip>
+					<TooltipTrigger>
+						<button
+							className="h-5 w-5"
+							disabled={playing != index && playing != -1}
+							onClick={edit}
+						>
+							<FaEdit className="w-full h-full" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Edit Audio</p>
+					</TooltipContent>
+				</Tooltip>
 
-			<Tooltip>
-				<TooltipTrigger>
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						onClick={duplicate}
-					>
-						<FaCopy className="w-full h-full" />
-					</button>
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>Duplicate Audio</p>
-				</TooltipContent>
-			</Tooltip>
+				<Tooltip>
+					<TooltipTrigger>
+						<button
+							className="h-5 w-5"
+							disabled={playing != index && playing != -1}
+							onClick={duplicate}
+						>
+							<FaCopy className="w-full h-full" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Duplicate Audio</p>
+					</TooltipContent>
+				</Tooltip>
 
-			<Tooltip>
-				<TooltipTrigger>
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						onClick={share}
-					>
-						<FaShare className="w-full h-full" />
-					</button>
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>Share Audio</p>
-				</TooltipContent>
-			</Tooltip>
+				<Tooltip>
+					<TooltipTrigger>
+						<button
+							className="h-5 w-5"
+							disabled={playing != index && playing != -1}
+							onClick={share}
+						>
+							<FaShare className="w-full h-full" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Share Audio</p>
+					</TooltipContent>
+				</Tooltip>
 
-			<Tooltip>
-				<TooltipTrigger>
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						onClick={() => {
-							if (confirm("Are you sure you want to delete this sound?")) {
-								updateDoc(doc(db, `sounds`, sound.id), {
-									in: arrayRemove(studio),
-								});
-							}
-						}}
-					>
-						<FaTrash className="w-full h-full" />
-					</button>
-				</TooltipTrigger>
-				<TooltipContent>
-					<p>Delete Audio</p>
-				</TooltipContent>
-			</Tooltip>
-		</TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger>
+						<button
+							className="h-5 w-5"
+							disabled={playing != index && playing != -1}
+							onClick={() => {
+								if (confirm("Are you sure you want to delete this sound?")) {
+									updateDoc(doc(db, `sounds`, sound.id), {
+										in: arrayRemove(studio),
+									});
+								}
+							}}
+						>
+							<FaTrash className="w-full h-full" />
+						</button>
+					</TooltipTrigger>
+					<TooltipContent>
+						<p>Delete Audio</p>
+					</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
+
+			{/* edit sound modal */}
+			{/* if piano */}
+			{open && sound.type == "piano" && (
+				<EditPianoSound
+					bpm={Number(bpm)}
+					sound={sound}
+					close={() => setOpen(false)}
+				/>
+			)}
+		</>
 	);
 };
 
