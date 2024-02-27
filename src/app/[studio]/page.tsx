@@ -9,7 +9,7 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Key, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -17,6 +17,7 @@ import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import crunker from "@/utils/crunker";
 import { playDrum, playPiano } from "@/utils/instruments";
+import MIDI from "@/utils/MIDI";
 
 export default function Page({ params }: { params: { studio: string } }) {
 	const { studio } = params;
@@ -55,28 +56,67 @@ export default function Page({ params }: { params: { studio: string } }) {
 		);
 	}, [studio]);
 
+	const [audios, setAudios] = useState<HTMLAudioElement[]>([]);
+
 	const play = async (onFinish: Function) => {
+		const newAudios: HTMLAudioElement[] = [];
+
 		for await (const track of tracks) {
 			if (crunker) {
 				const loopsToPlay: string[] = [];
-				const sequences: { start: number; type: string; sequence: Key[] }[] =
-					[];
 
 				let i = 0;
 				for await (const cell of track.notes) {
-					console.log(cell);
 					if (cell.type == "loop") {
 						loopsToPlay.push(`/loops/${cell.id}_${bpm}.mp3`);
 					} else if (cell.type == "sound") {
 						const snap = await getDoc(
 							doc(db, "studios", studio, "sounds", cell.id)
 						);
-						sequences.push({
-							start: (480000 * i) / Number(bpm),
-							type: snap.data()!.type,
-							sequence: snap.data()!.sequence,
-						});
-						loopsToPlay.push(`/loops/silent_${bpm}.mp3`);
+
+						const time = 7500 / Number(bpm);
+
+						const music = snap.data()!.sequence;
+
+						const audios: AudioBuffer[] = [];
+
+						for await (const key of music) {
+							const note: any = MIDI.filter(
+								(midi) => midi.value === key.note
+							)[0].text;
+							const start = key.start;
+							const end = key.end;
+
+							const buffers = await crunker?.fetchAudio(
+								`/sounds/piano/${note}.ogg`
+							);
+
+							if (buffers) {
+								const trimmed = crunker?.sliceAudio(
+									buffers[0],
+									0,
+									((end - start) * time) / 1000
+								);
+								const padded = crunker?.padAudio(
+									trimmed!,
+									0,
+									(start * time) / 1000
+								);
+
+								audios.push(padded!);
+							} else {
+								console.log("Something went wrong loading key", note);
+							}
+						}
+
+						const merged = crunker?.mergeAudio(
+							audios.concat(
+								await crunker.fetchAudio(`/loops/silent_${bpm}.mp3`)
+							)
+						);
+
+						const exported = crunker?.export(merged!, "audio/mp3");
+						loopsToPlay.push(exported.url);
 					} else {
 						loopsToPlay.push(`/loops/silent_${bpm}.mp3`);
 					}
@@ -89,21 +129,21 @@ export default function Page({ params }: { params: { studio: string } }) {
 				const audio = new Audio(exported.url);
 				audio.play();
 
-				sequences.forEach(({ start, type, sequence }) => {
-					if (type == "piano") {
-						setTimeout(() => {
-							playPiano(sequence, Number(bpm));
-						}, start);
-					} else if (type == "drum") {
-						setTimeout(() => {
-							playDrum(sequence, Number(bpm));
-						}, start);
-					}
-				});
+				newAudios.push(audio);
 
 				setTimeout(() => onFinish(), concat.duration * 1000);
 			}
 		}
+
+		setAudios(newAudios);
+	};
+
+	const stop = () => {
+		for (const audio of audios) {
+			audio.pause();
+		}
+
+		setAudios([]);
 	};
 
 	return (
@@ -122,7 +162,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 				{/* Main content will go here */}
 
 				{/* header */}
-				<Header studio={studio} bpm={bpm} play={play} />
+				<Header studio={studio} bpm={bpm} play={play} stop={stop} />
 
 				{/* rows content */}
 				<Tracks
