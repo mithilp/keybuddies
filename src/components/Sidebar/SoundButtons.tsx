@@ -6,10 +6,11 @@ import {
 	arrayRemove,
 	collection,
 	doc,
+	getDoc,
 	updateDoc,
 } from "firebase/firestore";
 import React from "react";
-import { FaCopy, FaEdit, FaTrash, FaVolumeUp } from "react-icons/fa";
+import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
 
 import {
 	Tooltip,
@@ -43,6 +44,16 @@ const SoundThumbnail = ({
 
 	const edit = () => {};
 
+	const share = async () => {
+		const soundData = await getDoc(doc(db, `sounds`, sound.id));
+
+		const code = soundData.data()!.code;
+
+		alert(
+			`Share this code with your friends to let them use this sound: ${code}`
+		);
+	};
+
 	const duplicate = () => {
 		addDoc(collection(db, "sounds"), {
 			name: prompt("Name this duplicated sound:") || sound.name + " copy",
@@ -59,7 +70,7 @@ const SoundThumbnail = ({
 				<TooltipTrigger>
 					<button
 						disabled={playing != index && playing != -1}
-						className="h-6 w-6"
+						className="h-5 w-5"
 						onClick={() => {
 							if (playing == -1) {
 								setPlaying(index);
@@ -85,7 +96,7 @@ const SoundThumbnail = ({
 			<Tooltip>
 				<TooltipTrigger>
 					<button
-						className="h-6 w-6"
+						className="h-5 w-5"
 						disabled={playing != index && playing != -1}
 						onClick={edit}
 					>
@@ -100,7 +111,7 @@ const SoundThumbnail = ({
 			<Tooltip>
 				<TooltipTrigger>
 					<button
-						className="h-6 w-6"
+						className="h-5 w-5"
 						disabled={playing != index && playing != -1}
 						onClick={duplicate}
 					>
@@ -115,7 +126,22 @@ const SoundThumbnail = ({
 			<Tooltip>
 				<TooltipTrigger>
 					<button
-						className="h-6 w-6"
+						className="h-5 w-5"
+						disabled={playing != index && playing != -1}
+						onClick={share}
+					>
+						<FaShare className="w-full h-full" />
+					</button>
+				</TooltipTrigger>
+				<TooltipContent>
+					<p>Share Audio</p>
+				</TooltipContent>
+			</Tooltip>
+
+			<Tooltip>
+				<TooltipTrigger>
+					<button
+						className="h-5 w-5"
 						disabled={playing != index && playing != -1}
 						onClick={() => {
 							if (confirm("Are you sure you want to delete this sound?")) {
