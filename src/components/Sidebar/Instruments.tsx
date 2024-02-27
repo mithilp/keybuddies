@@ -7,13 +7,17 @@ import { FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
 import { Sound, Track } from "@/utils/types";
 import { drum, playDrum, playPiano } from "@/utils/instruments";
 import {
+	arrayRemove,
 	collection,
 	deleteDoc,
 	doc,
 	onSnapshot,
+	query,
 	updateDoc,
+	where,
 } from "firebase/firestore";
 import { db } from "@/utils/firebase";
+import AddSound from "./AddSound";
 
 const Instruments = ({
 	setSelectedCell,
@@ -32,7 +36,7 @@ const Instruments = ({
 
 	useEffect(() => {
 		const soundsUnsub = onSnapshot(
-			collection(db, `studios/${studio}/sounds`),
+			query(collection(db, `sounds`), where("in", "array-contains", studio)),
 			(querySnapshot) => {
 				const freshSounds: Array<Sound> = [];
 				querySnapshot.forEach((doc) => {
@@ -133,7 +137,9 @@ const Instruments = ({
 								disabled={playing != index && playing != -1}
 								onClick={() => {
 									if (confirm("Are you sure you want to delete this sound?")) {
-										deleteDoc(doc(db, `studios/${studio}/sounds`, sound.id));
+										updateDoc(doc(db, `sounds`, sound.id), {
+											in: arrayRemove(studio),
+										});
 									}
 								}}
 							>
@@ -143,6 +149,8 @@ const Instruments = ({
 					</div>
 				</div>
 			))}
+
+			<AddSound studio={studio} />
 		</div>
 	);
 };

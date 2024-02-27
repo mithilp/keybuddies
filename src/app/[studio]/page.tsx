@@ -70,9 +70,7 @@ export default function Page({ params }: { params: { studio: string } }) {
 					if (cell.type == "loop") {
 						loopsToPlay.push(`/loops/${cell.id}_${bpm}.mp3`);
 					} else if (cell.type == "sound") {
-						const snap = await getDoc(
-							doc(db, "studios", studio, "sounds", cell.id)
-						);
+						const snap = await getDoc(doc(db, "sounds", cell.id));
 
 						const time = 7500 / Number(bpm);
 

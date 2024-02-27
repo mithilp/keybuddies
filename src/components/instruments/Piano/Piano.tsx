@@ -59,10 +59,12 @@ const Piano = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const save = async () => {
 		const name = prompt("Name your recording");
 
-		await addDoc(collection(db, `studios/${studio}/sounds`), {
+		await addDoc(collection(db, `sounds`), {
 			name: name,
 			type: "piano",
 			sequence: sequence,
+			in: [studio],
+			code: Math.floor(100000 + Math.random() * 900000).toString(),
 		});
 
 		setOpen(false);
