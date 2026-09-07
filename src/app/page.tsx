@@ -12,11 +12,12 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";
 
-export default function Home({
+export default async function Home({
 	searchParams,
 }: {
-	searchParams: { error?: string };
+	searchParams: Promise<{ error?: string }>;
 }) {
+	const { error } = await searchParams;
 	async function joinStudio(formData: FormData) {
 		"use server";
 		const pin = formData.get("pin") as string;
@@ -63,7 +64,7 @@ export default function Home({
 					action={joinStudio}
 					className="w-full space-y-2 border-b-8 border-black pb-2"
 				>
-					{searchParams.error === "not-found" && (
+					{error === "not-found" && (
 						<div>
 							<p className="text-red-500 text-center">Studio not found!</p>
 						</div>

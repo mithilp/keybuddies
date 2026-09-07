@@ -9,7 +9,7 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { Key, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -19,8 +19,8 @@ import crunker from "@/utils/crunker";
 import { playDrum, playPiano } from "@/utils/instruments";
 import MIDI from "@/utils/MIDI";
 
-export default function Page({ params }: { params: { studio: string } }) {
-	const { studio } = params;
+export default function Page(props: { params: Promise<{ studio: string }> }) {
+	const { studio } = use(props.params);
 	const [bpm, setbpm] = useState("120");
 
 	const [loading, setLoading] = useState(true);
