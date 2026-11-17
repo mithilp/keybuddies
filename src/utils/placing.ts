@@ -81,7 +81,8 @@ export const usePlacing = (
 
 	const waiting = cell !== null || item !== null;
 
-	// A dialog that's open takes Escape for itself before it gets here.
+	// A dialog or a recorder that's open takes Escape for itself before it gets
+	// here (see escape.ts), so closing one doesn't also let go of the pick.
 	useEffect(() => {
 		if (!waiting) return;
 

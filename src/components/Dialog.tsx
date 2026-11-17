@@ -10,6 +10,33 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { FaCheck, FaCopy } from "react-icons/fa";
+import { useEscape } from "@/utils/escape";
+
+// Tab and Shift Tab go round the buttons and boxes in `box` and never leave
+// it. Focus that's on `box` itself goes to the first or the last one.
+export const keepTabInside = (
+	event: ReactKeyboardEvent,
+	box: HTMLElement | null
+) => {
+	if (event.key !== "Tab" || !box) return;
+
+	const stops = box.querySelectorAll<HTMLElement>(
+		"button:not(:disabled), input:not(:disabled), select:not(:disabled)"
+	);
+	if (stops.length === 0) return;
+
+	const first = stops[0];
+	const last = stops[stops.length - 1];
+	const at = document.activeElement;
+
+	if (event.shiftKey && (at === first || at === box)) {
+		event.preventDefault();
+		last.focus();
+	} else if (!event.shiftKey && at === last) {
+		event.preventDefault();
+		first.focus();
+	}
+};
 
 const quiet =
 	"bg-yellow border-8 border-black rounded-xl px-4 py-2 disabled:opacity-50";
@@ -46,40 +73,14 @@ const Dialog = ({
 		};
 	}, []);
 
-	useEffect(() => {
-		const onKey = (event: KeyboardEvent) => {
-			if (event.key !== "Escape") return;
-
-			event.stopPropagation();
-			close();
-		};
-
-		window.addEventListener("keydown", onKey, true);
-		return () => window.removeEventListener("keydown", onKey, true);
-	}, [close]);
+	useEscape(close);
 
 	const onKeyDown = (event: ReactKeyboardEvent) => {
 		// typing in a dialog shouldn't reach anything under it. the piano
 		// listens to the whole keyboard.
 		event.stopPropagation();
 
-		if (event.key !== "Tab" || !card.current) return;
-
-		const stops = card.current.querySelectorAll<HTMLElement>(
-			"button:not(:disabled), input:not(:disabled)"
-		);
-		if (stops.length === 0) return;
-
-		const first = stops[0];
-		const last = stops[stops.length - 1];
-
-		if (event.shiftKey && document.activeElement === first) {
-			event.preventDefault();
-			last.focus();
-		} else if (!event.shiftKey && document.activeElement === last) {
-			event.preventDefault();
-			first.focus();
-		}
+		keepTabInside(event, card.current);
 	};
 
 	return createPortal(

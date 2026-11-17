@@ -30,6 +30,9 @@ export type Sound = {
 	type: "piano" | "drum";
 	// what a friend types in to add this sound to their studio
 	code?: string;
+	// drum: how many steps the cell is cut into, 32. beats saved before it was
+	// there have 16, see drumBeat.
+	steps?: number;
 };
 
 // One note in a recorded sound. What the numbers mean depends on the sound.
@@ -38,9 +41,11 @@ export type Sound = {
 // from the start of the cell, 64 to a cell.
 //
 // drum: `note` is a position in the drum list (0 clap, 1 kick, 2 open hat,
-// 3 closed hat, 4 snare, 5 low tom). `start` is the half-beat step it lands
-// on, 0 to 15, with 0 being the first beat of the cell. `end` is `start + 1`
-// and only there to keep the shape the same, drums ring out on their own.
+// 3 closed hat, 4 snare, 5 low tom). `start` is the sixteenth note step it
+// lands on, 0 to 31, with 0 being the first beat of the cell. A beat saved
+// without `steps` on its sound is on half beats instead, 0 to 15. `end` is
+// `start + 1` and only there to keep the shape the same, drums ring out on
+// their own.
 export type Key = {
 	note: number;
 	start: number;

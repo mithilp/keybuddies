@@ -5,9 +5,9 @@ import { db } from "@/utils/firebase";
 import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
 import PianoEditor from "./PianoEditor";
-import PianoModalHeader from "./PianoModalHeader";
 import { Key } from "@/utils/types";
 import { PromptDialog } from "@/components/Dialog";
+import Panel from "@/components/Panel";
 
 // The piano recorder. It's always on the page and draws nothing until it's
 // opened.
@@ -43,18 +43,14 @@ const Piano = ({
 	return (
 		<>
 			{open && (
-				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
-					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
-						<PianoModalHeader close={close} />
-
-						<PianoEditor
-							bpm={bpm}
-							saveLabel="Save Recording"
-							onSave={setNaming}
-							paused={naming !== null}
-						/>
-					</div>
-				</div>
+				<Panel title="Record a Piano Sound" close={close}>
+					<PianoEditor
+						bpm={bpm}
+						saveLabel="Save Recording"
+						onSave={setNaming}
+						paused={naming !== null}
+					/>
+				</Panel>
 			)}
 
 			{naming && (

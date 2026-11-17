@@ -1,3 +1,5 @@
+import type { Key } from "./types";
+
 // The drum kit is synthesized instead of loaded from sample files.
 // Everything here is plain math on Float32Arrays, so it sounds the same in
 // every browser and can be run outside one. Recipes are the usual 808 ones:
@@ -27,8 +29,29 @@ export const drumVoices: DrumVoice[] = [
 	"tom-low",
 ];
 
-// a beat is one cell: 8 beats cut into half-beat steps
-export const DRUM_STEPS = 16;
+// A beat is one cell: 8 beats cut into sixteenth note steps, 4 to a beat,
+// so a hat or a snare can roll.
+export const DRUM_STEPS = 32;
+
+// Beats saved before the grid went to sixteenths were on half beats, 16 to a
+// cell, and don't say how many steps they have.
+export const OLD_DRUM_STEPS = 16;
+
+// A saved drum beat with its hits on this grid. `steps` is the grid it was
+// saved on, the sound's `steps` field. This is the one place an old beat is
+// read differently, it's never rewritten, and everything after this counts
+// in DRUM_STEPS.
+export const drumBeat = (sequence: Key[], steps: number | undefined) => {
+	const saved = typeof steps === "number" && steps > 0 ? steps : OLD_DRUM_STEPS;
+	if (saved === DRUM_STEPS) return sequence;
+
+	const scale = DRUM_STEPS / saved;
+	return sequence.map((key) => ({
+		note: key.note,
+		start: key.start * scale,
+		end: key.start * scale + 1,
+	}));
+};
 
 const TAU = Math.PI * 2;
 
@@ -326,7 +349,8 @@ const voiceSamples = (voice: DrumVoice, sampleRate: number) => {
 	return samples;
 };
 
-// Mixes a beat down to mono samples. Each hit starts at `start` half-beats.
+// Mixes a beat down to mono samples. Each hit starts at `start` sixteenths,
+// a beat that was saved on another grid goes through drumBeat first.
 // Pass `frames` to get exactly that many samples (hits that ring past the end
 // are faded out), otherwise the result is as long as the beat needs.
 export const mixDrums = (
@@ -335,7 +359,9 @@ export const mixDrums = (
 	sampleRate: number,
 	frames?: number
 ) => {
-	const step = (30 / bpm) * sampleRate;
+	// a quarter of a beat, in samples. twice this is exactly the old half beat
+	// step, so an old beat's hits land on the same samples as they always did.
+	const step = (15 / bpm) * sampleRate;
 
 	const hits = sequence
 		.filter(
