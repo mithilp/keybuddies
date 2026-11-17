@@ -100,20 +100,23 @@ const SoundThumbnail = ({
 					</TooltipContent>
 				</Tooltip>
 
-				<Tooltip>
-					<TooltipTrigger>
-						<button
-							className="h-5 w-5"
-							disabled={playing != index && playing != -1}
-							onClick={edit}
-						>
-							<FaEdit className="w-full h-full" />
-						</button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>Edit Audio</p>
-					</TooltipContent>
-				</Tooltip>
+				{/* only piano has an editor so far */}
+				{sound.type == "piano" && (
+					<Tooltip>
+						<TooltipTrigger>
+							<button
+								className="h-5 w-5"
+								disabled={playing != index && playing != -1}
+								onClick={edit}
+							>
+								<FaEdit className="w-full h-full" />
+							</button>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>Edit Audio</p>
+						</TooltipContent>
+					</Tooltip>
+				)}
 
 				<Tooltip>
 					<TooltipTrigger>

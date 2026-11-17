@@ -3,9 +3,8 @@ import Piano from "../instruments/Piano/Piano";
 import SoundButtons from "./SoundButtons";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
-import { FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
+import { FaDrum, FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
 import { Sound, Track } from "@/utils/types";
-import { drum, playDrum, playPiano } from "@/utils/instruments";
 import {
 	arrayRemove,
 	collection,
@@ -50,6 +49,8 @@ const Instruments = ({
 				setSounds(freshSounds);
 			}
 		);
+
+		return soundsUnsub;
 	}, [studio]);
 
 	const [playing, setPlaying] = useState<number>(-1);
@@ -75,7 +76,7 @@ const Instruments = ({
 			<h3 className="text-lg font-medium">Record a New Sound</h3>
 			<Piano studio={studio} bpm={Number(bpm)} />
 			{/* <Guitar bpm={Number(bpm)} /> */}
-			<Drum bpm={Number(bpm)} studio={studio} drum={drum!} />
+			<Drum bpm={Number(bpm)} studio={studio} />
 			<h3 className="text-lg font-medium">Recorded Sounds</h3>
 			{sounds.map((sound, index) => (
 				<div
@@ -95,6 +96,8 @@ const Instruments = ({
 						<div className="flex items-center space-x-2">
 							{sound.type == "piano" ? (
 								<MdPiano size={32} />
+							) : sound.type == "drum" ? (
+								<FaDrum size={32} />
 							) : (
 								<FaGuitar size={32} />
 							)}

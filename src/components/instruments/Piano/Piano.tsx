@@ -19,7 +19,6 @@ import {
 	//@ts-ignore
 } from "react-piano";
 import "react-piano/dist/styles.css";
-import { Soundfont } from "smplr";
 import OpenPiano from "./OpenPiano";
 import PianoModalHeader from "./PianoModalHeader";
 import PianoOptions from "./PianoOptions";

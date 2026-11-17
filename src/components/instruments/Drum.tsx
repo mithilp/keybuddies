@@ -1,57 +1,75 @@
 "use client";
 
-import { DrumMachine } from "smplr";
 import { db } from "@/utils/firebase";
-import { playDrum, stopDrum } from "@/utils/instruments";
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
+import { addDoc, collection } from "firebase/firestore";
 import { FaDrum, FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { FaCircleXmark } from "react-icons/fa6";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
+import { DRUM_STEPS } from "@/utils/drum-synth";
 
-const Drum = ({
-	drum,
-	studio,
-	bpm,
-}: {
-	drum: DrumMachine;
-	studio: string;
-	bpm: number;
-}) => {
+const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const [open, setOpen] = useState(false);
 
 	const [sequence, setSequence] = useState<Array<Key>>([]);
 	const [isPlaying, setIsPlaying] = useState(false);
 
-	const playMusic = (isPlaying: boolean) => {
-		if (!isPlaying) {
-			playDrum(sequence, bpm);
-			setTimeout(() => {
-				setIsPlaying(false);
-			}, 480000 / Number(bpm));
-		} else {
-			stopDrum();
+	const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const stopListening = () => {
+		if (listenTimer.current) {
+			clearTimeout(listenTimer.current);
+			listenTimer.current = null;
 		}
+		stopDrum();
+		setIsPlaying(false);
+	};
+
+	const listen = () => {
+		if (isPlaying) {
+			stopListening();
+			return;
+		}
+
+		playDrum(sequence, bpm);
+		setIsPlaying(true);
+		listenTimer.current = setTimeout(stopListening, 480000 / bpm);
+	};
+
+	const close = () => {
+		stopListening();
+		setOpen(false);
 	};
 
 	const save = async () => {
 		const name = prompt("Name your beat");
 
-		await addDoc(collection(db, `studios/${studio}/sounds`), {
-			name: name,
+		// cancelled, keep the beat on screen
+		if (name === null) return;
+
+		await addDoc(collection(db, `sounds`), {
+			name: name.trim() || "Drum beat",
 			type: "drum",
 			sequence: sequence,
+			in: [studio],
+			code: Math.floor(100000 + Math.random() * 900000).toString(),
 		});
 
-		setOpen(false);
+		setSequence([]);
+		close();
 	};
 
 	return (
 		<>
 			<button
 				onClick={() => {
-					setOpen(!open);
+					if (open) {
+						close();
+					} else {
+						setOpen(true);
+					}
 				}}
 				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
 			>
@@ -66,7 +84,7 @@ const Drum = ({
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
-							<button onClick={() => setOpen(false)}>
+							<button onClick={close}>
 								<FaCircleXmark size={32} />
 							</button>
 						</div>
@@ -78,35 +96,35 @@ const Drum = ({
 										className="flex items-center justify-between"
 									>
 										<div className="w-40">{sound.note}</div>
-										{Array.from(Array(16)).map((_, i) => (
+										{Array.from(Array(DRUM_STEPS)).map((_, i) => (
 											<button
 												key={i}
 												onClick={() => {
 													if (
 														sequence.filter(
 															(note) =>
-																note.note == sound.value && note.start == i + 1
+																note.note == sound.value && note.start == i
 														).length > 0
 													) {
 														setSequence(
 															sequence.filter(
 																(note) =>
 																	note.note != sound.value ||
-																	note.start != i + 1
+																	note.start != i
 															)
 														);
 													} else {
-														drum.start({ note: sound.note });
+														playDrumHit(sound.value);
 														setSequence([
 															...sequence,
-															{ note: sound.value, start: i + 1, end: i + 2 },
+															{ note: sound.value, start: i, end: i + 1 },
 														]);
 													}
 												}}
 												className={`w-10 h-8 rounded-sm text-white my-1 ${
 													sequence.filter(
 														(note) =>
-															note.note == sound.value && note.start == i + 1
+															note.note == sound.value && note.start == i
 													).length > 0
 														? "bg-yellow"
 														: "bg-pink"
@@ -118,12 +136,9 @@ const Drum = ({
 							</div>
 							<div className="space-x-4 flex">
 								<button
-									onClick={() => {
-										setIsPlaying(!isPlaying);
-
-										playMusic(isPlaying);
-									}}
-									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+									onClick={listen}
+									disabled={sequence.length == 0}
+									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
 									<div id="ButtonListen">
 										{isPlaying ? "Stop Playback" : "Listen to Recording"}
@@ -132,7 +147,8 @@ const Drum = ({
 								</button>
 								<button
 									onClick={save}
-									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+									disabled={sequence.length == 0}
+									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
 									<div>Save Recording</div>
 									<FaCheck size={32} />
