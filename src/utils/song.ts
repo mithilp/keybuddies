@@ -4,7 +4,7 @@ import { doc, getDoc } from "firebase/firestore";
 import crunker from "./crunker";
 import { db } from "./firebase";
 import { renderSound } from "./instruments";
-import { loopUrl } from "./loops";
+import { loadLoop } from "./samples";
 import { cellFrames } from "./tempo";
 import { Cell, Track } from "./types";
 
@@ -34,6 +34,7 @@ const place = (
 
 // Renders every track of a song into its own buffer. Nothing plays here, so
 // whoever calls this can start all the tracks at the same moment.
+// Everything the song needs is asked for at once, not one cell after another.
 // Tracks with no cells are left out. Throws a SongError naming the cell that
 // couldn't be built.
 export const renderSong = async (
@@ -43,20 +44,20 @@ export const renderSong = async (
 	if (!crunker) {
 		throw new SongError("This browser can't play audio.");
 	}
-	const audio = crunker;
-	const context = audio.context;
+	const context = crunker.context;
 
 	// how long a cell is comes from the tempo, not from any file
 	const frames = cellFrames(Number(bpm), context.sampleRate);
 
-	// the same loops and sounds show up in lots of cells, so each one is only
-	// loaded once per render
-	const loading = new Map<string, Promise<AudioBuffer>>();
-	const once = (key: string, load: () => Promise<AudioBuffer>) => {
-		let buffer = loading.get(key);
+	// The same loops and sounds show up in lots of cells, so each one is only
+	// built once per render. Decoded files outlive the render in the sample
+	// cache. Sounds don't, they can be edited between two plays.
+	const building = new Map<string, Promise<AudioBuffer>>();
+	const once = (key: string, build: () => Promise<AudioBuffer>) => {
+		let buffer = building.get(key);
 		if (!buffer) {
-			buffer = load();
-			loading.set(key, buffer);
+			buffer = build();
+			building.set(key, buffer);
 		}
 		return buffer;
 	};
@@ -66,7 +67,7 @@ export const renderSong = async (
 		if (cell.type == "loop") {
 			return once(`loop ${cell.id}`, async () => {
 				try {
-					return (await audio.fetchAudio(loopUrl(cell.id, bpm)))[0];
+					return await loadLoop(cell.id, bpm);
 				} catch (error) {
 					console.error(error);
 					throw new SongError(
@@ -88,12 +89,7 @@ export const renderSong = async (
 						);
 					}
 
-					return await renderSound(
-						sound.type,
-						sound.sequence,
-						Number(bpm),
-						frames
-					);
+					return await renderSound(sound.type, sound.sequence, Number(bpm));
 				} catch (error) {
 					if (error instanceof SongError) throw error;
 

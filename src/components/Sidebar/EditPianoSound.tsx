@@ -16,7 +16,7 @@ import {
 	FaTrash,
 	FaVolumeUp,
 } from "react-icons/fa";
-import { playPiano } from "@/utils/instruments";
+import { playPiano, pressKey, releaseKey } from "@/utils/instruments";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 
@@ -38,9 +38,6 @@ const EditPianoSound = ({
 	const [tooltip, setTooltip] = useState([-1, -1]);
 	const [startTime, setStartTime] = useState<number>(Date.now());
 
-	const [audios, setAudios] = useState<
-		{ audio: HTMLAudioElement; midiNumber: number }[]
-	>([]);
 	const updateArray = (noteNumber: number, endTime: number) => {
 		for (let i = sequence.length - 1; i >= 0; i--) {
 			if (sequence[i].note === noteNumber) {
@@ -93,15 +90,7 @@ const EditPianoSound = ({
 						<ReactPiano
 							noteRange={{ first: firstNote, last: lastNote }}
 							playNote={(midiNumber: number) => {
-								const audio = new Audio(
-									`/sounds/piano/${
-										MIDI.filter((midi) => midi.value === midiNumber)[0].text
-									}.ogg`
-								);
-								audio.play();
-								const newAudios = audios;
-								newAudios.push({ audio: audio, midiNumber: midiNumber });
-								setAudios(newAudios);
+								pressKey(midiNumber);
 
 								if (recording) {
 									const endTime = Math.round(
@@ -125,11 +114,7 @@ const EditPianoSound = ({
 								}
 							}}
 							stopNote={(midiNumber: number) => {
-								audios
-									.filter((audio) => audio.midiNumber === midiNumber)
-									.forEach((audio) => {
-										audio.audio.pause();
-									});
+								releaseKey(midiNumber);
 
 								if (recording) {
 									const endTime = Math.round(
@@ -366,18 +351,8 @@ const EditPianoSound = ({
 											) : (
 												<button
 													onClick={() => {
-														const audio = new Audio(
-															`/sounds/piano/${
-																MIDI.filter(
-																	(midi) => midi.value === key.value
-																)[0].text
-															}.ogg`
-														);
-														audio.play();
-
-														setTimeout(() => {
-															audio.pause();
-														}, (7500 * 32) / bpm);
+														// the note rings for 4 beats
+														setTimeout(pressKey(key.value), (7500 * 32) / bpm);
 
 														setSequence([
 															...sequence,
