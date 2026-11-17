@@ -1,25 +1,38 @@
 import { useEffect, useState } from "react";
 import SoundButtons from "./SoundButtons";
 import { MdPiano } from "react-icons/md";
-import { FaDrum } from "react-icons/fa";
-import { Sound } from "@/utils/types";
+import { FaDrum, FaTrash } from "react-icons/fa";
+import { Cell, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/utils/firebase";
+import { removeLoop } from "@/utils/library";
 import AddSound from "./AddSound";
 import Notice from "../Notice";
+import PlayLoop from "../PlayLoop";
+import { Tip } from "../ui/tooltip";
 
-// the sounds that were recorded in this studio, or added to it by code
+// Everything in this studio that can go in a cell, in one list: the sounds
+// that were recorded here or added by code, and then the loops that were
+// added from the library. A row is picked and put in a cell the same way
+// whichever it is.
 const Sounds = ({
 	placing,
 	bpm,
 	studio,
+	loops,
 }: {
 	placing: Placing;
 	bpm: string;
 	studio: string;
+	// the library loops this studio has
+	loops: Cell[];
 }) => {
 	const [sounds, setSounds] = useState<Array<Sound>>([]);
+
+	// the recorded sounds come from their own query. until it has answered
+	// there's no telling whether the list is empty.
+	const [loaded, setLoaded] = useState(false);
 
 	const [playing, setPlaying] = useState<number>(-1);
 
@@ -40,6 +53,7 @@ const Sounds = ({
 					});
 				});
 				setSounds(freshSounds);
+				setLoaded(true);
 			},
 			(error) => {
 				console.error(error);
@@ -52,12 +66,28 @@ const Sounds = ({
 
 	const { item, dropItem } = placing;
 
-	// a picked sound that's taken out of the studio isn't picked any more
+	// a picked sound or loop that's taken out of the studio isn't picked any
+	// more
 	useEffect(() => {
 		if (item?.type == "sound" && !sounds.some((sound) => sound.id == item.id)) {
 			dropItem();
 		}
-	}, [item, sounds, dropItem]);
+
+		if (item?.type == "loop" && !loops.some((loop) => loop.id == item.id)) {
+			dropItem();
+		}
+	}, [item, sounds, loops, dropItem]);
+
+	// The loop leaves the list. The cells that hold it keep it.
+	const remove = (loop: Cell) => {
+		removeLoop(studio, loop.id).catch((error) => {
+			console.error(error);
+			setNotice(`Couldn't remove ${loop.name}. Try again.`);
+		});
+	};
+
+	// a recorded sound is being listened to. the other rows wait for it.
+	const busy = playing != -1;
 
 	return (
 		<div className="px-4 pt-4 space-y-2">
@@ -106,6 +136,52 @@ const Sounds = ({
 					</div>
 				</div>
 			))}
+
+			{loops.map((loop) => (
+				<div
+					key={loop.id}
+					onClick={() => placing.pickItem(loop)}
+					className={`bg-yellow flex items-center justify-between space-x-2 p-4 rounded-xl border-8 ${
+						placing.cell || (item?.type == "loop" && item.id == loop.id)
+							? "border-pink"
+							: "border-black"
+					} ${busy ? "opacity-50" : "cursor-pointer"}`}
+				>
+					<div className="text-xl">{loop.name}</div>
+
+					{/* a click on a button isn't a click on the loop */}
+					<div
+						className="flex items-center space-x-2"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<PlayLoop
+							id={loop.id}
+							name={loop.name}
+							bpm={bpm}
+							disabled={busy}
+							className="h-5 w-5"
+						/>
+
+						<Tip label="Remove">
+							<button
+								className="h-5 w-5"
+								disabled={busy}
+								aria-label={`Remove ${loop.name} from this studio`}
+								onClick={() => remove(loop)}
+							>
+								<FaTrash className="w-full h-full" />
+							</button>
+						</Tip>
+					</div>
+				</div>
+			))}
+
+			{loaded && sounds.length == 0 && loops.length == 0 && (
+				<p>
+					Nothing here yet. Record a sound with an instrument, or add a loop
+					from the Library.
+				</p>
+			)}
 
 			<AddSound studio={studio} />
 

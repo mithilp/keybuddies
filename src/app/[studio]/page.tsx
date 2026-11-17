@@ -8,7 +8,7 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Playback, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -22,6 +22,7 @@ import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
 import { usePlacing } from "@/utils/placing";
+import { studioLoops } from "@/utils/loops";
 import { mixDown, save, toWav } from "@/utils/export";
 
 // how long firestore gets to answer before the studio counts as not loading
@@ -64,6 +65,18 @@ function Studio({ studio }: { studio: string }) {
 	const [loading, setLoading] = useState(true);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
+
+	// The studio's `library` and `libraryRemoved` fields, as they came. A
+	// studio from before the library has neither.
+	const [library, setLibrary] = useState<{ added: unknown; removed: unknown }>(
+		{ added: undefined, removed: undefined }
+	);
+
+	// the library loops this studio has, for the sidebar
+	const loops = useMemo(
+		() => studioLoops(tracks, library.added, library.removed),
+		[tracks, library]
+	);
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
 
@@ -169,6 +182,7 @@ function Studio({ studio }: { studio: string }) {
 
 				setLoad("ready");
 				setbpm(data.bpm ?? "120");
+				setLibrary({ added: data.library, removed: data.libraryRemoved });
 			},
 			failed
 		);
@@ -410,7 +424,7 @@ function Studio({ studio }: { studio: string }) {
 	return (
 		<div className="grid grid-cols-3">
 			{/* Left column */}
-			<Sidebar placing={placing} bpm={bpm} studio={studio} />
+			<Sidebar placing={placing} bpm={bpm} studio={studio} loops={loops} />
 
 			{/* Right column (two-thirds of the screen). The header is not inside
 			    the part that scrolls, so the tracks can't end up over or under

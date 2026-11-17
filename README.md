@@ -7,7 +7,7 @@ Devpost prize: Winner, Future of Entertainment.
 ## What you can do
 
 - Stack tracks. A track is a row of cells, and each cell is 8 beats.
-- Put a loop in a cell (bass, piano, drums), or a sound you recorded.
+- Add loops from the library (bass, piano, drums) to the studio and put them in cells, next to the sounds you recorded.
 - Record a piano part on your keyboard and fix it up on a grid, or tap out a drum beat on a 16-step grid.
 - Share a recorded sound with another studio by its code.
 - Set the tempo to 80, 120 or 160 BPM for the whole studio.
@@ -33,6 +33,10 @@ Firestore only holds the arrangement. All audio is made in the browser:
 | --- | --- |
 | `createdAt` | timestamp |
 | `bpm` | `"80"`, `"120"` or `"160"` |
+| `library` | ids of the loops added from the library |
+| `libraryRemoved` | ids of the loops taken out of the sidebar list while a cell still held them |
+
+Both lists can be missing. A studio made before the library has neither, and the loops its cells hold show up in the sidebar anyway. `studioLoops` in `src/utils/loops.ts` makes the list.
 
 `studios/{code}/tracks/{id}`
 
@@ -43,7 +47,7 @@ Firestore only holds the arrangement. All audio is made in the browser:
 | `order` | where it sits in the list |
 | `notes` | the cells, in order |
 
-A cell is `{ type, name, id }`. `type` is `"empty"`, `"loop"` (`id` is a loop from `src/utils/loops.ts`) or `"sound"` (`id` is a document in `sounds`).
+A cell is `{ type, name, id }`. `type` is `"empty"`, `"loop"` (`id` is a loop from the library in `src/utils/loops.ts`) or `"sound"` (`id` is a document in `sounds`).
 
 `sounds/{id}`
 
@@ -81,6 +85,6 @@ Other commands:
 ```bash
 npm run build   # production build
 npm run lint    # eslint
-npm test        # timing tests, run with node --test
+npm test        # timing, drum and library tests, run with node --test
 npx tsc --noEmit
 ```

@@ -19,13 +19,20 @@ const loud =
 // The box every dialog sits in. It goes on top of everything, Escape or a
 // click outside it closes it, Tab stays inside it, and the focus goes back
 // to where it was once it's gone.
+//
+// It's never taller than the window. A dialog with a long list in it gives
+// the list `min-h-0 overflow-y-auto`, and the list scrolls while the title
+// and the buttons stay where they are.
 const Dialog = ({
 	title,
 	close,
+	wide = false,
 	children,
 }: {
 	title: string;
 	close: () => void;
+	// for a dialog with rows in it instead of a question
+	wide?: boolean;
 	children: ReactNode;
 }) => {
 	const heading = useId();
@@ -92,7 +99,9 @@ const Dialog = ({
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={heading}
-				className="w-full max-w-md bg-blue border-8 border-black rounded-xl p-6 space-y-4 text-left text-base font-normal cursor-auto"
+				className={`w-full ${
+					wide ? "max-w-xl" : "max-w-md"
+				} max-h-[calc(100dvh-2rem)] flex flex-col bg-blue border-8 border-black rounded-xl p-6 space-y-4 text-left text-base font-normal cursor-auto`}
 			>
 				<h3 id={heading} className="text-2xl font-bold">
 					{title}
@@ -321,3 +330,5 @@ export const ShareDialog = ({
 		</Dialog>
 	);
 };
+
+export { Dialog, quiet as quietButton, loud as loudButton };
