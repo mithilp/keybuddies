@@ -8,7 +8,7 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { Playback, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -16,39 +16,9 @@ import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";
 import StudioNotFound from "@/components/StudioNotFound";
-import crunker from "@/utils/crunker";
+import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, SongError } from "@/utils/song";
-
-// resolves once an audio element has enough loaded to start without a gap
-const loaded = (audio: HTMLAudioElement) =>
-	new Promise<void>((resolve, reject) => {
-		if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
-			resolve();
-			return;
-		}
-
-		// some browsers won't buffer ahead of a play() call, don't wait forever
-		const timer = setTimeout(resolve, 2000);
-
-		audio.addEventListener(
-			"canplaythrough",
-			() => {
-				clearTimeout(timer);
-				resolve();
-			},
-			{ once: true }
-		);
-		audio.addEventListener(
-			"error",
-			() => {
-				clearTimeout(timer);
-				reject(new Error("The rendered audio couldn't be loaded."));
-			},
-			{ once: true }
-		);
-
-		audio.load();
-	});
+import { Transport } from "@/utils/transport";
 
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
@@ -119,8 +89,28 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 
 	const [notice, setNotice] = useState("");
 
-	// the tracks that are playing, or about to
-	const audios = useRef<{ audio: HTMLAudioElement; track: string }[]>([]);
+	// Where the playhead rests while nothing is playing, in beats from the
+	// start of the song. Play starts from here.
+	const [beat, setBeat] = useState(0);
+	const beatRef = useRef(0);
+
+	const place = (to: number) => {
+		beatRef.current = to;
+		setBeat(to);
+	};
+
+	const [transport] = useState(() => new Transport());
+
+	// the tempo the playing song was rendered at. the studio's can change
+	// under it.
+	const playingBpm = useRef(120);
+
+	// where the song is right now, in beats. the playhead reads this on every
+	// frame while the song plays.
+	const liveBeat = useCallback(
+		() => (transport.position() * playingBpm.current) / 60,
+		[transport]
+	);
 
 	// Goes up on every play and every stop. A play that finds a different
 	// number than the one it started with was stopped and gives up.
@@ -131,26 +121,27 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	// play() reads this when the tracks start, which is after it was called
 	const mutedRef = useRef<boolean[]>([]);
 
-	const silence = () => {
-		for (const { audio } of audios.current) {
-			audio.pause();
-			URL.revokeObjectURL(audio.src);
-		}
-
-		audios.current = [];
+	// stops everything and leaves the playhead at `at`
+	const halt = (at: number) => {
+		run.current++;
+		transport.stop();
+		setPlayback("stopped");
+		place(at);
 	};
 
+	// the pause button. the playhead stays where the song got to.
 	const stop = () => {
-		run.current++;
-		silence();
-		setPlayback("stopped");
+		halt(transport.playing ? liveBeat() : beatRef.current);
 	};
 
 	const play = async () => {
 		const id = ++run.current;
 		const stopped = () => run.current !== id;
 
-		silence();
+		// browsers only let audio start from a click, and by the time the
+		// song is rendered this isn't one anymore
+		if (crunker) wake();
+
 		setNotice("");
 		setPlayback("loading");
 
@@ -160,70 +151,56 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 
 			if (stopped()) return;
 
-			if (song.length == 0) {
+			if (song.tracks.length == 0) {
 				throw new SongError("There's nothing to play yet.");
 			}
 
-			audios.current = song.map(({ track, buffer }) => {
-				// crunker hands back a url and an element with a url of its own.
-				// the element is the one that plays.
-				const exported = crunker!.export(buffer, "audio/wav");
-				URL.revokeObjectURL(exported.url);
-
-				const audio = exported.element;
-				audio.preload = "auto";
-
-				// muted tracks start silent instead of being turned down after
-				const index = tracks.findIndex((each) => each.id === track);
-				audio.volume = mutedRef.current[index] ? 0 : 1;
-
-				return { audio: audio, track: track };
-			});
-
-			const starting = audios.current;
-
-			await Promise.all(starting.map(({ audio }) => loaded(audio)));
+			if (!(await awake())) {
+				throw new SongError(
+					"The browser wouldn't start the audio. Press play again."
+				);
+			}
 
 			if (stopped()) return;
+
+			playingBpm.current = song.bpm;
 
 			// the song is over when its longest track is, and only then
-			let longest = 0;
-			song.forEach(({ buffer }, index) => {
-				if (buffer.duration > song[longest].buffer.duration) {
-					longest = index;
-				}
-			});
+			transport.onEnded = () => {
+				if (!stopped()) halt(0);
+			};
 
-			starting[longest].audio.addEventListener(
-				"ended",
-				() => {
-					if (!stopped()) stop();
-				},
-				{ once: true }
+			// muted tracks start silent instead of being turned down after
+			transport.start(
+				song,
+				(beatRef.current * 60) / song.bpm,
+				(track) =>
+					mutedRef.current[tracks.findIndex((each) => each.id === track)] ??
+					false
 			);
-
-			await Promise.all(starting.map(({ audio }) => audio.play()));
-
-			if (stopped()) return;
 
 			setPlayback("playing");
 		} catch (error) {
-			// stop() already cleaned up, and pausing is what made play() throw
 			if (stopped()) return;
 
 			console.error(error);
-			stop();
+			halt(beatRef.current);
 
 			if (error instanceof SongError) {
 				setNotice(error.message);
-			} else if (
-				error instanceof DOMException &&
-				error.name == "NotAllowedError"
-			) {
-				setNotice("The browser wouldn't start the audio. Press play again.");
 			} else {
 				setNotice("Something went wrong playing the song. Try again.");
 			}
+		}
+	};
+
+	// A click on the ruler. While stopped it sets where play starts, while
+	// playing the song jumps there.
+	const seek = (to: number) => {
+		place(to);
+
+		if (transport.playing) {
+			transport.seek((to * 60) / playingBpm.current);
 		}
 	};
 
@@ -231,13 +208,9 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	useEffect(() => {
 		return () => {
 			run.current++;
-
-			for (const { audio } of audios.current) {
-				audio.pause();
-				URL.revokeObjectURL(audio.src);
-			}
+			transport.stop();
 		};
-	}, []);
+	}, [transport]);
 
 	const mute = (track: Track, index: number) => {
 		const newMuted = [...mutedRef.current];
@@ -245,11 +218,7 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 		mutedRef.current = newMuted;
 		setMuted(newMuted);
 
-		for (const playing of audios.current) {
-			if (playing.track === track.id) {
-				playing.audio.volume = newMuted[index] ? 0 : 1;
-			}
-		}
+		transport.mute(track.id, newMuted[index]);
 	};
 
 	if (found === false) {
@@ -298,6 +267,10 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 					studio={studio}
 					mute={mute}
 					muted={muted}
+					beat={beat}
+					playing={playback == "playing"}
+					liveBeat={liveBeat}
+					seek={seek}
 				/>
 			</main>
 

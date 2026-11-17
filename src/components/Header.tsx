@@ -17,7 +17,7 @@ const Header = ({
 	stop: () => void;
 }) => {
 	return (
-		<div className="flex sticky top-0 justify-between border-black border-b-8 py-6 px-4">
+		<div className="flex sticky top-0 z-10 bg-pink justify-between border-black border-b-8 py-6 px-4">
 			<div>
 				<span className="leading-7 uppercase font-black">Studio Code</span>
 				<br />

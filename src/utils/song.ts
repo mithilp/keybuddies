@@ -10,6 +10,16 @@ import { Cell, Track } from "./types";
 
 export type RenderedTrack = { track: string; buffer: AudioBuffer };
 
+// A song ready to play. It's as long as its longest track, and every track's
+// buffer is that long too, with silence after its last cell. Same length
+// buffers are what let the tracks loop together without drifting.
+export type Song = {
+	tracks: RenderedTrack[];
+	bpm: number;
+	// seconds
+	duration: number;
+};
+
 // an error whose message is written for whoever pressed play
 export class SongError extends Error {}
 
@@ -32,15 +42,15 @@ const place = (
 	}
 };
 
-// Renders every track of a song into its own buffer. Nothing plays here, so
-// whoever calls this can start all the tracks at the same moment.
+// Renders every track of a song into its own buffer. Nothing plays here, the
+// transport starts all the tracks at the same moment.
 // Everything the song needs is asked for at once, not one cell after another.
 // Tracks with no cells are left out. Throws a SongError naming the cell that
 // couldn't be built.
 export const renderSong = async (
 	tracks: Track[],
 	bpm: string
-): Promise<RenderedTrack[]> => {
+): Promise<Song> => {
 	if (!crunker) {
 		throw new SongError("This browser can't play audio.");
 	}
@@ -102,23 +112,30 @@ export const renderSong = async (
 		return Promise.resolve(null);
 	};
 
-	return Promise.all(
-		tracks
-			.filter((track) => track.notes.length > 0)
-			.map(async (track) => {
-				const cells = await Promise.all(track.notes.map(renderCell));
+	const filled = tracks.filter((track) => track.notes.length > 0);
+	const longest = Math.max(0, ...filled.map((track) => track.notes.length));
 
-				const buffer = context.createBuffer(
-					2,
-					cells.length * frames,
-					context.sampleRate
-				);
+	const rendered = await Promise.all(
+		filled.map(async (track) => {
+			const cells = await Promise.all(track.notes.map(renderCell));
 
-				cells.forEach((cell, index) => {
-					if (cell) place(buffer, cell, index * frames, frames);
-				});
+			const buffer = context.createBuffer(
+				2,
+				longest * frames,
+				context.sampleRate
+			);
 
-				return { track: track.id, buffer: buffer };
-			})
+			cells.forEach((cell, index) => {
+				if (cell) place(buffer, cell, index * frames, frames);
+			});
+
+			return { track: track.id, buffer: buffer };
+		})
 	);
+
+	return {
+		tracks: rendered,
+		bpm: Number(bpm),
+		duration: (longest * frames) / context.sampleRate,
+	};
 };
