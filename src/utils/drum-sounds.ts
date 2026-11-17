@@ -1,10 +1,6 @@
-const sounds = [
-	{ value: 0, note: "clap" },
-	{ value: 1, note: "kick" },
-	{ value: 2, note: "hihat-open" },
-	{ value: 3, note: "hihat-close" },
-	{ value: 4, note: "snare" },
-	{ value: 5, note: "tom-low" },
-];
+import { drumVoices } from "./drum-synth";
+
+// `value` is what a drum Key stores in `note`
+const sounds = drumVoices.map((note, value) => ({ value, note }));
 
 export default sounds;

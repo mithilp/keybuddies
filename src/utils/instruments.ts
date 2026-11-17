@@ -1,16 +1,9 @@
 "use client";
 
-import { DrumMachine } from "smplr";
 import { Key } from "./types";
-import sounds from "./drum-sounds";
 import crunker from "./crunker";
 import MIDI from "./MIDI";
-
-const context = typeof window !== "undefined" ? new AudioContext() : null;
-
-export const drum = context
-	? new DrumMachine(context!, { instrument: "TR-808" })
-	: null;
+import { mixDrums } from "./drum-synth";
 
 export const playPiano = async (music: Array<Key>, bpm: number) => {
 	const time = 7500 / bpm;
@@ -46,26 +39,63 @@ export const playPiano = async (music: Array<Key>, bpm: number) => {
 	audio.play();
 };
 
-export const playDrum = (music: Array<Key>, bpm: number) => {
-	if (context && drum) {
-		const now = context.currentTime;
-		const time = 30 / bpm;
-		for (let j = 0; j < 1; j++) {
-			for (let i = 0; i < music.length; i++) {
-				const note = sounds[music[i].note].note;
-				const start = music[i].start;
-				drum.start({
-					note: note,
-					time: now + j * 16 * time + start * time,
-				});
-			}
-		}
+// A drum beat as a buffer on crunker's context, so it can be merged into a
+// track the same way piano is. Stereo, because crunker only fills the
+// channels a buffer has. `frames` forces an exact length.
+export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
+	const context = crunker!.context;
+	const samples = mixDrums(music, bpm, context.sampleRate, frames);
+
+	const buffer = context.createBuffer(2, samples.length, context.sampleRate);
+	buffer.getChannelData(0).set(samples);
+	buffer.getChannelData(1).set(samples);
+
+	return buffer;
+};
+
+const start = (buffer: AudioBuffer) => {
+	const context = crunker!.context;
+
+	// browsers keep the context suspended until the first click
+	if (context.state === "suspended") {
+		context.resume();
 	}
-	return true;
+
+	const source = context.createBufferSource();
+	source.buffer = buffer;
+	source.connect(context.destination);
+	source.start();
+
+	return source;
+};
+
+let beat: AudioBufferSourceNode | null = null;
+
+export const playDrum = (music: Array<Key>, bpm: number) => {
+	if (!crunker) return;
+
+	stopDrum();
+	beat = start(renderDrum(music, bpm));
 };
 
 export const stopDrum = () => {
-	if (drum) {
-		drum.stop({});
+	if (beat) {
+		beat.stop();
+		beat = null;
 	}
+};
+
+const hits = new Map<number, AudioBuffer>();
+
+// one hit of one drum, for clicking around the grid
+export const playDrumHit = (note: number) => {
+	if (!crunker) return;
+
+	let buffer = hits.get(note);
+	if (!buffer) {
+		buffer = renderDrum([{ note: note, start: 0, end: 1 }], 120);
+		hits.set(note, buffer);
+	}
+
+	start(buffer);
 };
