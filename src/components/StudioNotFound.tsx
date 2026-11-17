@@ -6,8 +6,8 @@ import { Card } from "./ui/card";
 
 const StudioNotFound = ({ studio }: { studio: string }) => {
 	return (
-		<main className="p-24 h-screen w-screen grid place-items-center">
-			<Card className="w-96 space-y-4 flex items-center flex-col p-10 text-center">
+		<main className="min-h-dvh p-4 sm:p-24 grid place-items-center">
+			<Card className="w-full max-w-96 space-y-4 flex items-center flex-col p-6 sm:p-10 text-center">
 				<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
 				<h1 className="text-2xl font-bold">Studio not found</h1>
 				<p>

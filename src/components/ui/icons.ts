@@ -3,6 +3,7 @@
 export {
 	LuArrowLeft as BackIcon,
 	LuArrowRight as ForwardIcon,
+	LuAudioLines as TracksIcon,
 	LuCheck as CheckIcon,
 	LuCircleAlert as ErrorIcon,
 	LuCircleMinus as RemoveBarIcon,
@@ -10,6 +11,7 @@ export {
 	LuCopy as CopyIcon,
 	LuDownload as DownloadIcon,
 	LuDrum as DrumIcon,
+	LuEllipsis as MoreIcon,
 	LuLibraryBig as LibraryIcon,
 	LuPause as PauseIcon,
 	LuPencil as EditIcon,

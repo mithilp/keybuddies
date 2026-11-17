@@ -9,7 +9,7 @@ import { DRUM_BAR_STEPS, drumSteps } from "@/utils/drum-synth";
 import { BAR_BEATS } from "@/utils/tempo";
 import { DEFAULT_BARS } from "@/utils/clips";
 import { PromptDialog } from "@/components/Dialog";
-import Panel from "@/components/Panel";
+import Panel, { panelFooter } from "@/components/Panel";
 import LengthPicker from "./LengthPicker";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, ICON, PauseIcon, SoundIcon } from "@/components/ui/icons";
@@ -110,7 +110,7 @@ const Drum = ({
 			{open && (
 				// Escape closes it the same way the X does, the beat stops too
 				<Panel title="Record a Drum Sound" close={shut}>
-					<div className="space-y-4">
+					<div className="flex-1 flex flex-col gap-4">
 						<LengthPicker
 							id="drumLength"
 							bars={bars}
@@ -125,7 +125,7 @@ const Drum = ({
 							<div className="w-max">
 								{/* the beat numbers, over the first step of each beat */}
 								<div className="flex" aria-hidden>
-									<div className="w-32 shrink-0"></div>
+									<div className="w-24 sm:w-32 shrink-0"></div>
 									{beats.map((beat) => (
 										<div
 											key={beat}
@@ -142,7 +142,7 @@ const Drum = ({
 
 								{sounds.map((sound) => (
 									<div key={sound.value} className="flex items-center">
-										<div className="w-32 shrink-0">{sound.note}</div>
+										<div className="w-24 sm:w-32 shrink-0">{sound.note}</div>
 										{beats.map((beat) => (
 											// a beat is 4 steps, with a thick line before it
 											<div
@@ -174,7 +174,7 @@ const Drum = ({
 								))}
 							</div>
 						</div>
-						<div className="flex gap-4">
+						<div className={panelFooter}>
 							<Button size="lg" onClick={listen} disabled={inside.length === 0}>
 								{isPlaying ? (
 									<PauseIcon size={ICON} aria-hidden />

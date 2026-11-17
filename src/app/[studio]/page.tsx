@@ -2,15 +2,17 @@
 
 import { use, useState } from "react";
 import { Item, Track } from "@/utils/types";
+import { cn } from "@/utils/cn";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";
+import TabBar, { View } from "@/components/TabBar";
 import StudioNotFound from "@/components/StudioNotFound";
 import StudioFailed from "@/components/StudioFailed";
 import { Spinner } from "@/components/ui/spinner";
 import { isStudioCode } from "@/utils/studio-code";
-import { usePlacing } from "@/utils/placing";
+import { Placing, usePlacing } from "@/utils/placing";
 import { useStudio } from "@/hooks/use-studio";
 import { usePlayback } from "@/hooks/use-playback";
 import { useExport } from "@/hooks/use-export";
@@ -41,7 +43,7 @@ function Studio({ studio }: { studio: string }) {
 
 	if (load === "loading") {
 		return (
-			<div className="h-screen w-screen grid place-items-center">
+			<div className="h-dvh grid place-items-center">
 				<Spinner size="lg" label="Loading the studio" />
 			</div>
 		);
@@ -75,17 +77,47 @@ function Workspace({
 }) {
 	const [notice, setNotice] = useState("");
 
+	// on a phone or a portrait iPad the sidebar and the tracks take turns,
+	// with a tab bar at the bottom to go between them. from lg up they're
+	// side by side and this does nothing.
+	const [view, setView] = useState<View>("tracks");
+
 	// which bar or clip, or which loop or sound, is picked, and putting one in
 	// the other
-	const placing = usePlacing(studio, tracks, setNotice);
+	const picking = usePlacing(studio, tracks, setNotice);
+
+	// a bar picked first needs a sound next, so the sounds come up. a sound
+	// picked first, or one that's just been put in, goes back to the tracks.
+	const placing: Placing = {
+		...picking,
+		pickSlot: (slot) => {
+			const next = picking.pickSlot(slot);
+			if (next.slot) setView("sounds");
+			return next;
+		},
+		pickItem: (item) => {
+			const next = picking.pickItem(item);
+			if (next.item || next.put) setView("tracks");
+			return next;
+		},
+	};
 
 	const playback = usePlayback(tracks, bpm, setNotice);
 
 	const { exporting, download } = useExport(studio, tracks, bpm, setNotice);
 
 	return (
-		<div className="grid grid-cols-3">
+		// The whole window and never more, so the page itself doesn't scroll:
+		// the sidebar and the tracks each scroll inside themselves. Small
+		// screens stack the header, one of the two, and the tab bar. From lg
+		// up the sidebar is a column on the left and the header and the
+		// tracks share the rest.
+		<div className="h-dvh overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto] lg:grid-cols-[340px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)]">
 			<Sidebar
+				className={cn(
+					"row-start-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:block",
+					view === "sounds" ? "block" : "hidden"
+				)}
 				placing={placing}
 				bpm={bpm}
 				studio={studio}
@@ -93,23 +125,28 @@ function Workspace({
 				failed={setNotice}
 			/>
 
-			{/* Two thirds of the screen. The header is not inside the part that
-			    scrolls, so the tracks can't end up over or under it whichever
-			    way they're scrolled. */}
-			<main className="col-span-2 h-screen min-w-0 flex flex-col">
-				<Header
-					studio={studio}
-					bpm={bpm}
-					playback={playback.playback}
-					play={playback.play}
-					stop={playback.stop}
-					looping={playback.looping}
-					toggleLoop={playback.toggleLoop}
-					exporting={exporting}
-					download={download}
-					failed={setNotice}
-				/>
+			{/* The header is not inside the part that scrolls, so the tracks
+			    can't end up over or under it whichever way they're scrolled. */}
+			<Header
+				className="row-start-1 lg:col-start-2"
+				studio={studio}
+				bpm={bpm}
+				playback={playback.playback}
+				play={playback.play}
+				stop={playback.stop}
+				looping={playback.looping}
+				toggleLoop={playback.toggleLoop}
+				exporting={exporting}
+				download={download}
+				failed={setNotice}
+			/>
 
+			<main
+				className={cn(
+					"row-start-2 lg:col-start-2 min-w-0 min-h-0 flex-col lg:flex",
+					view === "tracks" ? "flex" : "hidden"
+				)}
+			>
 				<Tracks
 					placing={placing}
 					tracks={tracks}
@@ -124,6 +161,8 @@ function Workspace({
 					failed={setNotice}
 				/>
 			</main>
+
+			<TabBar className="row-start-3 lg:hidden" view={view} show={setView} />
 
 			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>

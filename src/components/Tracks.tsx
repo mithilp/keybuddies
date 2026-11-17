@@ -49,8 +49,9 @@ const Tracks = ({
 
 	return (
 		// this is the box that scrolls, down through the tracks and sideways
-		// along the song
-		<div className="flex-1 min-h-0 overflow-auto p-10 space-y-4">
+		// along the song. the page never does, and a swipe that hits the end
+		// stops here instead of dragging the page along.
+		<div className="flex-1 min-h-0 overflow-auto overscroll-contain p-4 sm:p-10 space-y-4">
 			{loading ? (
 				<div className="w-full grid place-items-center">
 					<Spinner size="lg" label="Loading the tracks" />

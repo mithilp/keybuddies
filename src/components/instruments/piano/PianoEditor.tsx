@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, ICON, SoundIcon } from "@/components/ui/icons";
 import { ErrorMessage } from "@/components/ui/feedback";
+import { panelFooter } from "@/components/Panel";
 
 // the keys shown to start with, C3 to F5
 const FIRST_NOTE = 48;
@@ -191,7 +192,7 @@ const PianoEditor = ({
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="flex-1 flex flex-col gap-4">
 			<PianoOptions
 				firstNote={firstNote}
 				setFirstNote={setFirstNote}
@@ -234,9 +235,9 @@ const PianoEditor = ({
 			/>
 
 			{/* always here too, greyed out until there's something to hear */}
-			<div className="space-y-2">
-				<div className="text-lg">Done Recording?</div>
-				<div className="flex gap-4">
+			<div className={panelFooter}>
+				<div className="hidden sm:block text-lg">Done Recording?</div>
+				<div className="flex flex-wrap gap-4">
 					<Button size="lg" onClick={listen} disabled={idle || listening}>
 						{listening ? (
 							<Spinner size="sm" label="Playing" />
@@ -259,7 +260,7 @@ const PianoEditor = ({
 						{saveLabel}
 					</Button>
 				</div>
-				{problem && <ErrorMessage>{problem}</ErrorMessage>}
+				{problem && <ErrorMessage className="w-full">{problem}</ErrorMessage>}
 			</div>
 		</div>
 	);
