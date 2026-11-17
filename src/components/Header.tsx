@@ -28,7 +28,7 @@ const Header = ({
 	const percent = Math.round((exporting ?? 0) * 100);
 
 	return (
-		<div className="flex sticky top-0 z-10 bg-pink justify-between border-black border-b-8 py-6 px-4">
+		<div className="relative z-10 shrink-0 flex flex-wrap gap-2 justify-between bg-pink border-black border-b-8 py-6 px-4">
 			<div>
 				<span className="leading-7 uppercase font-black">Studio Code</span>
 				<br />

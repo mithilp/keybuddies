@@ -307,10 +307,10 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 				studio={studio}
 			/>
 
-			{/* Right column (two-thirds of the screen) */}
-			<main className="col-span-2 h-screen overflow-y-scroll">
-				{/* Main content will go here */}
-
+			{/* Right column (two-thirds of the screen). The header is not inside
+			    the part that scrolls, so the tracks can't end up over or under
+			    it whichever way they're scrolled. */}
+			<main className="col-span-2 h-screen min-w-0 flex flex-col">
 				{/* header */}
 				<Header
 					studio={studio}

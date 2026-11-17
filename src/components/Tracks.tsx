@@ -44,7 +44,9 @@ const Tracks = ({
 	const beats = cells * CELL_BEATS;
 
 	return (
-		<div className="p-10 space-y-4 w-full overflow-x-scroll">
+		// this is the box that scrolls, down through the tracks and sideways
+		// along the song
+		<div className="flex-1 min-h-0 overflow-auto p-10 space-y-4">
 			{loading ? (
 				<div className="w-full grid place-items-center">
 					<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
