@@ -1,13 +1,7 @@
 import { db } from "@/utils/firebase";
-import { Track as TrackType } from "@/utils/types";
-import {
-	Timestamp,
-	addDoc,
-	collection,
-	doc,
-	updateDoc,
-} from "firebase/firestore";
-import { FaPlus, FaPlusCircle, FaTrash, FaVolumeMute } from "react-icons/fa";
+import { SelectedCell, Track as TrackType } from "@/utils/types";
+import { Timestamp, addDoc, collection } from "firebase/firestore";
+import { FaPlus } from "react-icons/fa";
 import { CELL_BEATS } from "@/utils/tempo";
 import Playhead, { BEAT_WIDTH } from "./Playhead";
 import Track from "./Track";
@@ -25,14 +19,14 @@ const Tracks = ({
 	liveBeat,
 	seek,
 }: {
-	setSelectedCell: Function;
-	selectedCell: any[];
+	setSelectedCell: (cell: SelectedCell) => void;
+	selectedCell: SelectedCell;
 	tracks: TrackType[];
-	bpm: string;
 	studio: string;
 	loading: boolean;
-	mute: (track: TrackType, index: number) => void;
-	muted: boolean[];
+	mute: (track: TrackType) => void;
+	// the ids of the muted tracks
+	muted: ReadonlySet<string>;
 	beat: number;
 	playing: boolean;
 	liveBeat: () => number;
@@ -43,7 +37,9 @@ const Tracks = ({
 	const beats = cells * CELL_BEATS;
 
 	return (
-		<div className="p-10 space-y-4 w-full overflow-x-scroll">
+		// this is the box that scrolls, down through the tracks and sideways
+		// along the song
+		<div className="flex-1 min-h-0 overflow-auto p-10 space-y-4">
 			{loading ? (
 				<div className="w-full grid place-items-center">
 					<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
@@ -71,36 +67,34 @@ const Tracks = ({
 									);
 								}}
 							>
-								{new Array(cells).fill(0).map((_: any, i: number) => (
+								{Array.from({ length: cells }, (_, i) => (
 									<div className="relative" key={i}>
 										<div className="w-56 font-bold pl-1">
 											{i * CELL_BEATS + 1}
 										</div>
 										<div className="absolute flex">
-											{new Array(CELL_BEATS)
-												.fill(0)
-												.map((_: any, i: number) => (
-													<div
-														key={i}
-														className="h-4 w-7 border-l-2 border-black"
-													></div>
-												))}
+											{Array.from({ length: CELL_BEATS }, (_, i) => (
+												<div
+													key={i}
+													className="h-4 w-7 border-l-2 border-black"
+												></div>
+											))}
 										</div>
 									</div>
 								))}
 							</div>
 
-							{tracks.map((track, index) => (
+							{tracks.map((track) => (
 								<Track
-									key={index}
+									key={track.id}
 									track={track}
 									selectedCell={selectedCell}
 									setSelectedCell={setSelectedCell}
 									studio={studio}
 									onMute={() => {
-										mute(track, index);
+										mute(track);
 									}}
-									muted={muted[index]}
+									muted={muted.has(track.id)}
 								/>
 							))}
 						</div>

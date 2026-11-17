@@ -1,5 +1,6 @@
 "use client";
 
+import { freeSoundCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
 import { addDoc, collection } from "firebase/firestore";
@@ -9,6 +10,7 @@ import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
 import { DRUM_STEPS } from "@/utils/drum-synth";
+import { PromptDialog } from "@/components/Dialog";
 
 const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const [open, setOpen] = useState(false);
@@ -43,20 +45,22 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 		setOpen(false);
 	};
 
-	const save = async () => {
-		const name = prompt("Name your beat");
+	const [naming, setNaming] = useState(false);
 
-		// cancelled, keep the beat on screen
-		if (name === null) return;
+	// whether a drum is hit on a step
+	const on = (voice: number, step: number) =>
+		sequence.some((note) => note.note == voice && note.start == step);
 
+	const save = async (name: string) => {
 		await addDoc(collection(db, `sounds`), {
-			name: name.trim() || "Drum beat",
+			name: name || "Drum beat",
 			type: "drum",
 			sequence: sequence,
 			in: [studio],
-			code: Math.floor(100000 + Math.random() * 900000).toString(),
+			code: await freeSoundCode(),
 		});
 
+		setNaming(false);
 		setSequence([]);
 		close();
 	};
@@ -84,7 +88,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
-							<button onClick={close}>
+							<button onClick={close} aria-label="Close" title="Close">
 								<FaCircleXmark size={32} />
 							</button>
 						</div>
@@ -99,13 +103,11 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 										{Array.from(Array(DRUM_STEPS)).map((_, i) => (
 											<button
 												key={i}
+												aria-label={`${sound.note}, step ${i + 1}`}
+												aria-pressed={on(sound.value, i)}
+												title={`${sound.note}, step ${i + 1}`}
 												onClick={() => {
-													if (
-														sequence.filter(
-															(note) =>
-																note.note == sound.value && note.start == i
-														).length > 0
-													) {
+													if (on(sound.value, i)) {
 														setSequence(
 															sequence.filter(
 																(note) =>
@@ -122,12 +124,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 													}
 												}}
 												className={`w-10 h-8 rounded-sm text-white my-1 ${
-													sequence.filter(
-														(note) =>
-															note.note == sound.value && note.start == i
-													).length > 0
-														? "bg-yellow"
-														: "bg-pink"
+													on(sound.value, i) ? "bg-yellow" : "bg-pink"
 												}`}
 											></button>
 										))}
@@ -146,7 +143,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 									{isPlaying ? <FaPause size={32} /> : <FaVolumeUp size={32} />}
 								</button>
 								<button
-									onClick={save}
+									onClick={() => setNaming(true)}
 									disabled={sequence.length == 0}
 									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
@@ -157,6 +154,18 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 						</div>
 					</div>
 				</div>
+			)}
+
+			{/* cancelling keeps the beat on screen and saves nothing */}
+			{naming && (
+				<PromptDialog
+					title="Name your beat"
+					label="Beat name"
+					placeholder="Drum beat"
+					submit="Save"
+					onSubmit={save}
+					onCancel={() => setNaming(false)}
+				/>
 			)}
 		</>
 	);

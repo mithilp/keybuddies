@@ -23,6 +23,20 @@ export type Song = {
 // an error whose message is written for whoever pressed play
 export class SongError extends Error {}
 
+// Everything about a song that can be heard, as one string: the tempo and
+// what's in every cell. Two songs with the same one render the same, a track
+// that only got a new name doesn't change it.
+export const songKey = (tracks: Track[], bpm: string) =>
+	JSON.stringify([
+		bpm,
+		tracks.map((track) => [
+			track.id,
+			track.notes.map((cell) =>
+				cell.type == "empty" ? "" : `${cell.type} ${cell.id}`
+			),
+		]),
+	]);
+
 // Copies one cell's audio into a track, starting at sample `at`. It never
 // writes more than a cell, so nothing can push the next cell late.
 const place = (

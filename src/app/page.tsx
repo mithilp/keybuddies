@@ -1,12 +1,13 @@
 import PendingButton from "@/components/PendingButton";
 import { db } from "@/utils/firebase";
+import { claimStudio } from "@/utils/codes";
+import { isStudioCode } from "@/utils/studio-code";
 import {
 	Timestamp,
 	addDoc,
 	collection,
 	doc,
 	getDoc,
-	setDoc,
 } from "firebase/firestore";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -20,7 +21,10 @@ export default async function Home({
 	const { error } = await searchParams;
 	async function joinStudio(formData: FormData) {
 		"use server";
-		const pin = formData.get("pin") as string;
+		const pin = String(formData.get("pin") ?? "").trim();
+
+		// firestore isn't asked about something that can't be a code
+		if (!isStudioCode(pin)) redirect(`/?error=not-found`);
 
 		const snapshot = await getDoc(doc(db, "studios", pin));
 		if (snapshot.exists()) {
@@ -30,14 +34,10 @@ export default async function Home({
 		}
 	}
 
-	async function createStudio(formData: FormData) {
+	async function createStudio() {
 		"use server";
-		const pin = Math.floor(100000 + Math.random() * 900000).toString();
-
-		await setDoc(doc(db, "studios", pin), {
-			createdAt: Timestamp.now(),
-			bpm: "120",
-		});
+		const pin = await claimStudio();
+		if (!pin) redirect(`/?error=no-code`);
 
 		for (let i = 0; i < 4; i++) {
 			await addDoc(collection(db, `studios/${pin}/tracks`), {
@@ -80,7 +80,14 @@ export default async function Home({
 					/>
 					<PendingButton text="Join a Studio!" />
 				</form>
-				<form action={createStudio} className="w-full">
+				<form action={createStudio} className="w-full space-y-2">
+					{error === "no-code" && (
+						<div>
+							<p className="text-red-500 text-center">
+								Couldn&apos;t make a studio. Try again!
+							</p>
+						</div>
+					)}
 					<PendingButton text="Create a Studio!" />
 				</form>
 			</div>

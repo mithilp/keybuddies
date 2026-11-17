@@ -28,7 +28,7 @@ const Header = ({
 	const percent = Math.round((exporting ?? 0) * 100);
 
 	return (
-		<div className="flex sticky top-0 z-10 bg-pink justify-between border-black border-b-8 py-6 px-4">
+		<div className="relative z-10 shrink-0 flex flex-wrap gap-2 justify-between bg-pink border-black border-b-8 py-6 px-4">
 			<div>
 				<span className="leading-7 uppercase font-black">Studio Code</span>
 				<br />
@@ -81,6 +81,14 @@ const Header = ({
 				</button>
 				<button
 					onClick={playback == "stopped" ? play : stop}
+					aria-label={
+						playback == "stopped"
+							? "Play the song"
+							: playback == "playing"
+							? "Pause the song"
+							: "Loading the song, press to cancel"
+					}
+					title={playback == "stopped" ? "Play" : "Pause"}
 					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
 				>
 					{playback == "loading" ? (

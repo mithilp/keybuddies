@@ -1,48 +1,60 @@
+import { soundsWithCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
-import {
-	arrayUnion,
-	collection,
-	doc,
-	getDoc,
-	getDocs,
-	query,
-	updateDoc,
-	where,
-} from "firebase/firestore";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
+import { PromptDialog } from "../Dialog";
 
 const AddSound = ({ studio }: { studio: string }) => {
-	return (
-		<button
-			onClick={async () => {
-				const id = prompt(
-					"Tell your friend to give you the code to their sound and enter that below."
-				);
-				if (id) {
-					try {
-						const querySnapshot = await getDocs(
-							query(collection(db, "sounds"), where("code", "==", id))
-						);
+	const [asking, setAsking] = useState(false);
 
-						if (querySnapshot.empty) {
-							alert("Invalid sound code");
-						} else {
-							await updateDoc(doc(db, "sounds", querySnapshot.docs[0].id), {
-								in: arrayUnion(studio),
-							});
-						}
-					} catch (error) {
-						alert("Invalid sound code");
-					}
-				}
-			}}
-			className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
-		>
-			<div className="flex items-center space-x-2">
-				<FaPlus size={32} />
-				<div className="text-xl">Add Sound</div>
-			</div>
-		</button>
+	// comes back with what's wrong with the code, or nothing when the sound
+	// was added
+	const add = async (code: string) => {
+		if (!code) return "Enter the code of a sound.";
+
+		const sounds = await soundsWithCode(code);
+
+		if (sounds.length === 0) return "No sound has that code.";
+
+		// two old sounds can still have the same code. sharing one of them
+		// again gives it a code of its own.
+		if (sounds.length > 1) {
+			return "More than one sound has that code. Ask your friend to share it again for a new one.";
+		}
+
+		await updateDoc(doc(db, "sounds", sounds[0].id), {
+			in: arrayUnion(studio),
+		});
+
+		setAsking(false);
+	};
+
+	return (
+		<>
+			<button
+				onClick={() => setAsking(true)}
+				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
+			>
+				<div className="flex items-center space-x-2">
+					<FaPlus size={32} />
+					<div className="text-xl">Add Sound</div>
+				</div>
+			</button>
+
+			{asking && (
+				<PromptDialog
+					title="Add a friend's sound"
+					hint="Ask your friend for the code to their sound and enter it here."
+					label="Sound code"
+					placeholder="6 digit code"
+					maxLength={6}
+					submit="Add Sound"
+					onSubmit={add}
+					onCancel={() => setAsking(false)}
+				/>
+			)}
+		</>
 	);
 };
 

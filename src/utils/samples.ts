@@ -2,7 +2,7 @@
 
 import crunker from "./crunker";
 import { loopUrl } from "./loops";
-import MIDI from "./MIDI";
+import MIDI, { HIGHEST_NOTE, LOWEST_NOTE } from "./MIDI";
 
 // Every audio file the app plays is fetched and decoded once per session and
 // kept here by url. Loop previews, the piano keys and song rendering all ask
@@ -46,9 +46,11 @@ export const loadLoop = (id: string, bpm: number | string) =>
 
 const pianoFiles = new Map(MIDI.map((midi) => [midi.value, midi.text]));
 
-// `note` is a MIDI number. The samples cover a real piano, A0 to C8, and the
-// note pickers go further than that in both directions.
-export const hasPianoNote = (note: number) => note >= 21 && note <= 108;
+// `note` is a MIDI number. The samples cover a real piano, A0 to C8. Old
+// recordings can have notes past either end, from when the pickers went
+// further.
+export const hasPianoNote = (note: number) =>
+	note >= LOWEST_NOTE && note <= HIGHEST_NOTE;
 
 export const loadPianoNote = (note: number) => {
 	if (!hasPianoNote(note)) {
