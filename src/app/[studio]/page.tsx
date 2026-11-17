@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";
 import TabBar, { View } from "@/components/TabBar";
+import PickBar from "@/components/PickBar";
 import StudioNotFound from "@/components/StudioNotFound";
 import StudioFailed from "@/components/StudioFailed";
 import { Spinner } from "@/components/ui/spinner";
@@ -112,10 +113,10 @@ function Workspace({
 		// screens stack the header, one of the two, and the tab bar. From lg
 		// up the sidebar is a column on the left and the header and the
 		// tracks share the rest.
-		<div className="h-dvh overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto] lg:grid-cols-[340px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)]">
+		<div className="h-dvh overflow-hidden grid grid-rows-[auto_minmax(0,1fr)_auto_auto] lg:grid-cols-[340px_minmax(0,1fr)] lg:grid-rows-[auto_minmax(0,1fr)_auto]">
 			<Sidebar
 				className={cn(
-					"row-start-2 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:block",
+					"row-start-2 lg:col-start-1 lg:row-start-1 lg:row-span-3 lg:block",
 					view === "sounds" ? "block" : "hidden"
 				)}
 				placing={placing}
@@ -162,7 +163,14 @@ function Workspace({
 				/>
 			</main>
 
-			<TabBar className="row-start-3 lg:hidden" view={view} show={setView} />
+			{/* what's picked, and a way out of it, whichever tab is up */}
+			<PickBar
+				className="row-start-3 lg:col-start-2"
+				placing={placing}
+				tracks={tracks}
+			/>
+
+			<TabBar className="row-start-4 lg:hidden" view={view} show={setView} />
 
 			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>

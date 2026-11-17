@@ -1,6 +1,4 @@
-import { useEffect, useRef, useState } from "react";
 import { setBpm } from "@/utils/studio";
-import { useEscape } from "@/utils/escape";
 import { TEMPOS } from "@/utils/tempo";
 import { Playback } from "@/utils/types";
 import { Tip } from "./ui/tooltip";
@@ -8,7 +6,7 @@ import { cn } from "@/utils/cn";
 import { selected } from "./ui/state";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/spinner";
-import { Popover } from "./ui/popover";
+import { Menu, MenuItem } from "./ui/menu";
 import {
 	BIG_ICON,
 	CheckIcon,
@@ -24,7 +22,7 @@ import {
 const square = "h-12 w-12 sm:h-16 sm:w-16 p-0";
 
 // On a phone there's room for the code, the tempo and Play, and the rest go
-// in here: a menu that opens under its button and says what each thing is.
+// in a menu that opens under its button and says what each thing is.
 const More = ({
 	looping,
 	toggleLoop,
@@ -38,73 +36,50 @@ const More = ({
 	download: () => void;
 	className?: string;
 }) => {
-	const [open, setOpen] = useState(false);
-	const box = useRef<HTMLDivElement>(null);
 	const percent = Math.round((exporting ?? 0) * 100);
 
-	useEscape(() => setOpen(false), open);
-
-	// a tap anywhere else closes it
-	useEffect(() => {
-		if (!open) return;
-
-		const away = (event: PointerEvent) => {
-			if (!box.current?.contains(event.target as Node)) setOpen(false);
-		};
-
-		document.addEventListener("pointerdown", away);
-		return () => document.removeEventListener("pointerdown", away);
-	}, [open]);
-
 	return (
-		<div ref={box} className={cn("relative", className)}>
-			<Button
-				onClick={() => setOpen(!open)}
-				aria-haspopup="menu"
-				aria-expanded={open}
-				aria-label={
-					exporting === null ? "More" : `More, making the download, ${percent}%`
-				}
-				className={square}
-			>
-				{exporting === null ? (
+		<Menu
+			className={className}
+			variant="secondary"
+			buttonClassName={square}
+			label={
+				exporting === null ? "More" : `More, making the download, ${percent}%`
+			}
+			button={
+				exporting === null ? (
 					<MoreIcon size={BIG_ICON} aria-hidden />
 				) : (
 					<span className="text-sm font-bold">{percent}%</span>
-				)}
-			</Button>
-
-			{open && (
-				<Popover className="right-0 top-full mt-2 w-56 flex-col items-stretch">
-					<Button
-						role="menuitem"
-						variant="ghost"
+				)
+			}
+		>
+			{(close) => (
+				<>
+					<MenuItem
 						onClick={() => {
-							setOpen(false);
+							close();
 							download();
 						}}
 						disabled={exporting !== null}
-						className="h-12 justify-start"
 					>
 						<DownloadIcon size={ICON} aria-hidden />
 						{exporting === null
 							? "Download the song"
 							: `Making it, ${percent}%`}
-					</Button>
-					<Button
+					</MenuItem>
+					<MenuItem
 						role="menuitemcheckbox"
 						aria-checked={looping}
-						variant="ghost"
 						onClick={toggleLoop}
-						className="h-12 justify-start"
 					>
 						<LoopIcon size={ICON} aria-hidden />
-						<span className="flex-1 text-left">Loop the song</span>
+						<span className="flex-1">Loop the song</span>
 						{looping && <CheckIcon size={ICON} aria-hidden />}
-					</Button>
-				</Popover>
+					</MenuItem>
+				</>
 			)}
-		</div>
+		</Menu>
 	);
 };
 

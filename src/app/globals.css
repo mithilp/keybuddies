@@ -21,8 +21,21 @@
 }
 
 @layer base {
+	/* a double tap doesn't zoom and a tap doesn't wait to see if it's one.
+	   pinch zoom still works. the few things that drag (the playhead, a
+	   picked piano note) turn panning off for themselves. */
+	html {
+		touch-action: manipulation;
+	}
+
 	body {
 		@apply bg-page text-ink;
+	}
+
+	/* holding a finger on a button shows what it does (see Tip), not the
+	   phone's own menu */
+	button {
+		-webkit-touch-callout: none;
 	}
 
 	/* one focus ring for everything, only for the keyboard */

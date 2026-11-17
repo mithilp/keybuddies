@@ -36,6 +36,7 @@ const AddSound = ({ studio }: { studio: string }) => {
 					label="Sound code"
 					placeholder="6 digit code"
 					maxLength={6}
+					numeric
 					submit="Add Sound"
 					onSubmit={add}
 					onCancel={() => setAsking(false)}

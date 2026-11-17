@@ -150,7 +150,7 @@ const Track = ({
 								</div>
 								<div className="flex items-center justify-between space-x-1">
 									<select
-										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0"
+										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0 pointer-coarse:min-h-11"
 										aria-label={`Length of ${clip.name} on bar ${clip.start + 1} of ${track.name}`}
 										value={clip.bars}
 										// the clip behind this is what gets picked otherwise
@@ -172,7 +172,7 @@ const Track = ({
 									<Tip label="Take out">
 										<button
 											type="button"
-											className="grid place-items-center rounded"
+											className="grid place-items-center rounded min-w-8 min-h-8 pointer-coarse:min-w-11 pointer-coarse:min-h-11"
 											aria-label={`Take ${clip.name} off bar ${clip.start + 1} of ${track.name}`}
 											onClick={(event) => {
 												// the clip behind this button is what gets picked

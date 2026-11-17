@@ -132,7 +132,7 @@ const Drum = ({
 											className="flex gap-0.5 px-1 border-l-hair border-ink font-bold"
 										>
 											{QUARTERS.map((quarter) => (
-												<div key={quarter} className="w-6">
+												<div key={quarter} className="w-6 pointer-coarse:w-11">
 													{quarter === 0 && beat + 1}
 												</div>
 											))}
@@ -162,7 +162,8 @@ const Drum = ({
 															aria-pressed={hit}
 															onClick={() => toggle(sound.value, step)}
 															className={cn(
-																"w-6 h-8 border-hair border-ink",
+																// bigger under a finger, the numbers above match
+															"w-6 h-8 pointer-coarse:w-11 pointer-coarse:h-11 border-hair border-ink",
 																hit ? selected : "bg-paper hover:bg-surface"
 															)}
 														></button>

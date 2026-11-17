@@ -60,6 +60,9 @@ export default async function Home({
 						required
 						minLength={6}
 						name="pin"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						autoComplete="off"
 						aria-label="Studio code"
 						className="w-full text-center"
 						placeholder="Studio Code"
