@@ -1,15 +1,14 @@
 import type { Cell } from "./types";
 
 // The library: the loops that come with the app. They're kept in sets, and
-// a set is the parts of one song, made to be stacked on top of each other.
-// Another set is one more entry in `library`.
+// another set is one more entry in `library`.
 //
 // A loop's id is what a cell keeps and what its files are named after, so
 // an id that's been out in the world doesn't change.
 export type LibraryLoop = {
 	id: string;
 	name: string;
-	// one line on what part of the song it is
+	// one line on what it is
 	description: string;
 };
 
@@ -21,54 +20,53 @@ export type LibrarySet = {
 
 export const library: LibrarySet[] = [
 	{
-		name: "Love Story",
-		description:
-			"Nine parts of one song. They're made to go together, so stack them on different tracks.",
+		name: "Loops",
+		description: "Bass, piano and drum loops. Each one is 8 beats.",
 		loops: [
 			{
 				id: "bass_1",
 				name: "Bass 1",
-				description: "Bass part 1 of 4.",
+				description: "One of four bass loops.",
 			},
 			{
 				id: "bass_2",
 				name: "Bass 2",
-				description: "Bass part 2 of 4.",
+				description: "One of four bass loops.",
 			},
 			{
 				id: "bass_3",
 				name: "Bass 3",
-				description: "Bass part 3 of 4.",
+				description: "One of four bass loops.",
 			},
 			{
 				id: "bass_4",
 				name: "Bass 4",
-				description: "Bass part 4 of 4.",
+				description: "One of four bass loops.",
 			},
 			{
 				id: "piano_1",
 				name: "Piano 1",
-				description: "Piano part 1 of 4.",
+				description: "One of four piano loops.",
 			},
 			{
 				id: "piano_2",
 				name: "Piano 2",
-				description: "Piano part 2 of 4.",
+				description: "One of four piano loops.",
 			},
 			{
 				id: "piano_3",
 				name: "Piano 3",
-				description: "Piano part 3 of 4.",
+				description: "One of four piano loops.",
 			},
 			{
 				id: "piano_4",
 				name: "Piano 4",
-				description: "Piano part 4 of 4.",
+				description: "One of four piano loops.",
 			},
 			{
 				id: "love_story_drums",
 				name: "Love Story Drums",
-				description: "The drum part.",
+				description: "The drum loop.",
 			},
 		],
 	},
