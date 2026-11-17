@@ -4,7 +4,15 @@ import { Placing } from "@/utils/placing";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
 import { FaPlus } from "react-icons/fa";
 import { BAR_BEATS } from "@/utils/tempo";
-import Playhead, { BEAT_WIDTH } from "./Playhead";
+import Playhead from "./Playhead";
+import {
+	BAR_WIDTH,
+	BEAT_WIDTH,
+	RULER_HEIGHT,
+	TICK_HEIGHT,
+	TICK_WIDTH,
+	beatAt,
+} from "@/utils/grid";
 import Track from "./Track";
 
 const Tracks = ({
@@ -59,24 +67,33 @@ const Tracks = ({
 										event.clientX -
 										event.currentTarget.getBoundingClientRect().left;
 
-									// the nearest beat, but never the very end
-									seek(
-										Math.max(0, Math.min(Math.round(x / BEAT_WIDTH), beats - 1))
-									);
+									seek(beatAt(x, beats));
 								}}
 							>
 								{Array.from({ length: bars }, (_, i) => (
 									<div className="relative" key={i}>
-										{/* one bar, numbered. h-6, the playhead starts right
+										{/* one bar, numbered. the playhead starts right
 										    under it */}
-										<div className="w-28 h-6 leading-6 font-bold pl-1">
+										<div
+											className="font-bold pl-1"
+											style={{
+												width: BAR_WIDTH,
+												height: RULER_HEIGHT,
+												lineHeight: `${RULER_HEIGHT}px`,
+											}}
+										>
 											{i + 1}
 										</div>
 										<div className="absolute flex">
 											{Array.from({ length: BAR_BEATS }, (_, i) => (
 												<div
 													key={i}
-													className="h-4 w-7 border-l-2 border-black"
+													className="border-black"
+													style={{
+														width: BEAT_WIDTH,
+														height: TICK_HEIGHT,
+														borderLeftWidth: TICK_WIDTH,
+													}}
 												></div>
 											))}
 										</div>

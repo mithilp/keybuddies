@@ -19,13 +19,7 @@ import {
 	FaVolumeMute,
 	FaVolumeUp,
 } from "react-icons/fa";
-import { BEAT_WIDTH } from "./Playhead";
-import { BAR_BEATS } from "@/utils/tempo";
-
-// a bar on a track lines up with 4 beats on the ruler. what's in it is a gap
-// narrower, so clips next to each other don't touch.
-const BAR_WIDTH = BAR_BEATS * BEAT_WIDTH;
-const GAP = 8;
+import { BAR_WIDTH, CLIP_GAP } from "@/utils/grid";
 
 const barsLabel = (bars: number) => (bars == 1 ? "1 bar" : `${bars} bars`);
 
@@ -114,7 +108,7 @@ const Track = ({
 								<div
 									key={`empty ${bar}`}
 									className={`absolute top-0 h-24 bg-white/60 p-1 rounded-xl border-8 cursor-pointer text-sm ${border(picked)}`}
-									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - GAP }}
+									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - CLIP_GAP }}
 									aria-label={`Bar ${bar + 1} of ${track.name}, empty`}
 									onClick={() => {
 										placing.pickSlot({ track: track.id, bar: bar, clip: null });
@@ -136,7 +130,7 @@ const Track = ({
 								className={`absolute top-0 h-24 flex flex-col justify-between bg-yellow p-1 rounded-xl border-8 cursor-pointer ${border(picked)}`}
 								style={{
 									left: clip.start * BAR_WIDTH,
-									width: clip.bars * BAR_WIDTH - GAP,
+									width: clip.bars * BAR_WIDTH - CLIP_GAP,
 								}}
 								onClick={() => {
 									placing.pickSlot({
