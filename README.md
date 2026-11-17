@@ -63,7 +63,7 @@ For a piano sound `note` is a MIDI number and `start` and `end` are in eighths o
 
 ## Running it
 
-You need Node 24 and a Firebase project with Firestore turned on. The app reads and writes without signing in, so the Firestore rules have to allow that.
+You need Node 24 and a Firebase project with Firestore turned on. The app reads and writes without signing in, so the rules in `firestore.rules` let anyone in, but only to the paths and shapes above.
 
 ```bash
 npm install
@@ -88,3 +88,17 @@ npm run lint    # eslint
 npm test        # timing, drum and library tests, run with node --test
 npx tsc --noEmit
 ```
+
+## Firestore rules
+
+The rules are in `firestore.rules`. With no sign-in they can't say who writes, only what: studio codes are 6 digits, studios and sounds can't be deleted (the app never does), fields like `createdAt`, `name` and `type` don't change, and lists and names have caps far past what the app makes. Updates only check the fields they change, so studios, tracks and sounds from 2024 with fields the app doesn't use any more still work.
+
+The tests in `tests/rules` run every read and write the app makes against the Firestore emulator, plus the ones that should be turned down:
+
+```bash
+npm run test:rules
+```
+
+That needs Java 11 or newer. It runs firebase-tools 13 through npx under the `demo-keybuddies` project, so it never touches the real database. The emulator starts for the run and stops after it.
+
+Changing `firestore.rules` doesn't change the live database. Publish them by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.
