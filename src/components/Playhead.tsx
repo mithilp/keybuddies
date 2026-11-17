@@ -1,10 +1,17 @@
-import { PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import {
+	MouseEvent,
+	PointerEvent,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Tip } from "./ui/tooltip";
 
 // a beat on the ruler is one w-7 tick
 export const BEAT_WIDTH = 28;
 
-// how far the pointer has to go before a press on the arrow is a drag, in px
+// how far the pointer has to go before a press on the playhead is a drag, in px
 const SLACK = 3;
 
 // The line that shows where the song is, with an arrow on top of it. It lives
@@ -15,9 +22,9 @@ const SLACK = 3;
 // `beat` is where it rests. While the song plays it asks `liveBeat` on every
 // frame and moves itself, without re-rendering anything.
 //
-// The arrow can be dragged along the ruler. It goes from beat to beat like a
-// click on the ruler does, and `seek` is told where it was let go. The line
-// under it can't be touched, so it never gets in the way of a cell.
+// The arrow and the line under it can both be dragged sideways. They go from
+// beat to beat like a click on the ruler does, and `seek` is told where they
+// were let go.
 const Playhead = ({
 	beat,
 	playing,
@@ -46,7 +53,7 @@ const Playhead = ({
 				}px)`;
 			}
 		},
-		[beats]
+		[beats],
 	);
 
 	// The drag that's going on, if one is. `from` is where the pointer went
@@ -113,22 +120,33 @@ const Playhead = ({
 			0,
 			Math.min(
 				Math.round((along(event) - held.offset) / BEAT_WIDTH),
-				beats - 1
-			)
+				beats - 1,
+			),
 		);
 		show(held.to);
 	};
 
-	// The song jumps when the arrow is let go, not on the way: every beat it
-	// passes would be a jump of its own.
-	const release = () => {
+	// The song jumps when the playhead is let go, not on the way: every beat
+	// it passes would be a jump of its own.
+	//
+	// A press that never turned into a drag was meant for whatever is under
+	// the playhead (a cell, the ruler), so it gets the click instead.
+	const release = (event: PointerEvent<HTMLDivElement>) => {
 		const held = drag.current;
 		if (!held) return;
 
 		drag.current = null;
 		setDragging(false);
 
-		if (held.to !== null) seek(held.to);
+		if (held.to !== null) {
+			seek(held.to);
+			return;
+		}
+
+		const under = document
+			.elementsFromPoint(event.clientX, event.clientY)
+			.find((el) => !line.current?.contains(el));
+		if (under instanceof HTMLElement) under.click();
 	};
 
 	// the drag was taken away (a touch that turned into something else), the
@@ -136,6 +154,17 @@ const Playhead = ({
 	const cancel = () => {
 		drag.current = null;
 		setDragging(false);
+	};
+
+	// the arrow and the line are both handles for the same drag
+	const handle = {
+		// no text gets selected on the way
+		onMouseDown: (event: MouseEvent) => event.preventDefault(),
+		onPointerDown: grab,
+		onPointerMove: move,
+		onPointerUp: release,
+		onPointerCancel: cancel,
+		onLostPointerCapture: cancel,
 	};
 
 	// The line is 8px wide and pulled left so its middle sits on the middle of
@@ -146,20 +175,15 @@ const Playhead = ({
 			aria-hidden
 			className="pointer-events-none absolute top-6 bottom-0 left-0 w-0"
 		>
-			<div className="absolute inset-y-0 -left-[3px] w-2 bg-blue border-x-2 border-black"></div>
+			<div
+				{...handle}
+				className="pointer-events-auto absolute inset-y-0 -left-[3px] w-2 bg-blue border-x-2 border-black cursor-ew-resize touch-none select-none"
+			></div>
 
 			<Tip label="Drag to move through the song">
 				<div
-					// no text gets selected on the way
-					onMouseDown={(event) => event.preventDefault()}
-					onPointerDown={grab}
-					onPointerMove={move}
-					onPointerUp={release}
-					onPointerCancel={cancel}
-					onLostPointerCapture={cancel}
-					className={`pointer-events-auto absolute top-0 -left-[13px] w-7 h-6 touch-none select-none ${
-						dragging ? "cursor-grabbing" : "cursor-grab"
-					}`}
+					{...handle}
+					className="pointer-events-auto absolute top-0 -left-[13px] w-7 h-6 touch-none select-none cursor-ew-resize"
 				>
 					<svg
 						viewBox="0 0 28 24"
