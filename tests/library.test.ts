@@ -4,19 +4,24 @@ import { test } from "node:test";
 import loops, {
 	cellOnlyLoops,
 	library,
+	loopBars,
 	loopUrl,
 	studioLoops,
 } from "../src/utils/loops.ts";
 import { TEMPOS } from "../src/utils/tempo.ts";
-import type { Cell } from "../src/utils/types.ts";
+import { readTrack } from "../src/utils/clips.ts";
+import type { Item } from "../src/utils/types.ts";
 
+// tracks as old docs have them, cells with empty ones in between, read the
+// way the studio page reads them
+type Cell = { type: string; name: string; id: string };
 const empty: Cell = { type: "empty", name: "", id: "" };
 const loop = (id: string, name = id): Cell => ({ type: "loop", name, id });
 const sound = (id: string): Cell => ({ type: "sound", name: id, id });
 
-const track = (...notes: Cell[]) => ({ notes });
+const track = (...notes: Cell[]) => readTrack({ notes });
 
-const ids = (cells: Cell[]) => cells.map((cell) => cell.id);
+const ids = (cells: Item[]) => cells.map((cell) => cell.id);
 
 test("every library loop has a file at every tempo", () => {
 	for (const { id } of loops) {
@@ -92,8 +97,8 @@ test("a studio from before the library lists the loops in its cells", () => {
 
 	// once each, in the library's order, as the cells they make
 	assert.deepEqual(studioLoops(tracks, undefined, undefined), [
-		{ type: "loop", id: "bass_1", name: "Bass 1" },
-		{ type: "loop", id: "piano_2", name: "Piano 2" },
+		{ type: "loop", id: "bass_1", name: "Bass 1", bars: 2 },
+		{ type: "loop", id: "piano_2", name: "Piano 2", bars: 2 },
 	]);
 });
 
@@ -130,8 +135,8 @@ test("a loop in a cell that the library doesn't have goes last, by the cell's na
 	const tracks = [track(loop("old_synth", "Old Synth"), loop("bass_1"))];
 
 	assert.deepEqual(studioLoops(tracks, undefined, undefined), [
-		{ type: "loop", id: "bass_1", name: "Bass 1" },
-		{ type: "loop", id: "old_synth", name: "Old Synth" },
+		{ type: "loop", id: "bass_1", name: "Bass 1", bars: 2 },
+		{ type: "loop", id: "old_synth", name: "Old Synth", bars: 2 },
 	]);
 
 	assert.deepEqual(ids(studioLoops(tracks, [], ["old_synth"])), ["bass_1"]);
@@ -139,9 +144,15 @@ test("a loop in a cell that the library doesn't have goes last, by the cell's na
 
 test("ids the library doesn't know and fields that aren't lists are ignored", () => {
 	assert.deepEqual(studioLoops([], ["nope", 7, null, "bass_1"], "bass_1"), [
-		{ type: "loop", id: "bass_1", name: "Bass 1" },
+		{ type: "loop", id: "bass_1", name: "Bass 1", bars: 2 },
 	]);
 	assert.deepEqual(studioLoops([], { bass_1: true }, 3), []);
+});
+
+test("a loop's length comes from the library, 2 bars when it doesn't say", () => {
+	assert.equal(loopBars("bass_1"), 2);
+	assert.equal(loopBars("old_synth"), 2);
+	for (const loop of loops) assert.equal(loopBars(loop.id), loop.bars ?? 2);
 });
 
 test("the loops that only cells hold are the ones to write down", () => {

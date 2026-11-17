@@ -3,7 +3,7 @@ import { Track as TrackType } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
 import { FaPlus } from "react-icons/fa";
-import { CELL_BEATS } from "@/utils/tempo";
+import { BAR_BEATS } from "@/utils/tempo";
 import Playhead, { BEAT_WIDTH } from "./Playhead";
 import Track from "./Track";
 
@@ -35,8 +35,8 @@ const Tracks = ({
 	failed: (message: string) => void;
 }) => {
 	// the song is as long as its longest track
-	const cells = Math.max(0, ...tracks.map((track) => track.notes.length));
-	const beats = cells * CELL_BEATS;
+	const bars = Math.max(0, ...tracks.map((track) => track.bars));
+	const beats = bars * BAR_BEATS;
 
 	return (
 		// this is the box that scrolls, down through the tracks and sideways
@@ -68,14 +68,15 @@ const Tracks = ({
 									);
 								}}
 							>
-								{Array.from({ length: cells }, (_, i) => (
+								{Array.from({ length: bars }, (_, i) => (
 									<div className="relative" key={i}>
-										{/* h-6, the playhead starts right under it */}
-										<div className="w-56 h-6 leading-6 font-bold pl-1">
-											{i * CELL_BEATS + 1}
+										{/* one bar, numbered. h-6, the playhead starts right
+										    under it */}
+										<div className="w-28 h-6 leading-6 font-bold pl-1">
+											{i + 1}
 										</div>
 										<div className="absolute flex">
-											{Array.from({ length: CELL_BEATS }, (_, i) => (
+											{Array.from({ length: BAR_BEATS }, (_, i) => (
 												<div
 													key={i}
 													className="h-4 w-7 border-l-2 border-black"
@@ -119,12 +120,10 @@ const Tracks = ({
 									createdAt: Timestamp.now(),
 									name: `Track ${tracks.length + 1}`,
 									order: tracks.length,
-									notes: [
-										{ type: "empty", name: "", id: "" },
-										{ type: "empty", name: "", id: "" },
-										{ type: "empty", name: "", id: "" },
-										{ type: "empty", name: "", id: "" },
-									],
+									// `notes` is only there so a tab still on the old app can show it
+									notes: [],
+									clips: [],
+									bars: 8,
 								});
 							}}
 							className="bg-yellow border-8 p-2 border-black flex items-center space-x-2 rounded-xl text-xl"

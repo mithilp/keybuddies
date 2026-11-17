@@ -29,23 +29,37 @@ export const drumVoices: DrumVoice[] = [
 	"tom-low",
 ];
 
-// A beat is one cell: 8 beats cut into sixteenth note steps, 4 to a beat,
-// so a hat or a snare can roll.
+// Beats are on sixteenth note steps, 4 to a beat and 16 to a bar, so a hat
+// or a snare can roll.
+export const DRUM_BAR_STEPS = 16;
+
+// the steps in a 2 bar beat, which is what every beat was before sounds had
+// a length
 export const DRUM_STEPS = 32;
 
-// Beats saved before the grid went to sixteenths were on half beats, 16 to a
-// cell, and don't say how many steps they have.
+// Beats saved before the grid went to sixteenths were on half beats, 16 to
+// 2 bars, and don't say how many steps they have.
 export const OLD_DRUM_STEPS = 16;
 
-// A saved drum beat with its hits on this grid. `steps` is the grid it was
-// saved on, the sound's `steps` field. This is the one place an old beat is
-// read differently, it's never rewritten, and everything after this counts
-// in DRUM_STEPS.
-export const drumBeat = (sequence: Key[], steps: number | undefined) => {
-	const saved = typeof steps === "number" && steps > 0 ? steps : OLD_DRUM_STEPS;
-	if (saved === DRUM_STEPS) return sequence;
+// how many sixteenths a beat `bars` long has. a sound with no length is 2
+// bars.
+export const drumSteps = (bars: unknown) =>
+	(bars === 1 || bars === 4 ? bars : 2) * DRUM_BAR_STEPS;
 
-	const scale = DRUM_STEPS / saved;
+// A saved drum beat with its hits on sixteenths. `steps` and `bars` are the
+// sound's fields: a beat with both is already on sixteenths (steps is
+// always bars * 16), and a beat from before sounds had a length is 2 bars on
+// whatever grid `steps` says, half beats when it says nothing. This is the
+// one place an old beat is read differently, it's never rewritten.
+export const drumBeat = (
+	sequence: Key[],
+	steps: number | undefined,
+	bars?: number
+) => {
+	const saved = typeof steps === "number" && steps > 0 ? steps : OLD_DRUM_STEPS;
+	const scale = drumSteps(bars) / saved;
+	if (scale === 1) return sequence;
+
 	return sequence.map((key) => ({
 		note: key.note,
 		start: key.start * scale,
@@ -352,12 +366,14 @@ const voiceSamples = (voice: DrumVoice, sampleRate: number) => {
 // Mixes a beat down to mono samples. Each hit starts at `start` sixteenths,
 // a beat that was saved on another grid goes through drumBeat first.
 // Pass `frames` to get exactly that many samples (hits that ring past the end
-// are faded out), otherwise the result is as long as the beat needs.
+// are faded out), otherwise the result is as long as the beat needs. Hits
+// past `steps`, the length of the beat, are left out.
 export const mixDrums = (
 	sequence: { note: number; start: number }[],
 	bpm: number,
 	sampleRate: number,
-	frames?: number
+	frames?: number,
+	steps = DRUM_STEPS
 ) => {
 	// a quarter of a beat, in samples. twice this is exactly the old half beat
 	// step, so an old beat's hits land on the same samples as they always did.
@@ -368,7 +384,7 @@ export const mixDrums = (
 			(key) =>
 				drumVoices[key.note] !== undefined &&
 				key.start >= 0 &&
-				key.start < DRUM_STEPS
+				key.start < steps
 		)
 		.map((key) => ({
 			at: Math.round(key.start * step),

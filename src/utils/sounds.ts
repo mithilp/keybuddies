@@ -29,8 +29,10 @@ export const saveSound = async (
 	const batch = writeBatch(db);
 
 	const data = { ...sound };
-	// firestore won't take an undefined field. a sound without steps has none.
+	// firestore won't take an undefined field. a sound without steps or a
+	// length has none.
 	if (data.steps === undefined) delete data.steps;
+	if (data.bars === undefined) delete data.bars;
 
 	batch.set(ref, data);
 	batch.set(doc(soundList(studio), ref.id), {});
@@ -42,6 +44,6 @@ export const addSound = (studio: string, id: string) =>
 	setDoc(doc(soundList(studio), id), {});
 
 // Takes a sound out of a studio. It stays in any other studio that has it,
-// and the cells that hold it keep playing it.
+// and the clips that hold it keep playing it.
 export const removeSound = (studio: string, id: string) =>
 	deleteDoc(doc(soundList(studio), id));

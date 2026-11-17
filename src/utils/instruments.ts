@@ -2,31 +2,35 @@
 
 import { Key, Sound } from "./types";
 import crunker, { wake } from "./crunker";
-import { drumBeat, mixDrums } from "./drum-synth";
+import { drumBeat, drumSteps, mixDrums } from "./drum-synth";
 import { pianoNotes } from "./piano-notes";
 import { preview, stopPreview } from "./preview";
 import { hasPianoNote, loadPianoNote } from "./samples";
-import { cellFrames, PIANO_STEPS } from "./tempo";
+import { framesOf, PIANO_BAR_STEPS } from "./tempo";
+import { soundBars } from "./clips";
 
 // seconds a piano note takes to fade when it's cut off before its sample
 // ends, so it doesn't click
 const RELEASE = 0.005;
 
-// A piano recording as a stereo buffer `frames` samples long. Every note is
-// added straight into the buffer at the sample it starts on.
-const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
+// A piano recording `bars` long as a stereo buffer of exactly that many
+// samples. Every note is added straight into the buffer at the sample it
+// starts on.
+const renderPiano = async (music: Array<Key>, bpm: number, bars: number) => {
 	const context = crunker!.context;
-	const step = cellFrames(bpm, context.sampleRate) / PIANO_STEPS;
+	const frames = framesOf(bars, bpm, context.sampleRate);
+	const steps = bars * PIANO_BAR_STEPS;
+	const step = frames / steps;
 
 	// only the notes that can sound, each at least one step long
-	const playable = pianoNotes(music);
+	const playable = pianoNotes(music, steps);
 
 	// each different note is loaded once, and all of them at the same time
 	const notes = [...new Set(playable.map((key) => key.note))];
 	const buffers = await Promise.all(notes.map(loadPianoNote));
 	const samples = new Map(notes.map((note, index) => [note, buffers[index]]));
 
-	const cell = context.createBuffer(2, frames, context.sampleRate);
+	const out = context.createBuffer(2, frames, context.sampleRate);
 	const fade = Math.round(RELEASE * context.sampleRate);
 
 	for (const key of playable) {
@@ -34,7 +38,7 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 		const at = Math.round(key.start * step);
 
 		// a note lasts until its end, the end of its sample or the end of the
-		// cell, whichever is first
+		// sound, whichever is first
 		const held = Math.round((key.end - key.start) * step);
 		const length = Math.min(held, sample.length, frames - at);
 		if (length <= 0) continue;
@@ -47,7 +51,7 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 			const from = sample.getChannelData(
 				Math.min(channel, sample.numberOfChannels - 1)
 			);
-			const to = cell.getChannelData(channel);
+			const to = out.getChannelData(channel);
 
 			for (let i = 0; i < length; i++) {
 				const left = length - i;
@@ -56,15 +60,21 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 		}
 	}
 
-	return cell;
+	return out;
 };
 
 // A drum beat as a buffer on crunker's context. Stereo, so it sits in a
 // track the same way everything else does. `frames` forces an exact length.
-// The hits are on the sixteenth grid, see drumBeat.
-export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
+// The hits are on the sixteenth grid, see drumBeat, and the beat is `steps`
+// of them long.
+export const renderDrum = (
+	music: Array<Key>,
+	bpm: number,
+	frames?: number,
+	steps?: number
+) => {
 	const context = crunker!.context;
-	const samples = mixDrums(music, bpm, context.sampleRate, frames);
+	const samples = mixDrums(music, bpm, context.sampleRate, frames, steps);
 
 	const buffer = context.createBuffer(2, samples.length, context.sampleRate);
 	buffer.getChannelData(0).set(samples);
@@ -73,19 +83,24 @@ export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
 	return buffer;
 };
 
-// One recorded sound as a buffer exactly one cell long, ready to go into a
-// track or to be listened to on its own.
+// One recorded sound as a buffer exactly as long as the sound, 1, 2 or 4
+// bars, ready to go into a track or to be listened to on its own.
 export const renderSound = async (
-	sound: Pick<Sound, "type" | "sequence" | "steps">,
+	sound: Pick<Sound, "type" | "sequence" | "steps" | "bars">,
 	bpm: number
 ) => {
-	const frames = cellFrames(bpm, crunker!.context.sampleRate);
+	const bars = soundBars(sound.bars);
 
 	if (sound.type === "drum") {
-		return renderDrum(drumBeat(sound.sequence, sound.steps), bpm, frames);
+		return renderDrum(
+			drumBeat(sound.sequence, sound.steps, sound.bars),
+			bpm,
+			framesOf(bars, bpm, crunker!.context.sampleRate),
+			drumSteps(bars)
+		);
 	}
 
-	return renderPiano(sound.sequence, bpm, frames);
+	return renderPiano(sound.sequence, bpm, bars);
 };
 
 const start = (buffer: AudioBuffer) => {
@@ -101,15 +116,25 @@ const start = (buffer: AudioBuffer) => {
 
 // Listening to a sound on its own goes through the preview slot, so it
 // stops whatever loop or sound was being listened to before.
-export const playPiano = (music: Array<Key>, bpm: number) =>
-	preview("piano", () => renderSound({ type: "piano", sequence: music }, bpm));
+export const playPiano = (
+	music: Array<Key>,
+	bpm: number,
+	bars: number | undefined
+) =>
+	preview("piano", () =>
+		renderSound({ type: "piano", sequence: music, bars: soundBars(bars) }, bpm)
+	);
 
-// `steps` is the grid the beat is on, the sound's `steps` field
+// `steps` and `bars` are the sound's fields, see drumBeat
 export const playDrum = (
 	music: Array<Key>,
 	bpm: number,
-	steps: number | undefined
-) => preview("drum", () => renderDrum(drumBeat(music, steps), bpm));
+	steps: number | undefined,
+	bars: number | undefined
+) =>
+	preview("drum", () =>
+		renderDrum(drumBeat(music, steps, bars), bpm, undefined, drumSteps(bars))
+	);
 
 export const stopDrum = () => stopPreview("drum");
 

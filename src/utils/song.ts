@@ -5,13 +5,15 @@ import crunker from "./crunker";
 import { db } from "./firebase";
 import { renderSound } from "./instruments";
 import { loadLoop } from "./samples";
-import { cellFrames } from "./tempo";
-import { Cell, Track } from "./types";
+import { loopBars } from "./loops";
+import { fill, soundBars } from "./clips";
+import { framesOf } from "./tempo";
+import { Clip, Track } from "./types";
 
 export type RenderedTrack = { track: string; buffer: AudioBuffer };
 
 // A song ready to play. It's as long as its longest track, and every track's
-// buffer is that long too, with silence after its last cell. Same length
+// buffer is that long too, with silence where it has no clips. Same length
 // buffers are what let the tracks loop together without drifting.
 export type Song = {
 	tracks: RenderedTrack[];
@@ -23,44 +25,49 @@ export type Song = {
 // an error whose message is written for whoever pressed play
 export class SongError extends Error {}
 
-// Everything about a song that can be heard, as one string: the tempo and
-// what's in every cell. Two songs with the same one render the same, a track
-// that only got a new name doesn't change it.
+// Everything about a song that can be heard, as one string: the tempo, how
+// long every track is and where every clip is. Two songs with the same one
+// render the same, a track that only got a new name doesn't change it.
 export const songKey = (tracks: Track[], bpm: string) =>
 	JSON.stringify([
 		bpm,
 		tracks.map((track) => [
 			track.id,
-			track.notes.map((cell) =>
-				cell.type == "empty" ? "" : `${cell.type} ${cell.id}`
+			track.bars,
+			track.clips.map(
+				(clip) => `${clip.type} ${clip.id} ${clip.start} ${clip.bars}`
 			),
 		]),
 	]);
 
-// Copies one cell's audio into a track, starting at sample `at`. It never
-// writes more than a cell, so nothing can push the next cell late.
+// Copies the start of a loop or a sound into a track, at sample `at`. It
+// never writes more than `room`, so nothing can push the next bar late.
 const place = (
 	track: AudioBuffer,
-	cell: AudioBuffer,
+	source: AudioBuffer,
 	at: number,
-	frames: number
+	room: number
 ) => {
-	const length = Math.min(cell.length, frames);
+	const length = Math.min(source.length, room, track.length - at);
+	if (length <= 0) return;
 
 	for (let channel = 0; channel < track.numberOfChannels; channel++) {
 		// mono goes to both sides
-		const from = cell.getChannelData(
-			Math.min(channel, cell.numberOfChannels - 1)
+		const from = source.getChannelData(
+			Math.min(channel, source.numberOfChannels - 1)
 		);
 		track.getChannelData(channel).set(from.subarray(0, length), at);
 	}
 };
 
+// a loop or a sound ready to go into tracks, and how many bars it is
+type Source = { buffer: AudioBuffer; bars: number };
+
 // Renders every track of a song into its own buffer. Nothing plays here, the
 // transport starts all the tracks at the same moment.
-// Everything the song needs is asked for at once, not one cell after another.
-// Tracks with no cells are left out. Throws a SongError naming the cell that
-// couldn't be built.
+// Everything the song needs is asked for at once, not one clip after another.
+// Tracks with no bars are left out. Throws a SongError naming the loop or
+// sound that couldn't be built.
 //
 // `progress` is told how many of the song's loops and sounds are ready, out
 // of how many there are.
@@ -74,23 +81,23 @@ export const renderSong = async (
 	}
 	const context = crunker.context;
 
-	// how long a cell is comes from the tempo, not from any file
-	const frames = cellFrames(Number(bpm), context.sampleRate);
+	// where a bar starts comes from the tempo, not from any file
+	const framesAt = (bar: number) =>
+		framesOf(bar, Number(bpm), context.sampleRate);
 
 	// how many different loops and sounds the song is made of, for `progress`
 	const total = new Set(
 		tracks
-			.flatMap((track) => track.notes)
-			.filter((cell) => cell.type != "empty")
-			.map((cell) => `${cell.type} ${cell.id}`)
+			.flatMap((track) => track.clips)
+			.map((clip) => `${clip.type} ${clip.id}`)
 	).size;
 	let ready = 0;
 
-	// The same loops and sounds show up in lots of cells, so each one is only
+	// The same loops and sounds show up in lots of clips, so each one is only
 	// built once per render. Decoded files outlive the render in the sample
 	// cache. Sounds don't, they can be edited between two plays.
-	const building = new Map<string, Promise<AudioBuffer>>();
-	const once = (key: string, build: () => Promise<AudioBuffer>) => {
+	const building = new Map<string, Promise<Source>>();
+	const once = (key: string, build: () => Promise<Source>) => {
 		let buffer = building.get(key);
 		if (!buffer) {
 			buffer = build();
@@ -104,68 +111,70 @@ export const renderSong = async (
 		return buffer;
 	};
 
-	// an empty cell is nothing at all, the track is silent until written to
-	const renderCell = (cell: Cell): Promise<AudioBuffer | null> => {
-		if (cell.type == "loop") {
-			return once(`loop ${cell.id}`, async () => {
+	const renderClip = (clip: Clip): Promise<Source> => {
+		if (clip.type == "loop") {
+			return once(`loop ${clip.id}`, async () => {
 				try {
-					return await loadLoop(cell.id, bpm);
+					return {
+						buffer: await loadLoop(clip.id, bpm),
+						bars: loopBars(clip.id),
+					};
 				} catch (error) {
 					console.error(error);
 					throw new SongError(
-						`Couldn't load the loop "${cell.name}" at ${bpm} BPM.`
+						`Couldn't load the loop "${clip.name}" at ${bpm} BPM.`
 					);
 				}
 			});
 		}
 
-		if (cell.type == "sound") {
-			return once(`sound ${cell.id}`, async () => {
-				try {
-					const snap = await getDoc(doc(db, "sounds", cell.id));
-					const sound = snap.data();
+		return once(`sound ${clip.id}`, async () => {
+			try {
+				const snap = await getDoc(doc(db, "sounds", clip.id));
+				const sound = snap.data();
 
-					if (!sound) {
-						throw new SongError(
-							`The sound "${cell.name}" doesn't exist anymore.`
-						);
-					}
-
-					return await renderSound(
-						{
-							type: sound.type,
-							sequence: sound.sequence,
-							steps: sound.steps,
-						},
-						Number(bpm)
+				if (!sound) {
+					throw new SongError(
+						`The sound "${clip.name}" doesn't exist anymore.`
 					);
-				} catch (error) {
-					if (error instanceof SongError) throw error;
-
-					console.error(error);
-					throw new SongError(`Couldn't play the sound "${cell.name}".`);
 				}
-			});
-		}
 
-		return Promise.resolve(null);
+				const buffer = await renderSound(
+					{
+						type: sound.type,
+						sequence: sound.sequence,
+						steps: sound.steps,
+						bars: sound.bars,
+					},
+					Number(bpm)
+				);
+				return { buffer: buffer, bars: soundBars(sound.bars) };
+			} catch (error) {
+				if (error instanceof SongError) throw error;
+
+				console.error(error);
+				throw new SongError(`Couldn't play the sound "${clip.name}".`);
+			}
+		});
 	};
 
-	const filled = tracks.filter((track) => track.notes.length > 0);
-	const longest = Math.max(0, ...filled.map((track) => track.notes.length));
+	const filled = tracks.filter((track) => track.bars > 0);
+	const longest = framesAt(Math.max(0, ...filled.map((track) => track.bars)));
 
 	const rendered = await Promise.all(
 		filled.map(async (track) => {
-			const cells = await Promise.all(track.notes.map(renderCell));
+			const sources = await Promise.all(track.clips.map(renderClip));
 
-			const buffer = context.createBuffer(
-				2,
-				longest * frames,
-				context.sampleRate
-			);
+			const buffer = context.createBuffer(2, longest, context.sampleRate);
 
-			cells.forEach((cell, index) => {
-				if (cell) place(buffer, cell, index * frames, frames);
+			// a clip plays its source from the start, again and again until the
+			// clip is full, and is cut off where it ends
+			track.clips.forEach((clip, index) => {
+				const source = sources[index];
+
+				for (const piece of fill(clip, source.bars, framesAt)) {
+					place(buffer, source.buffer, piece.at, piece.length);
+				}
 			});
 
 			return { track: track.id, buffer: buffer };
@@ -175,6 +184,6 @@ export const renderSong = async (
 	return {
 		tracks: rendered,
 		bpm: Number(bpm),
-		duration: (longest * frames) / context.sampleRate,
+		duration: longest / context.sampleRate,
 	};
 };

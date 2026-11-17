@@ -1,14 +1,14 @@
 import Image from "next/image";
 import logo from "../../../public/images/keybuddies-logo.png";
 import { Placing } from "@/utils/placing";
-import { Cell } from "@/utils/types";
+import { Item } from "@/utils/types";
 import Instruments from "./Instruments";
 import Library from "./Library";
 import Sounds from "./Sounds";
 
 // The left side of the studio. It's one panel that scrolls on its own: the
-// instruments to record with, everything in the studio that can go in a
-// cell, and the way into the library.
+// instruments to record with, everything in the studio that can go on a
+// track, and the way into the library.
 const Sidebar = ({
 	placing,
 	bpm,
@@ -19,7 +19,7 @@ const Sidebar = ({
 	bpm: string;
 	studio: string;
 	// the library loops this studio has
-	loops: Cell[];
+	loops: Item[];
 }) => {
 	return (
 		<div className="col-span-1 bg-blue text-black overflow-y-scroll h-screen border-r-8 border-black">

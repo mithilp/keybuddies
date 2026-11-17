@@ -3,8 +3,9 @@
 import { playPiano, pressKey, releaseKey } from "@/utils/instruments";
 import { pianoNotes } from "@/utils/piano-notes";
 import { stopPreview } from "@/utils/preview";
-import { PIANO_STEPS } from "@/utils/tempo";
-import { Key } from "@/utils/types";
+import { PIANO_BAR_STEPS } from "@/utils/tempo";
+import { DEFAULT_BARS } from "@/utils/clips";
+import { ClipBars, Key } from "@/utils/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCheck, FaVolumeUp } from "react-icons/fa";
 import { Piano as ReactPiano, KeyboardShortcuts } from "react-piano";
@@ -19,30 +20,44 @@ const LAST_NOTE = 77;
 // Everything for making a piano sound: the options, the keyboard, the grid
 // and the buttons under it. Recording a new sound and editing a saved one
 // are this with a different title and a different save.
+//
+// A new recording can be 1, 2 or 4 bars. A saved one is edited at the length
+// it was made with, passed in as `bars`. Notes past the end stay in
+// `sequence` so a shorter length can be tried and undone, and are only cut
+// off what's played and saved, the same as the drum recorder.
 const PianoEditor = ({
 	bpm,
 	initial,
+	bars,
 	saveLabel,
 	onSave,
 	paused = false,
 }: {
 	bpm: number;
 	initial?: Key[];
+	bars?: ClipBars;
 	saveLabel: string;
-	onSave: (sequence: Key[]) => void;
+	onSave: (sequence: Key[], bars: ClipBars) => void;
 	// the keyboard stops listening, for when something is being typed
 	paused?: boolean;
 }) => {
 	// how many milliseconds one step is
 	const multiplier = 7500 / bpm;
 
+	const [chosen, setChosen] = useState<ClipBars>(DEFAULT_BARS);
+	const length = bars ?? chosen;
+	const steps = length * PIANO_BAR_STEPS;
+
 	const [firstNote, setFirstNote] = useState(FIRST_NOTE);
 	const [lastNote, setLastNote] = useState(LAST_NOTE);
 
 	const [sequence, setSequence] = useState<Array<Key>>(() =>
-		pianoNotes(initial ?? [])
+		pianoNotes(initial ?? [], steps)
 	);
 	const [recording, setRecording] = useState(false);
+
+	// what's heard and saved at this length
+	const inside = useMemo(() => pianoNotes(sequence, steps), [sequence, steps]);
 
 	// when the recording started, and the note of every key that's down
 	const startedAt = useRef(0);
@@ -65,7 +80,7 @@ const PianoEditor = ({
 	// the step the recording stopped on, so no note is left without an end.
 	const stopRecording = useCallback(() => {
 		const step = Math.min(
-			PIANO_STEPS,
+			steps,
 			Math.round((Date.now() - startedAt.current) / multiplier)
 		);
 
@@ -83,17 +98,17 @@ const PianoEditor = ({
 		}
 
 		setRecording(false);
-	}, [multiplier]);
+	}, [multiplier, steps]);
 
-	// a recording is one cell long and stops by itself at the end of it
+	// a recording is as long as the sound and stops by itself at the end
 	useEffect(() => {
 		if (!recording) return;
 
-		const left = PIANO_STEPS * multiplier - (Date.now() - startedAt.current);
+		const left = steps * multiplier - (Date.now() - startedAt.current);
 		const timer = setTimeout(stopRecording, Math.max(0, left));
 
 		return () => clearTimeout(timer);
-	}, [recording, multiplier, stopRecording]);
+	}, [recording, multiplier, steps, stopRecording]);
 
 	const startRecording = () => {
 		held.current.clear();
@@ -108,7 +123,7 @@ const PianoEditor = ({
 		if (!recording) return;
 
 		const step = Math.round((Date.now() - startedAt.current) / multiplier);
-		if (step >= PIANO_STEPS) {
+		if (step >= steps) {
 			stopRecording();
 			return;
 		}
@@ -127,7 +142,7 @@ const PianoEditor = ({
 		held.current.delete(note);
 
 		const step = Math.round((Date.now() - startedAt.current) / multiplier);
-		const end = Math.min(PIANO_STEPS, Math.max(key.start + 1, step));
+		const end = Math.min(steps, Math.max(key.start + 1, step));
 
 		setSequence((sequence) =>
 			sequence.map((other) => (other === key ? { ...key, end: end } : other))
@@ -146,13 +161,13 @@ const PianoEditor = ({
 		if (listening) return;
 
 		setListening(true);
-		playPiano(sequence, bpm);
+		playPiano(inside, bpm, length);
 		listenTimer.current = setTimeout(() => {
 			setListening(false);
-		}, multiplier * PIANO_STEPS);
+		}, multiplier * steps);
 	};
 
-	const idle = sequence.length === 0 || recording;
+	const idle = inside.length === 0 || recording;
 
 	return (
 		<div className="space-y-4">
@@ -166,6 +181,9 @@ const PianoEditor = ({
 				empty={sequence.length === 0}
 				onRecord={startRecording}
 				onStop={stopRecording}
+				// only a new recording can pick its length
+				bars={bars === undefined ? chosen : undefined}
+				setBars={setChosen}
 				// ends the take too. the timer that stops a recording by itself
 				// was set when it started and wouldn't know about a new start.
 				onReset={() => {
@@ -191,6 +209,7 @@ const PianoEditor = ({
 				firstNote={firstNote}
 				lastNote={lastNote}
 				bpm={bpm}
+				steps={steps}
 			/>
 
 			{/* always here too, greyed out until there's something to hear */}
@@ -211,7 +230,7 @@ const PianoEditor = ({
 						)}
 					</button>
 					<button
-						onClick={() => onSave(sequence)}
+						onClick={() => onSave(inside, length)}
 						disabled={idle}
 						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 					>
