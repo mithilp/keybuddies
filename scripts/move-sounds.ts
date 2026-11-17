@@ -20,7 +20,12 @@
 // Running it again is safe. movedSounds/{id} keeps the codes in `in` it
 // already moved, so a second run only moves studios an old tab added since,
 // and a sound someone took out of a studio in the new app stays out. The
-// rules don't match movedSounds, so the app can't read it.
+// rules don't match movedSounds, so the app can't read it. A sound taken out
+// in an old tab after the first run stays in the new app, since a rerun only
+// adds. It can be taken out again there.
+//
+// `in` stays on old sounds, and anyone with a sound's share code can read
+// it, so the studio codes in it are still out there until it's removed.
 //
 // Before writing anything it saves every sound, and every studio with its
 // tracks and soundList, to backup-<time>.json in the folder it's run from.

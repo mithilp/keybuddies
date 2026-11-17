@@ -122,6 +122,13 @@ The script lists every sound, which the rules turn down, so it only works while 
 4. Publish the rules right after that, with nothing in between. Anything an old tab writes after the last run won't show in the new app.
 5. Click through the app and watch the console for `PERMISSION_DENIED`.
 
+Publish at a quiet hour. Once the rules are live, tabs still on the old app can't save, share or add sounds, since those list `/sounds`, and a recording that fails to save is lost on reload. A reload gets the new app.
+
+Known gaps:
+
+- A sound taken out of a studio in an old tab after the first run comes back in the new app, since reruns only add. It can be taken out again there.
+- Old sounds keep `in`, and a sound can be read by anyone with its share code or id, so the studio codes in `in` are still readable. Rules can't hide a field, so closing this means removing `in` from old sounds. The rules turn that down too, so it has to happen before they're published, or with admin access.
+
 It only adds docs. Old sounds keep their `in`, so tabs still on the old app keep working until the rules are published. Before writing anything, `--write` saves every sound, and every studio with its tracks and `soundList`, to `backup-<time>.json` in the folder it's run from (gitignored). `--backup <file>` saves it somewhere else, and works without `--write` too. Running it again is safe: `movedSounds/{id}` keeps which studios each sound was already put in, so a second run only picks up studios an old tab added since, and a sound someone took out of a studio stays out.
 
 To publish the rules, paste them into Firestore > Rules in the Firebase console, or run `firebase deploy --only firestore:rules`.
