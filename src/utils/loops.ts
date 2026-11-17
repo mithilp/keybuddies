@@ -6,70 +6,71 @@ import type { Cell } from "./types";
 // A loop's id is what a cell keeps and what its files are named after, so
 // an id that's been out in the world doesn't change.
 export type LibraryLoop = {
-	id: string;
-	name: string;
-	// one line on what it is
-	description: string;
+  id: string;
+  name: string;
+  // one line on what it is
+  description: string;
 };
 
 export type LibrarySet = {
-	name: string;
-	description: string;
-	loops: LibraryLoop[];
+  name: string;
+  description: string;
+  loops: LibraryLoop[];
 };
 
 export const library: LibrarySet[] = [
-	{
-		name: "Loops",
-		description: "Bass, piano and drum loops. Each one is 8 beats.",
-		loops: [
-			{
-				id: "bass_1",
-				name: "Bass 1",
-				description: "One of four bass loops.",
-			},
-			{
-				id: "bass_2",
-				name: "Bass 2",
-				description: "One of four bass loops.",
-			},
-			{
-				id: "bass_3",
-				name: "Bass 3",
-				description: "One of four bass loops.",
-			},
-			{
-				id: "bass_4",
-				name: "Bass 4",
-				description: "One of four bass loops.",
-			},
-			{
-				id: "piano_1",
-				name: "Piano 1",
-				description: "One of four piano loops.",
-			},
-			{
-				id: "piano_2",
-				name: "Piano 2",
-				description: "One of four piano loops.",
-			},
-			{
-				id: "piano_3",
-				name: "Piano 3",
-				description: "One of four piano loops.",
-			},
-			{
-				id: "piano_4",
-				name: "Piano 4",
-				description: "One of four piano loops.",
-			},
-			{
-				id: "love_story_drums",
-				name: "Love Story Drums",
-				description: "The drum loop.",
-			},
-		],
-	},
+  {
+    name: "Love Story",
+    description:
+      "The bass, piano and drums of one song, cut into 8 beat loops. They're made to go together, so stack them on different tracks.",
+    loops: [
+      {
+        id: "bass_1",
+        name: "Bass 1",
+        description: "Bass line, part 1 of 4.",
+      },
+      {
+        id: "bass_2",
+        name: "Bass 2",
+        description: "Bass line, part 2 of 4.",
+      },
+      {
+        id: "bass_3",
+        name: "Bass 3",
+        description: "Bass line, part 3 of 4.",
+      },
+      {
+        id: "bass_4",
+        name: "Bass 4",
+        description: "Bass line, part 4 of 4.",
+      },
+      {
+        id: "piano_1",
+        name: "Piano 1",
+        description: "Piano, part 1 of 4.",
+      },
+      {
+        id: "piano_2",
+        name: "Piano 2",
+        description: "Piano, part 2 of 4.",
+      },
+      {
+        id: "piano_3",
+        name: "Piano 3",
+        description: "Piano, part 3 of 4.",
+      },
+      {
+        id: "piano_4",
+        name: "Piano 4",
+        description: "Piano, part 4 of 4.",
+      },
+      {
+        id: "love_story_drums",
+        name: "Love Story Drums",
+        description: "The drum beat.",
+      },
+    ],
+  },
 ];
 
 // every loop of every set, in the order the library shows them
@@ -78,27 +79,27 @@ const loops = library.flatMap((set) => set.loops);
 // Loops are FLAC so they decode to exactly 8 beats in every browser. See
 // scripts/stretch-loop.py for how the files are made.
 export const loopUrl = (id: string, bpm: number | string) =>
-	`/loops/${id}_${bpm}.flac`;
+  `/loops/${id}_${bpm}.flac`;
 
 // the ids in a field of the studio document, whatever is really in it
 const ids = (field: unknown) =>
-	new Set(
-		Array.isArray(field)
-			? field.filter((id): id is string => typeof id == "string")
-			: []
-	);
+  new Set(
+    Array.isArray(field)
+      ? field.filter((id): id is string => typeof id == "string")
+      : [],
+  );
 
 // the first cell of every loop that's on a track
 const inCells = (tracks: { notes: Cell[] }[]) => {
-	const used = new Map<string, Cell>();
+  const used = new Map<string, Cell>();
 
-	for (const track of tracks) {
-		for (const cell of track.notes) {
-			if (cell.type == "loop" && !used.has(cell.id)) used.set(cell.id, cell);
-		}
-	}
+  for (const track of tracks) {
+    for (const cell of track.notes) {
+      if (cell.type == "loop" && !used.has(cell.id)) used.set(cell.id, cell);
+    }
+  }
 
-	return used;
+  return used;
 };
 
 // The library loops a studio has, as the cells they make, for the sidebar.
@@ -115,25 +116,27 @@ const inCells = (tracks: { notes: Cell[] }[]) => {
 // A loop in a cell that the library doesn't have any more goes last, under
 // the name its cell has.
 export const studioLoops = (
-	tracks: { notes: Cell[] }[],
-	added: unknown,
-	removed: unknown
+  tracks: { notes: Cell[] }[],
+  added: unknown,
+  removed: unknown,
 ): Cell[] => {
-	const has = ids(added);
-	const out = ids(removed);
-	const used = inCells(tracks);
+  const has = ids(added);
+  const out = ids(removed);
+  const used = inCells(tracks);
 
-	const known = loops.filter(
-		(loop) => has.has(loop.id) || (used.has(loop.id) && !out.has(loop.id))
-	);
+  const known = loops.filter(
+    (loop) => has.has(loop.id) || (used.has(loop.id) && !out.has(loop.id)),
+  );
 
-	const gone = [...used.values()].filter(
-		(cell) => !out.has(cell.id) && !loops.some((loop) => loop.id == cell.id)
-	);
+  const gone = [...used.values()].filter(
+    (cell) => !out.has(cell.id) && !loops.some((loop) => loop.id == cell.id),
+  );
 
-	return [...known, ...gone].map(
-		({ id, name }): Cell => ({ type: "loop", id: id, name: name })
-	);
+  return [...known, ...gone].map(({ id, name }): Cell => ({
+    type: "loop",
+    id: id,
+    name: name,
+  }));
 };
 
 // The ids of the loops that are only in the list because a cell holds them.
@@ -145,17 +148,17 @@ export const studioLoops = (
 // A loop the library doesn't have any more isn't one of them. Its name is
 // only in its cell, so there's nothing to list it by once the cell is gone.
 export const cellOnlyLoops = (
-	tracks: { notes: Cell[] }[],
-	added: unknown,
-	removed: unknown
+  tracks: { notes: Cell[] }[],
+  added: unknown,
+  removed: unknown,
 ): string[] => {
-	const has = ids(added);
-	const out = ids(removed);
-	const used = inCells(tracks);
+  const has = ids(added);
+  const out = ids(removed);
+  const used = inCells(tracks);
 
-	return loops
-		.filter(({ id }) => used.has(id) && !has.has(id) && !out.has(id))
-		.map(({ id }) => id);
+  return loops
+    .filter(({ id }) => used.has(id) && !has.has(id) && !out.has(id))
+    .map(({ id }) => id);
 };
 
 export default loops;
