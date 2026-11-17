@@ -41,13 +41,16 @@ const SoundButtons = ({
 	// ends the listen once the sound is over
 	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-	// a row that goes away doesn't end a listen later. the list stops
-	// waiting on a sound that isn't in it.
+	// a row that goes away mid-listen ends the listen now, so the other rows
+	// don't wait on it and it doesn't spin if the sound comes back
 	useEffect(
 		() => () => {
-			if (timer.current) clearTimeout(timer.current);
+			if (timer.current) {
+				clearTimeout(timer.current);
+				setPlaying(null);
+			}
 		},
-		[]
+		[setPlaying]
 	);
 
 	const listen = () => {
