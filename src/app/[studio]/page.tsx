@@ -217,22 +217,17 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	// from 0 to 1
 	const [exporting, setExporting] = useState<number | null>(null);
 
-	// Saves the song as one WAV file. It's the mix you'd hear, so muted
-	// tracks are left out.
+	// Saves the song as one WAV file. It's the whole song, muted tracks
+	// too: mute only lives in this browser, so the file would depend on
+	// what happened to be muted here.
 	const download = async () => {
 		if (exporting !== null) return;
 
 		const hasSound = (track: Track) =>
 			track.notes.some((cell) => cell.type != "empty");
 
-		const heard = tracks.filter((_, index) => !mutedRef.current[index]);
-
-		if (!heard.some(hasSound)) {
-			setNotice(
-				tracks.some(hasSound)
-					? "Every track with something on it is muted. Unmute one to export it."
-					: "There's nothing to export yet."
-			);
+		if (!tracks.some(hasSound)) {
+			setNotice("There's nothing to export yet.");
 			return;
 		}
 
@@ -240,7 +235,7 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 		setExporting(0);
 
 		try {
-			const song = await renderSong(heard, bpm, (ready, total) =>
+			const song = await renderSong(tracks, bpm, (ready, total) =>
 				setExporting(ready / total)
 			);
 
