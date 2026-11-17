@@ -7,7 +7,8 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "eslint .",
-		"test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/*.test.ts\""
+		"test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tests/*.test.ts\"",
+		"test:rules": "npx -y firebase-tools@13.35.1 emulators:exec --only firestore --project demo-keybuddies \"node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/rules/*.test.ts\""
 	},
 	"dependencies": {
 		"@radix-ui/react-tooltip": "^1.2.16",
@@ -23,6 +24,7 @@
 		"tailwind-merge": "^3.6.0"
 	},
 	"devDependencies": {
+		"@firebase/rules-unit-testing": "5.0.2",
 		"@types/node": "20.11.16",
 		"@types/react": "^19.2.18",
 		"@types/react-dom": "^19.2.7",

@@ -1,13 +1,4 @@
-import {
-	Timestamp,
-	collection,
-	doc,
-	getDocs,
-	query,
-	runTransaction,
-	updateDoc,
-	where,
-} from "firebase/firestore";
+import { Timestamp, doc, getDoc, runTransaction } from "firebase/firestore";
 import { db } from "./firebase";
 
 // studios and sounds both go by a random 6 digit code
@@ -40,37 +31,39 @@ export const claimStudio = async () => {
 	return null;
 };
 
-export const soundsWithCode = async (code: string) => {
-	const found = await getDocs(
-		query(collection(db, "sounds"), where("code", "==", code))
-	);
+// A share code is a doc of its own, shareCodes/{code}, holding the id of the
+// sound it's for. Sounds can't be listed, so this is how a code is looked up.
+// Comes back with the sound's id, or null if no sound has the code.
+export const soundWithCode = async (code: string) => {
+	const found = await getDoc(doc(db, "shareCodes", code));
 
-	return found.docs;
+	return found.exists() ? (found.get("sound") as string) : null;
 };
 
-// A share code no sound has yet. A sound's code is a field on it and not its
-// id, so this is a look and then a write, not a transaction.
-export const freeSoundCode = async () => {
-	for (let attempt = 0; attempt < TRIES; attempt++) {
-		const code = randomCode();
+// The code to share a sound with. A new sound has none until it's first
+// shared. One from before share codes were docs, or one whose code another
+// old sound took, gets a new one here, so the code that's handed out only
+// ever means this sound. Taking the code and writing it on the sound are one
+// transaction, the same as claimStudio.
+export const shareCode = async (id: string, code?: string) => {
+	if (code && (await soundWithCode(code)) === id) return code;
 
-		if ((await soundsWithCode(code)).length === 0) return code;
+	const sound = doc(db, "sounds", id);
+
+	for (let attempt = 0; attempt < TRIES; attempt++) {
+		const fresh = randomCode();
+		const share = doc(db, "shareCodes", fresh);
+
+		const claimed = await runTransaction(db, async (transaction) => {
+			if ((await transaction.get(share)).exists()) return false;
+
+			transaction.set(share, { sound: id });
+			transaction.update(sound, { code: fresh });
+			return true;
+		});
+
+		if (claimed) return fresh;
 	}
 
 	throw new Error("Couldn't find a free sound code.");
-};
-
-// The code to share a sound with. Sounds made before codes were checked can
-// have the same code as another sound, or none. One of those gets a new code
-// here, so the code that's handed out only ever means this sound.
-export const shareCode = async (id: string, code?: string) => {
-	if (code) {
-		const same = await soundsWithCode(code);
-		if (same.every((sound) => sound.id === id)) return code;
-	}
-
-	const fresh = await freeSoundCode();
-	await updateDoc(doc(db, "sounds", id), { code: fresh });
-
-	return fresh;
 };
