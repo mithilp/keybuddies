@@ -1,5 +1,6 @@
 "use client";
 
+import { freeSoundCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
 import { addDoc, collection } from "firebase/firestore";
 import { useState } from "react";
@@ -23,7 +24,7 @@ const Piano = ({ studio, bpm }: { studio: string; bpm: number }) => {
 			type: "piano",
 			sequence: naming,
 			in: [studio],
-			code: Math.floor(100000 + Math.random() * 900000).toString(),
+			code: await freeSoundCode(),
 		});
 
 		setNaming(null);

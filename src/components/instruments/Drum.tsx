@@ -1,5 +1,6 @@
 "use client";
 
+import { freeSoundCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
 import { addDoc, collection } from "firebase/firestore";
@@ -52,7 +53,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 			type: "drum",
 			sequence: sequence,
 			in: [studio],
-			code: Math.floor(100000 + Math.random() * 900000).toString(),
+			code: await freeSoundCode(),
 		});
 
 		setNaming(false);

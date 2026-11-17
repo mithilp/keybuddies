@@ -1,13 +1,6 @@
+import { soundsWithCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
-import {
-	arrayUnion,
-	collection,
-	doc,
-	getDocs,
-	query,
-	updateDoc,
-	where,
-} from "firebase/firestore";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
 import { PromptDialog } from "../Dialog";
@@ -20,13 +13,17 @@ const AddSound = ({ studio }: { studio: string }) => {
 	const add = async (code: string) => {
 		if (!code) return "Enter the code of a sound.";
 
-		const querySnapshot = await getDocs(
-			query(collection(db, "sounds"), where("code", "==", code))
-		);
+		const sounds = await soundsWithCode(code);
 
-		if (querySnapshot.empty) return "No sound has that code.";
+		if (sounds.length === 0) return "No sound has that code.";
 
-		await updateDoc(doc(db, "sounds", querySnapshot.docs[0].id), {
+		// two old sounds can still have the same code. sharing one of them
+		// again gives it a code of its own.
+		if (sounds.length > 1) {
+			return "More than one sound has that code. Ask your friend to share it again for a new one.";
+		}
+
+		await updateDoc(doc(db, "sounds", sounds[0].id), {
 			in: arrayUnion(studio),
 		});
 

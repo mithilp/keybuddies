@@ -1,3 +1,4 @@
+import { freeSoundCode, shareCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
 import { playDrum, playPiano } from "@/utils/instruments";
 import { Sound } from "@/utils/types";
@@ -56,11 +57,16 @@ const SoundThumbnail = ({
 	);
 	const [notice, setNotice] = useState("");
 
-	const share = () => {
-		if (sound.code) {
+	// the code that's being shared, once it's known to be this sound's alone
+	const [code, setCode] = useState("");
+
+	const share = async () => {
+		try {
+			setCode(await shareCode(sound.id, sound.code));
 			setAsking("share");
-		} else {
-			setNotice("This sound doesn't have a code to share.");
+		} catch (error) {
+			console.error(error);
+			setNotice("Couldn't get the code for this sound. Try again.");
 		}
 	};
 
@@ -70,7 +76,7 @@ const SoundThumbnail = ({
 			type: sound.type,
 			sequence: sound.sequence,
 			in: [studio],
-			code: Math.floor(100000 + Math.random() * 900000).toString(),
+			code: await freeSoundCode(),
 		});
 
 		setAsking(null);
@@ -186,11 +192,11 @@ const SoundThumbnail = ({
 				</Tooltip>
 			</TooltipProvider>
 
-			{asking === "share" && sound.code && (
+			{asking === "share" && (
 				<ShareDialog
 					title="Share this sound"
 					hint="A friend can add it to their studio with this code."
-					code={sound.code}
+					code={code}
 					onClose={() => setAsking(null)}
 				/>
 			)}
