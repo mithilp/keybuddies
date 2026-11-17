@@ -1,5 +1,5 @@
 import { db } from "@/utils/firebase";
-import loops from "@/utils/loops";
+import loops, { loopUrl } from "@/utils/loops";
 import { Track } from "@/utils/types";
 import { doc, updateDoc } from "firebase/firestore";
 import PlayLoop from "../PlayLoop";
@@ -28,7 +28,7 @@ const Loops = ({
 								(track) => track.id === selectedCell[0]
 							);
 							if (track) {
-								new Audio(`/loops/${loop.id}_${bpm}.mp3`).play();
+								new Audio(loopUrl(loop.id, bpm)).play();
 								track.notes[selectedCell[1]] = loop;
 								await updateDoc(
 									doc(db, "studios", studio, "tracks", selectedCell[0]),

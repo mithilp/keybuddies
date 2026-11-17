@@ -49,16 +49,21 @@ export const playPiano = async (music: Array<Key>, bpm: number) => {
 };
 
 // One recorded sound as a buffer that fills a cell, ready to go into a track.
-// `cell` is a cell of silence at this tempo and sets the length.
+// `frames` is how many samples a cell is at this tempo.
 export const renderSound = async (
 	type: Sound["type"],
 	music: Array<Key>,
 	bpm: number,
-	cell: AudioBuffer
+	frames: number
 ) => {
 	if (type === "drum") {
-		return renderDrum(music, bpm, cell.length);
+		return renderDrum(music, bpm, frames);
 	}
+
+	// a cell of silence under the notes, so the sound is never shorter than
+	// its cell
+	const context = crunker!.context;
+	const cell = context.createBuffer(2, frames, context.sampleRate);
 
 	return crunker!.mergeAudio([...(await pianoNotes(music, bpm)), cell]);
 };

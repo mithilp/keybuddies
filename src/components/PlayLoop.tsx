@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaVolumeUp } from "react-icons/fa";
+import { loopUrl } from "@/utils/loops";
 
 const PlayLoop = ({
 	id,
@@ -11,7 +12,7 @@ const PlayLoop = ({
 	bpm: string;
 }) => {
 	const [audio] = useState(
-		typeof window !== "undefined" ? new Audio(`/loops/${id}_${bpm}.mp3`) : null
+		typeof window !== "undefined" ? new Audio(loopUrl(id, bpm)) : null
 	);
 
 	const [playing, setPlaying] = useState(false);
