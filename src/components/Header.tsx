@@ -1,7 +1,7 @@
 import { db } from "@/utils/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { Playback } from "@/utils/types";
-import { FaCircle, FaPause, FaPlay } from "react-icons/fa";
+import { FaPause, FaPlay } from "react-icons/fa";
 
 const Header = ({
 	studio,
@@ -39,9 +39,6 @@ const Header = ({
 					<option value="120">120</option>
 					<option value="160">160</option>
 				</select>
-				<button className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black">
-					<FaCircle color="#ff6767" />
-				</button>
 				<button
 					onClick={playback == "stopped" ? play : stop}
 					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
