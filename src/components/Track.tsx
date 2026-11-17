@@ -22,7 +22,7 @@ import {
 } from "./ui/icons";
 import { dropTarget, empty, selected } from "./ui/state";
 import { cn } from "@/utils/cn";
-import { BAR_WIDTH, CLIP_GAP } from "@/utils/grid";
+import { BAR_WIDTH, CLIP_GAP, CLIP_LEFT } from "@/utils/grid";
 
 const barsLabel = (bars: number) => (bars === 1 ? "1 bar" : `${bars} bars`);
 
@@ -73,8 +73,12 @@ const Track = ({
 
 	return (
 		<div>
-			<div className="flex items-center space-x-2">
-				<h3 className="text-lg uppercase font-bold">{track.name}</h3>
+			{/* starts where the clips do, so the playhead never covers the name */}
+			<div
+				className="flex items-center gap-2"
+				style={{ paddingLeft: CLIP_LEFT }}
+			>
+				<h3 className="text-lg uppercase font-bold pl-1">{track.name}</h3>
 
 				<IconButton
 					label={`Mute ${track.name}`}
@@ -88,55 +92,92 @@ const Track = ({
 					icon={DeleteIcon}
 					onClick={() => setDeleting(true)}
 				/>
+
+				{/* up here and not at the end of the track, where a long one
+				    pushes them off the screen */}
+				<IconButton
+					label={`Add a bar to ${track.name}`}
+					icon={AddBarIcon}
+					onClick={() => {
+						addTrackBar(studio, track.id).catch(unsaved);
+					}}
+				/>
+
+				<IconButton
+					label={`Take the last bar off ${track.name}`}
+					icon={RemoveBarIcon}
+					// only an empty last bar can go
+					disabled={
+						track.bars === 0 || clipAt(track.clips, track.bars - 1) !== null
+					}
+					onClick={() => {
+						removeTrackBar(studio, track.id).catch(unsaved);
+					}}
+				/>
 			</div>
-			<div className="flex items-center space-x-2">
-				<div
-					className="relative h-24"
-					style={{ width: track.bars * BAR_WIDTH }}
-				>
-					{Array.from({ length: track.bars }, (_, bar) => bar)
-						.filter((bar) => !clipAt(track.clips, bar))
-						.map((bar) => {
-							const picked =
-								placing.slot?.track === track.id &&
-								!placing.slot.clip &&
-								placing.slot.bar === bar;
-
-							return (
-								<div
-									key={`empty ${bar}`}
-									className={cn(
-										"absolute top-0 h-24 grid place-items-center rounded border-control cursor-pointer text-xl font-bold",
-										empty,
-										look(picked)
-									)}
-									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - CLIP_GAP }}
-									aria-label={`Bar ${bar + 1} of ${track.name}, empty`}
-									onClick={() => {
-										placing.pickSlot({ track: track.id, bar: bar, clip: null });
-									}}
-								>
-									<span aria-hidden>+</span>
-								</div>
-							);
-						})}
-
-					{track.clips.map((clip) => {
+			<div
+				className="relative h-24"
+				style={{ width: track.bars * BAR_WIDTH }}
+			>
+				{Array.from({ length: track.bars }, (_, bar) => bar)
+					.filter((bar) => !clipAt(track.clips, bar))
+					.map((bar) => {
 						const picked =
 							placing.slot?.track === track.id &&
-							placing.slot.clip?.start === clip.start;
+							!placing.slot.clip &&
+							placing.slot.bar === bar;
 
 						return (
-							<div
-								key={`clip ${clip.start}`}
+							<button
+								type="button"
+								key={`empty ${bar}`}
 								className={cn(
-									"absolute top-0 h-24 flex flex-col justify-between bg-surface p-1 rounded border-control border-ink cursor-pointer",
+									"absolute top-0 h-24 grid place-items-center rounded border-control text-xl font-bold",
+									empty,
 									look(picked)
 								)}
 								style={{
-									left: clip.start * BAR_WIDTH,
-									width: clip.bars * BAR_WIDTH - CLIP_GAP,
+									left: bar * BAR_WIDTH + CLIP_LEFT,
+									width: BAR_WIDTH - CLIP_GAP,
 								}}
+								aria-label={`Bar ${bar + 1} of ${track.name}, empty`}
+								aria-pressed={picked}
+								onClick={() => {
+									placing.pickSlot({ track: track.id, bar: bar, clip: null });
+								}}
+							>
+								<span aria-hidden>+</span>
+							</button>
+						);
+					})}
+
+				{track.clips.map((clip) => {
+					const picked =
+						placing.slot?.track === track.id &&
+						placing.slot.clip?.start === clip.start;
+
+					// The whole clip is a button that picks it, under its name and
+					// its controls. The name lets clicks through to it, the
+					// controls keep their own.
+					return (
+						<div
+							key={`clip ${clip.start}`}
+							className={cn(
+								"absolute top-0 h-24 bg-surface rounded border-control border-ink",
+								look(picked)
+							)}
+							style={{
+								left: clip.start * BAR_WIDTH + CLIP_LEFT,
+								width: clip.bars * BAR_WIDTH - CLIP_GAP,
+							}}
+						>
+							<button
+								type="button"
+								className="absolute inset-0 rounded cursor-pointer"
+								aria-label={`${clip.name} on bar ${clip.start + 1} of ${track.name}`}
+								aria-pressed={picked}
+								// the whole name, when it doesn't fit
+								title={clip.name}
 								onClick={() => {
 									placing.pickSlot({
 										track: track.id,
@@ -144,17 +185,17 @@ const Track = ({
 										clip: clip,
 									});
 								}}
-							>
-								<div className="truncate font-bold" title={clip.name}>
+							></button>
+
+							<div className="relative h-full flex flex-col justify-between p-1 pointer-events-none">
+								<div className="truncate font-bold">
 									{clip.name}
 								</div>
-								<div className="flex items-center justify-between space-x-1">
+								<div className="flex items-center justify-between gap-1 [&>*]:pointer-events-auto">
 									<select
 										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0 pointer-coarse:min-h-11"
 										aria-label={`Length of ${clip.name} on bar ${clip.start + 1} of ${track.name}`}
 										value={clip.bars}
-										// the clip behind this is what gets picked otherwise
-										onClick={(event) => event.stopPropagation()}
 										onChange={(event) => {
 											resize(clip, Number(event.target.value) as ClipBars);
 										}}
@@ -174,10 +215,7 @@ const Track = ({
 											type="button"
 											className="grid place-items-center rounded min-w-8 min-h-8 pointer-coarse:min-w-11 pointer-coarse:min-h-11"
 											aria-label={`Take ${clip.name} off bar ${clip.start + 1} of ${track.name}`}
-											onClick={(event) => {
-												// the clip behind this button is what gets picked
-												event.stopPropagation();
-
+											onClick={() => {
 												takeOutClip(studio, track.id, clip).catch(unsaved);
 											}}
 										>
@@ -186,32 +224,9 @@ const Track = ({
 									</Tip>
 								</div>
 							</div>
-						);
-					})}
-				</div>
-
-				<IconButton
-					label={`Add a bar to ${track.name}`}
-					icon={AddBarIcon}
-					big
-					onClick={() => {
-						addTrackBar(studio, track.id).catch(unsaved);
-					}}
-				/>
-
-				<IconButton
-					label={`Take the last bar off ${track.name}`}
-					icon={RemoveBarIcon}
-					big
-					className="mr-4"
-					// only an empty last bar can go
-					disabled={
-						track.bars === 0 || clipAt(track.clips, track.bars - 1) !== null
-					}
-					onClick={() => {
-						removeTrackBar(studio, track.id).catch(unsaved);
-					}}
-				/>
+						</div>
+					);
+				})}
 			</div>
 
 			{deleting && (

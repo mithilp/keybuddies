@@ -42,8 +42,9 @@ export const buttonStyles = ({
 		sizes[size],
 		// on: aria-pressed for a toggle, aria-checked for a radio
 		"aria-pressed:bg-ink aria-pressed:text-surface aria-checked:bg-ink aria-checked:text-surface",
-		// a disabled button looks it and doesn't respond
-		"disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:cursor-not-allowed",
+		// a disabled button looks it and doesn't respond. the same as
+		// `disabled` in state.ts, and an "on" one stays readable.
+		"disabled:text-ink/60 disabled:border-ink/40 disabled:shadow-none disabled:cursor-not-allowed aria-disabled:text-ink/60 aria-disabled:border-ink/40 aria-disabled:shadow-none aria-disabled:cursor-not-allowed aria-pressed:disabled:text-surface/60 aria-checked:disabled:text-surface/60",
 		className
 	);
 
@@ -93,7 +94,7 @@ export const IconButton = ({
 				"grid place-items-center min-w-10 min-h-10 pointer-coarse:min-w-11 pointer-coarse:min-h-11 rounded select-none",
 				variants.ghost,
 				"aria-pressed:bg-ink aria-pressed:text-surface",
-				"disabled:opacity-50 disabled:cursor-not-allowed",
+				"disabled:text-ink/60 disabled:cursor-not-allowed aria-pressed:disabled:text-surface/60",
 				big && "min-w-12 min-h-12 pointer-coarse:min-w-12 pointer-coarse:min-h-12",
 				className
 			)}
