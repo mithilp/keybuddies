@@ -19,6 +19,7 @@ import StudioNotFound from "@/components/StudioNotFound";
 import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
+import { mixDown, save, toWav } from "@/utils/export";
 
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
@@ -212,6 +213,51 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 		}
 	};
 
+	// null when no download is being made, otherwise how far along it is
+	// from 0 to 1
+	const [exporting, setExporting] = useState<number | null>(null);
+
+	// Saves the song as one WAV file. It's the mix you'd hear, so muted
+	// tracks are left out.
+	const download = async () => {
+		if (exporting !== null) return;
+
+		const hasSound = (track: Track) =>
+			track.notes.some((cell) => cell.type != "empty");
+
+		const heard = tracks.filter((_, index) => !mutedRef.current[index]);
+
+		if (!heard.some(hasSound)) {
+			setNotice(
+				tracks.some(hasSound)
+					? "Every track with something on it is muted. Unmute one to export it."
+					: "There's nothing to export yet."
+			);
+			return;
+		}
+
+		setNotice("");
+		setExporting(0);
+
+		try {
+			const song = await renderSong(heard, bpm, (ready, total) =>
+				setExporting(ready / total)
+			);
+
+			save(toWav(mixDown(song)), `keybuddies-${studio}.wav`);
+		} catch (error) {
+			console.error(error);
+
+			if (error instanceof SongError) {
+				setNotice(error.message);
+			} else {
+				setNotice("Something went wrong exporting the song. Try again.");
+			}
+		} finally {
+			setExporting(null);
+		}
+	};
+
 	// leaving the studio stops the song
 	useEffect(() => {
 		return () => {
@@ -265,6 +311,8 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 					stop={stop}
 					looping={looping}
 					toggleLoop={toggleLoop}
+					exporting={exporting}
+					download={download}
 				/>
 
 				{/* rows content */}

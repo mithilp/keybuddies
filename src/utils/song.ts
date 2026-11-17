@@ -47,9 +47,13 @@ const place = (
 // Everything the song needs is asked for at once, not one cell after another.
 // Tracks with no cells are left out. Throws a SongError naming the cell that
 // couldn't be built.
+//
+// `progress` is told how many of the song's loops and sounds are ready, out
+// of how many there are.
 export const renderSong = async (
 	tracks: Track[],
-	bpm: string
+	bpm: string,
+	progress?: (ready: number, total: number) => void
 ): Promise<Song> => {
 	if (!crunker) {
 		throw new SongError("This browser can't play audio.");
@@ -58,6 +62,15 @@ export const renderSong = async (
 
 	// how long a cell is comes from the tempo, not from any file
 	const frames = cellFrames(Number(bpm), context.sampleRate);
+
+	// how many different loops and sounds the song is made of, for `progress`
+	const total = new Set(
+		tracks
+			.flatMap((track) => track.notes)
+			.filter((cell) => cell.type != "empty")
+			.map((cell) => `${cell.type} ${cell.id}`)
+	).size;
+	let ready = 0;
 
 	// The same loops and sounds show up in lots of cells, so each one is only
 	// built once per render. Decoded files outlive the render in the sample
@@ -68,6 +81,11 @@ export const renderSong = async (
 		if (!buffer) {
 			buffer = build();
 			building.set(key, buffer);
+
+			buffer.then(
+				() => progress?.(++ready, total),
+				() => {}
+			);
 		}
 		return buffer;
 	};
