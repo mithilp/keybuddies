@@ -1,5 +1,4 @@
 import loops from "@/utils/loops";
-import { previewLoop } from "@/utils/preview";
 import { SelectedCell, Track } from "@/utils/types";
 import { setCell } from "@/utils/cells";
 import { useState } from "react";
@@ -32,7 +31,6 @@ const Loops = ({
 								(track) => track.id === selectedCell.track
 							);
 							if (track) {
-								previewLoop(loop.id, bpm);
 								setCell(
 									studio,
 									track.id,
