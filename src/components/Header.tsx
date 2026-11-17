@@ -3,6 +3,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { Playback } from "@/utils/types";
 import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { FaRepeat } from "react-icons/fa6";
+import { Tip } from "./ui/tooltip";
 
 const Header = ({
 	studio,
@@ -50,55 +51,72 @@ const Header = ({
 					<option value="120">120</option>
 					<option value="160">160</option>
 				</select>
-				<button
-					onClick={download}
-					disabled={exporting !== null}
-					aria-busy={exporting !== null}
-					aria-label={
-						exporting === null
-							? "Download the song"
-							: `Making the download, ${percent}%`
+				<Tip
+					label={
+						exporting === null ? "Download the song" : "Making the download"
 					}
-					title="Download the song"
-					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					side="bottom"
 				>
-					{exporting === null ? (
-						<FaDownload color="#000000" />
-					) : (
-						<span className="text-sm">{percent}%</span>
-					)}
-				</button>
-				<button
-					onClick={toggleLoop}
-					aria-pressed={looping}
-					aria-label="Loop the song"
-					title="Loop the song"
-					className={`${
-						looping ? "bg-blue" : "bg-yellow"
-					} border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black`}
-				>
-					<FaRepeat color="#000000" />
-				</button>
-				<button
-					onClick={playback == "stopped" ? play : stop}
-					aria-label={
+					<button
+						onClick={download}
+						disabled={exporting !== null}
+						aria-busy={exporting !== null}
+						aria-label={
+							exporting === null
+								? "Download the song"
+								: `Making the download, ${percent}%`
+						}
+						className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					>
+						{exporting === null ? (
+							<FaDownload color="#000000" />
+						) : (
+							<span className="text-sm">{percent}%</span>
+						)}
+					</button>
+				</Tip>
+				<Tip label={looping ? "Stop looping" : "Loop the song"} side="bottom">
+					<button
+						onClick={toggleLoop}
+						aria-pressed={looping}
+						aria-label="Loop the song"
+						className={`${
+							looping ? "bg-blue" : "bg-yellow"
+						} border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black`}
+					>
+						<FaRepeat color="#000000" />
+					</button>
+				</Tip>
+				<Tip
+					label={
 						playback == "stopped"
-							? "Play the song"
+							? "Play"
 							: playback == "playing"
-							? "Pause the song"
-							: "Loading the song, press to cancel"
+							? "Pause"
+							: "Loading, press to cancel"
 					}
-					title={playback == "stopped" ? "Play" : "Pause"}
-					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					side="bottom"
 				>
-					{playback == "loading" ? (
-						<div className="animate-spin w-8 h-8 border-4 border-black border-b-transparent rounded-full"></div>
-					) : playback == "playing" ? (
-						<FaPause color="#000000" />
-					) : (
-						<FaPlay color="#000000" />
-					)}
-				</button>
+					<button
+						onClick={playback == "stopped" ? play : stop}
+						aria-label={
+							playback == "stopped"
+								? "Play the song"
+								: playback == "playing"
+								? "Pause the song"
+								: "Loading the song, press to cancel"
+						}
+						className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					>
+						{playback == "loading" ? (
+							<div className="animate-spin w-8 h-8 border-4 border-black border-b-transparent rounded-full"></div>
+						) : playback == "playing" ? (
+							<FaPause color="#000000" />
+						) : (
+							<FaPlay color="#000000" />
+						)}
+					</button>
+				</Tip>
 			</div>
 		</div>
 	);

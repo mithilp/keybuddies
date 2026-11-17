@@ -4,6 +4,7 @@ import { addCell, removeCell } from "@/utils/cells";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState } from "react";
 import Notice from "./Notice";
+import { Tip } from "./ui/tooltip";
 import {
 	FaPlusCircle,
 	FaTrash,
@@ -38,24 +39,26 @@ const Track = ({
 			<div className="flex items-center space-x-4">
 				<h3 className="text-lg uppercase font-black">{track.name}</h3>
 
-				<button
-					onClick={() => onMute()}
-					aria-pressed={muted}
-					aria-label={`Mute ${track.name}`}
-					title={muted ? "Unmute track" : "Mute track"}
-				>
-					{muted ? <FaVolumeMute /> : <FaVolumeUp />}
-				</button>
+				<Tip label={muted ? "Unmute track" : "Mute track"}>
+					<button
+						onClick={() => onMute()}
+						aria-pressed={muted}
+						aria-label={`Mute ${track.name}`}
+					>
+						{muted ? <FaVolumeMute /> : <FaVolumeUp />}
+					</button>
+				</Tip>
 
-				<button
-					onClick={() => {
-						deleteDoc(doc(db, "studios", studio, "tracks", track.id));
-					}}
-					aria-label={`Delete ${track.name}`}
-					title="Delete track"
-				>
-					<FaTrash />
-				</button>
+				<Tip label="Delete track">
+					<button
+						onClick={() => {
+							deleteDoc(doc(db, "studios", studio, "tracks", track.id));
+						}}
+						aria-label={`Delete ${track.name}`}
+					>
+						<FaTrash />
+					</button>
+				</Tip>
 			</div>
 			<div className="flex items-center space-x-2">
 				{track.notes.map((note, index) => {
@@ -82,30 +85,32 @@ const Track = ({
 							>
 								{note.type == "empty" ? "Select a loop" : note.name}
 							</div>
-							<button
-								className="text-2xl"
-								aria-label={`Delete cell ${index + 1} of ${track.name}`}
-								title="Delete cell"
-								onClick={() => {
-									removeCell(studio, track.id, index, note).catch(failed);
-								}}
-							>
-								<FaTrash />
-							</button>
+							<Tip label="Delete cell">
+								<button
+									className="text-2xl"
+									aria-label={`Delete cell ${index + 1} of ${track.name}`}
+									onClick={() => {
+										removeCell(studio, track.id, index, note).catch(failed);
+									}}
+								>
+									<FaTrash />
+								</button>
+							</Tip>
 						</div>
 					);
 				})}
 
-				<button
-					className="pr-4"
-					aria-label={`Add a cell to ${track.name}`}
-					title="Add a cell"
-					onClick={() => {
-						addCell(studio, track.id).catch(failed);
-					}}
-				>
-					<FaPlusCircle color="black" size={32} />
-				</button>
+				<Tip label="Add a cell">
+					<button
+						className="pr-4"
+						aria-label={`Add a cell to ${track.name}`}
+						onClick={() => {
+							addCell(studio, track.id).catch(failed);
+						}}
+					>
+						<FaPlusCircle color="black" size={32} />
+					</button>
+				</Tip>
 			</div>
 
 			{notice && <Notice message={notice} close={() => setNotice("")} />}

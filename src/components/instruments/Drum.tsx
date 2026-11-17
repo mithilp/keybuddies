@@ -11,6 +11,7 @@ import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
 import { DRUM_STEPS } from "@/utils/drum-synth";
 import { PromptDialog } from "@/components/Dialog";
+import { Tip } from "@/components/ui/tooltip";
 
 const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const [open, setOpen] = useState(false);
@@ -88,9 +89,11 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
-							<button onClick={close} aria-label="Close" title="Close">
-								<FaCircleXmark size={32} />
-							</button>
+							<Tip label="Close" side="left">
+								<button onClick={close} aria-label="Close">
+									<FaCircleXmark size={32} />
+								</button>
+							</Tip>
 						</div>
 						<div className="space-y-4">
 							<div className="w-full">
@@ -101,32 +104,32 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 									>
 										<div className="w-40">{sound.note}</div>
 										{Array.from(Array(DRUM_STEPS)).map((_, i) => (
-											<button
-												key={i}
-												aria-label={`${sound.note}, step ${i + 1}`}
-												aria-pressed={on(sound.value, i)}
-												title={`${sound.note}, step ${i + 1}`}
-												onClick={() => {
-													if (on(sound.value, i)) {
-														setSequence(
-															sequence.filter(
-																(note) =>
-																	note.note != sound.value ||
-																	note.start != i
-															)
-														);
-													} else {
-														playDrumHit(sound.value);
-														setSequence([
-															...sequence,
-															{ note: sound.value, start: i, end: i + 1 },
-														]);
-													}
-												}}
-												className={`w-10 h-8 rounded-sm text-white my-1 ${
-													on(sound.value, i) ? "bg-yellow" : "bg-pink"
-												}`}
-											></button>
+											<Tip key={i} label={`${sound.note}, step ${i + 1}`}>
+												<button
+													aria-label={`${sound.note}, step ${i + 1}`}
+													aria-pressed={on(sound.value, i)}
+													onClick={() => {
+														if (on(sound.value, i)) {
+															setSequence(
+																sequence.filter(
+																	(note) =>
+																		note.note != sound.value ||
+																		note.start != i
+																)
+															);
+														} else {
+															playDrumHit(sound.value);
+															setSequence([
+																...sequence,
+																{ note: sound.value, start: i, end: i + 1 },
+															]);
+														}
+													}}
+													className={`w-10 h-8 rounded-sm text-white my-1 ${
+														on(sound.value, i) ? "bg-yellow" : "bg-pink"
+													}`}
+												></button>
+											</Tip>
 										))}
 									</div>
 								))}
