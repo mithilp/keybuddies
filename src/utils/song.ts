@@ -11,6 +11,42 @@ export type RenderedTrack = { track: string; buffer: AudioBuffer };
 // an error whose message is written for whoever pressed play
 export class SongError extends Error {}
 
+// Where a loop starts when a browser decodes the whole file: 528 samples
+// from the encoder and 529 from the decoder, at 44.1 kHz.
+const LOOP_START = 1057;
+
+// Cuts a decoded loop to exactly one cell. The loop files say how long they
+// really are in an iTunSMPB tag. Chrome reads it and hands back 8 beats.
+// Firefox doesn't, so there the loop comes back a few frames longer than a
+// cell and every track with loops drifts behind the ones without.
+export const fitToCell = (
+	loop: AudioBuffer,
+	cell: AudioBuffer,
+	context: BaseAudioContext
+) => {
+	if (loop.length === cell.length) return loop;
+
+	const extra = loop.length - cell.length;
+	const start = Math.max(
+		0,
+		Math.min(Math.round((LOOP_START * loop.sampleRate) / 44100), extra)
+	);
+
+	const fitted = context.createBuffer(
+		loop.numberOfChannels,
+		cell.length,
+		loop.sampleRate
+	);
+
+	for (let channel = 0; channel < loop.numberOfChannels; channel++) {
+		fitted
+			.getChannelData(channel)
+			.set(loop.getChannelData(channel).subarray(start, start + cell.length));
+	}
+
+	return fitted;
+};
+
 // Renders every track of a song into its own buffer. Nothing plays here, so
 // whoever calls this can start all the tracks at the same moment.
 // Tracks with no cells are left out. Throws a SongError naming the cell that
@@ -51,7 +87,15 @@ export const renderSong = async (
 
 	const renderCell = (cell: Cell) => {
 		if (cell.type == "loop") {
-			return file(`${cell.id}_${bpm}`, `the loop "${cell.name}"`);
+			const name = `${cell.id}_${bpm}`;
+
+			return once(`loop ${name}`, async () =>
+				fitToCell(
+					await file(name, `the loop "${cell.name}"`),
+					await silent(),
+					audio.context
+				)
+			);
 		}
 
 		if (cell.type == "sound") {
