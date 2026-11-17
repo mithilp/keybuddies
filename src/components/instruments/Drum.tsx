@@ -2,7 +2,7 @@
 
 import { db } from "@/utils/firebase";
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection } from "firebase/firestore";
 import { FaDrum, FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { FaCircleXmark } from "react-icons/fa6";
 import { useRef, useState } from "react";
@@ -46,12 +46,18 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const save = async () => {
 		const name = prompt("Name your beat");
 
-		await addDoc(collection(db, `studios/${studio}/sounds`), {
-			name: name,
+		// cancelled, keep the beat on screen
+		if (name === null) return;
+
+		await addDoc(collection(db, `sounds`), {
+			name: name.trim() || "Drum beat",
 			type: "drum",
 			sequence: sequence,
+			in: [studio],
+			code: Math.floor(100000 + Math.random() * 900000).toString(),
 		});
 
+		setSequence([]);
 		close();
 	};
 
@@ -131,7 +137,8 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 							<div className="space-x-4 flex">
 								<button
 									onClick={listen}
-									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+									disabled={sequence.length == 0}
+									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
 									<div id="ButtonListen">
 										{isPlaying ? "Stop Playback" : "Listen to Recording"}
@@ -140,7 +147,8 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 								</button>
 								<button
 									onClick={save}
-									className="bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+									disabled={sequence.length == 0}
+									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
 									<div>Save Recording</div>
 									<FaCheck size={32} />

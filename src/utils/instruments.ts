@@ -1,11 +1,13 @@
 "use client";
 
-import { Key } from "./types";
+import { Key, Sound } from "./types";
 import crunker from "./crunker";
 import MIDI from "./MIDI";
 import { mixDrums } from "./drum-synth";
 
-export const playPiano = async (music: Array<Key>, bpm: number) => {
+// every note of a piano recording as its own buffer, padded with silence up
+// to where the note starts
+const pianoNotes = async (music: Array<Key>, bpm: number) => {
 	const time = 7500 / bpm;
 
 	const audios: AudioBuffer[] = [];
@@ -31,12 +33,31 @@ export const playPiano = async (music: Array<Key>, bpm: number) => {
 		}
 	}
 
-	const merged = crunker?.mergeAudio(audios);
+	return audios;
+};
+
+export const playPiano = async (music: Array<Key>, bpm: number) => {
+	const merged = crunker?.mergeAudio(await pianoNotes(music, bpm));
 
 	const exported = crunker?.export(merged!, "audio/mp3");
 
 	const audio = new Audio(exported!.url);
 	audio.play();
+};
+
+// One recorded sound as a buffer that fills a cell, ready to go into a track.
+// `cell` is a cell of silence at this tempo and sets the length.
+export const renderSound = async (
+	type: Sound["type"],
+	music: Array<Key>,
+	bpm: number,
+	cell: AudioBuffer
+) => {
+	if (type === "drum") {
+		return renderDrum(music, bpm, cell.length);
+	}
+
+	return crunker!.mergeAudio([...(await pianoNotes(music, bpm)), cell]);
 };
 
 // A drum beat as a buffer on crunker's context, so it can be merged into a

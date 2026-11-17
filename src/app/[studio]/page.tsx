@@ -16,8 +16,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import crunker from "@/utils/crunker";
-import { playDrum, playPiano } from "@/utils/instruments";
-import MIDI from "@/utils/MIDI";
+import { renderSound } from "@/utils/instruments";
 
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
@@ -77,45 +76,15 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 					} else if (cell.type == "sound") {
 						const snap = await getDoc(doc(db, "sounds", cell.id));
 
-						const time = 7500 / Number(bpm);
+						const [silent] = await crunker.fetchAudio(
+							`/loops/silent_${bpm}.mp3`
+						);
 
-						const music = snap.data()!.sequence;
-
-						const audios: AudioBuffer[] = [];
-
-						for await (const key of music) {
-							const note: any = MIDI.filter(
-								(midi) => midi.value === key.note
-							)[0].text;
-							const start = key.start;
-							const end = key.end;
-
-							const buffers = await crunker?.fetchAudio(
-								`/sounds/piano/${note}.ogg`
-							);
-
-							if (buffers) {
-								const trimmed = crunker?.sliceAudio(
-									buffers[0],
-									0,
-									((end - start) * time) / 1000
-								);
-								const padded = crunker?.padAudio(
-									trimmed!,
-									0,
-									(start * time) / 1000
-								);
-
-								audios.push(padded!);
-							} else {
-								console.log("Something went wrong loading key", note);
-							}
-						}
-
-						const merged = crunker?.mergeAudio(
-							audios.concat(
-								await crunker.fetchAudio(`/loops/silent_${bpm}.mp3`)
-							)
+						const merged = await renderSound(
+							snap.data()!.type,
+							snap.data()!.sequence,
+							Number(bpm),
+							silent
 						);
 
 						const exported = crunker?.export(merged!, "audio/mp3");
