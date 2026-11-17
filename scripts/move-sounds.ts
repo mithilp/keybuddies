@@ -1,8 +1,14 @@
-// Moves sounds from before soundList and shareCodes over to them. Run it
-// once, before publishing firestore.rules, while the database is still open:
+// Moves sounds from before soundList and shareCodes over to them:
 //
 //   node --env-file=.env.local scripts/move-sounds.ts          # says what it would do
 //   node --env-file=.env.local scripts/move-sounds.ts --write  # does it
+//
+// It lists every sound, which firestore.rules turns down, so it only works
+// while the database is still open. Run it before merging, so old studios'
+// sidebars aren't empty once the new app is up. Then run it again right
+// before publishing the rules, to pick up what tabs still on the old app
+// saved, shared or added in between. Anything an old tab writes after that
+// last run won't show in the new app.
 //
 // For every sound it puts the sound in the soundList of each studio in its
 // `in` and makes the shareCodes doc for its code. It only adds docs: `in` stays

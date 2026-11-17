@@ -107,13 +107,21 @@ npm run test:rules
 
 That needs Java 11 or newer. It runs firebase-tools 13 through npx under the `demo-keybuddies` project, so it never touches the real database. The emulator starts for the run and stops after it.
 
-Changing `firestore.rules` doesn't change the live database. Before publishing them the first time, move the old sounds over while the database is still open, or their studios' sidebars will come up empty:
+Changing `firestore.rules` doesn't change the live database. The new app reads each studio's `soundList`, so old sounds have to be moved over first with `scripts/move-sounds.ts`:
 
 ```bash
 node --env-file=.env.local scripts/move-sounds.ts          # says what it would do
 node --env-file=.env.local scripts/move-sounds.ts --write  # does it
 ```
 
+The script lists every sound, which the rules turn down, so it only works while the database is still open. The first time:
+
+1. Run it, dry run first, then `--write`, before merging. The old app ignores what it adds.
+2. Merge and wait for Vercel to deploy.
+3. Run `--write` again, to pick up what tabs still on the old app saved, shared or added since.
+4. Publish the rules right after that, with nothing in between. Anything an old tab writes after the last run won't show in the new app.
+5. Click through the app and watch the console for `PERMISSION_DENIED`.
+
 It only adds docs. Old sounds keep their `in`, so tabs still on the old app keep working until the rules are published. Before writing anything, `--write` saves every sound, and every studio with its tracks and `soundList`, to `backup-<time>.json` in the folder it's run from (gitignored). `--backup <file>` saves it somewhere else, and works without `--write` too. Running it again is safe: `movedSounds/{id}` keeps which studios each sound was already put in, so a second run only picks up studios an old tab added since, and a sound someone took out of a studio stays out.
 
-Then publish the rules by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.
+To publish the rules, paste them into Firestore > Rules in the Firebase console, or run `firebase deploy --only firestore:rules`.
