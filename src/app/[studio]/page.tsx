@@ -16,75 +16,51 @@ import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";
 import StudioNotFound from "@/components/StudioNotFound";
+import StudioFailed from "@/components/StudioFailed";
+import { isStudioCode } from "@/utils/studio-code";
 import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
 import { mixDown, save, toWav } from "@/utils/export";
 
+// how long firestore gets to answer before the studio counts as not loading
+const PATIENCE = 10000;
+
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
+
+	// only a code that can't be a studio is known to be nothing without asking
+	if (!isStudioCode(studio)) {
+		return <StudioNotFound studio={studio} />;
+	}
+
+	// another studio is another page, with nothing left over from this one
+	return <Studio key={studio} studio={studio} />;
+}
+
+function Studio({ studio }: { studio: string }) {
 	const [bpm, setbpm] = useState("120");
 
-	// null until firestore says whether this studio exists
-	const [found, setFound] = useState<boolean | null>(null);
+	// What firestore has said about the studio so far. "missing" is the server
+	// saying there's no such studio. "failed" is not getting an answer, and
+	// says nothing about whether the studio exists.
+	const [load, setLoad] = useState<"loading" | "ready" | "missing" | "failed">(
+		"loading"
+	);
+
+	// goes up to ask firestore again
+	const [attempt, setAttempt] = useState(0);
+
+	const retry = () => {
+		setLoad("loading");
+		setAttempt(attempt + 1);
+	};
 
 	const [loading, setLoading] = useState(true);
 
 	const [selectedCell, setSelectedCell] = useState<Array<any>>([-1, -1]);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
-
-	useEffect(() => {
-		// metadata changes are included so a studio that isn't in the cache
-		// still gets a second snapshot once the server has answered
-		const unsub = onSnapshot(
-			doc(db, "studios", studio),
-			{ includeMetadataChanges: true },
-			(snap) => {
-				const data = snap.data();
-
-				if (!data) {
-					// an empty cache only means firestore hasn't been reached yet.
-					// keep the spinner until the server says it isn't there.
-					if (!snap.metadata.fromCache) setFound(false);
-					return;
-				}
-
-				setFound(true);
-				setbpm(data.bpm ?? "120");
-			},
-			(error) => {
-				// a code firestore won't even look up isn't a studio either
-				console.error(error);
-				setFound(false);
-			}
-		);
-
-		const tracksUnsub = onSnapshot(
-			query(collection(db, `studios/${studio}/tracks`), orderBy("order")),
-			(querySnapshot) => {
-				const freshTracks: Array<Track> = [];
-
-				querySnapshot.forEach((doc) => {
-					freshTracks.push({
-						name: doc.data().name,
-						createdAt: doc.data().createdAt,
-						order: doc.data().order,
-						notes: doc.data().notes,
-						id: doc.id,
-					});
-				});
-				setTracks(freshTracks);
-
-				setLoading(false);
-			}
-		);
-
-		return () => {
-			unsub();
-			tracksUnsub();
-		};
-	}, [studio]);
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
 
@@ -95,10 +71,10 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const [beat, setBeat] = useState(0);
 	const beatRef = useRef(0);
 
-	const place = (to: number) => {
+	const place = useCallback((to: number) => {
 		beatRef.current = to;
 		setBeat(to);
-	};
+	}, []);
 
 	const [transport] = useState(() => new Transport());
 
@@ -133,12 +109,88 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	};
 
 	// stops everything and leaves the playhead at `at`
-	const halt = (at: number) => {
-		run.current++;
-		transport.stop();
-		setPlayback("stopped");
-		place(at);
-	};
+	const halt = useCallback(
+		(at: number) => {
+			run.current++;
+			transport.stop();
+			setPlayback("stopped");
+			place(at);
+		},
+		[transport, place]
+	);
+
+	useEffect(() => {
+		// A listener that got an error is over, nothing more comes from it.
+		// The other one is ignored from then on, half a studio isn't shown.
+		let over = false;
+
+		const failed = (error: Error) => {
+			console.error(error);
+			over = true;
+
+			// the song would go on playing behind the message
+			halt(beatRef.current);
+			setLoad("failed");
+		};
+
+		// With no connection firestore doesn't fail, it waits. The listeners
+		// stay on, so the studio still shows up if the answer comes late.
+		const slow = setTimeout(() => {
+			setLoad((load) => (load == "loading" ? "failed" : load));
+		}, PATIENCE);
+
+		// metadata changes are included so a studio that isn't in the cache
+		// still gets a second snapshot once the server has answered
+		const unsub = onSnapshot(
+			doc(db, "studios", studio),
+			{ includeMetadataChanges: true },
+			(snap) => {
+				if (over) return;
+
+				const data = snap.data();
+
+				if (!data) {
+					// an empty cache only means firestore hasn't been reached yet.
+					// keep the spinner until the server says it isn't there.
+					if (!snap.metadata.fromCache) setLoad("missing");
+					return;
+				}
+
+				setLoad("ready");
+				setbpm(data.bpm ?? "120");
+			},
+			failed
+		);
+
+		const tracksUnsub = onSnapshot(
+			query(collection(db, `studios/${studio}/tracks`), orderBy("order")),
+			(querySnapshot) => {
+				if (over) return;
+
+				const freshTracks: Array<Track> = [];
+
+				querySnapshot.forEach((doc) => {
+					freshTracks.push({
+						name: doc.data().name,
+						createdAt: doc.data().createdAt,
+						order: doc.data().order,
+						notes: doc.data().notes,
+						id: doc.id,
+					});
+				});
+				setTracks(freshTracks);
+
+				setLoading(false);
+			},
+			failed
+		);
+
+		return () => {
+			clearTimeout(slow);
+			unsub();
+			tracksUnsub();
+		};
+	}, [studio, attempt, halt]);
 
 	// the pause button. the playhead stays where the song got to.
 	const stop = () => {
@@ -284,11 +336,15 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 		transport.mute(track.id, on);
 	};
 
-	if (found === false) {
+	if (load == "missing") {
 		return <StudioNotFound studio={studio} />;
 	}
 
-	if (found === null) {
+	if (load == "failed") {
+		return <StudioFailed studio={studio} retry={retry} />;
+	}
+
+	if (load == "loading") {
 		return (
 			<div className="h-screen w-screen grid place-items-center">
 				<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>

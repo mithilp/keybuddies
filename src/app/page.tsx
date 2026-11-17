@@ -1,6 +1,7 @@
 import PendingButton from "@/components/PendingButton";
 import { db } from "@/utils/firebase";
 import { claimStudio } from "@/utils/codes";
+import { isStudioCode } from "@/utils/studio-code";
 import {
 	Timestamp,
 	addDoc,
@@ -20,7 +21,10 @@ export default async function Home({
 	const { error } = await searchParams;
 	async function joinStudio(formData: FormData) {
 		"use server";
-		const pin = formData.get("pin") as string;
+		const pin = String(formData.get("pin") ?? "").trim();
+
+		// firestore isn't asked about something that can't be a code
+		if (!isStudioCode(pin)) redirect(`/?error=not-found`);
 
 		const snapshot = await getDoc(doc(db, "studios", pin));
 		if (snapshot.exists()) {
