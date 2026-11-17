@@ -8,8 +8,8 @@ export const selected = "bg-ink text-surface";
 // can take what's being placed
 export const dropTarget = "border-dashed border-ink";
 
-// a bar with nothing in it
-export const empty = "bg-paper/60 border-dashed border-ink text-ink/60";
+// a bar with nothing in it. its border is quiet so dropTarget shows on it.
+export const empty = "bg-paper/60 border-ink/30 text-ink/60";
 
 // recording, counting down: something is happening right now
 export const live = "bg-ink text-surface";
