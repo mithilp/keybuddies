@@ -26,7 +26,7 @@ const EditPianoSound = ({
 			<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 				<div className="flex justify-between items-center">
 					<h3 className="text-2xl font-bold">Edit {sound.name}</h3>
-					<button onClick={close}>
+					<button onClick={close} aria-label="Close" title="Close">
 						<FaCircleXmark size={32} />
 					</button>
 				</div>

@@ -47,6 +47,10 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 
 	const [naming, setNaming] = useState(false);
 
+	// whether a drum is hit on a step
+	const on = (voice: number, step: number) =>
+		sequence.some((note) => note.note == voice && note.start == step);
+
 	const save = async (name: string) => {
 		await addDoc(collection(db, `sounds`), {
 			name: name || "Drum beat",
@@ -84,7 +88,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
-							<button onClick={close}>
+							<button onClick={close} aria-label="Close" title="Close">
 								<FaCircleXmark size={32} />
 							</button>
 						</div>
@@ -99,13 +103,11 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 										{Array.from(Array(DRUM_STEPS)).map((_, i) => (
 											<button
 												key={i}
+												aria-label={`${sound.note}, step ${i + 1}`}
+												aria-pressed={on(sound.value, i)}
+												title={`${sound.note}, step ${i + 1}`}
 												onClick={() => {
-													if (
-														sequence.filter(
-															(note) =>
-																note.note == sound.value && note.start == i
-														).length > 0
-													) {
+													if (on(sound.value, i)) {
 														setSequence(
 															sequence.filter(
 																(note) =>
@@ -122,12 +124,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 													}
 												}}
 												className={`w-10 h-8 rounded-sm text-white my-1 ${
-													sequence.filter(
-														(note) =>
-															note.note == sound.value && note.start == i
-													).length > 0
-														? "bg-yellow"
-														: "bg-pink"
+													on(sound.value, i) ? "bg-yellow" : "bg-pink"
 												}`}
 											></button>
 										))}

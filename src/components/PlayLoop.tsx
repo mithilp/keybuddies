@@ -8,10 +8,12 @@ import {
 
 const PlayLoop = ({
 	id,
+	name,
 	selected,
 	bpm,
 }: {
 	id: string;
+	name: string;
 	selected: boolean;
 	bpm: string;
 }) => {
@@ -25,6 +27,8 @@ const PlayLoop = ({
 	return (
 		<button
 			className="w-6 h-6"
+			aria-label={state == "idle" ? `Listen to ${name}` : `Stop ${name}`}
+			title={state == "idle" ? "Listen" : "Stop"}
 			onClick={(event) => {
 				// the row behind this button is what puts a loop in a cell.
 				// this one only listens.

@@ -50,7 +50,12 @@ const Loops = ({
 					}`}
 				>
 					<div>{loop.name}</div>
-					<PlayLoop bpm={bpm} selected={selectedCell[0] != -1} id={loop.id} />
+					<PlayLoop
+						bpm={bpm}
+						selected={selectedCell[0] != -1}
+						id={loop.id}
+						name={loop.name}
+					/>
 				</div>
 			))}
 

@@ -38,7 +38,12 @@ const Track = ({
 			<div className="flex items-center space-x-4">
 				<h3 className="text-lg uppercase font-black">{track.name}</h3>
 
-				<button onClick={() => onMute()}>
+				<button
+					onClick={() => onMute()}
+					aria-pressed={muted}
+					aria-label={`Mute ${track.name}`}
+					title={muted ? "Unmute track" : "Mute track"}
+				>
 					{muted ? <FaVolumeMute /> : <FaVolumeUp />}
 				</button>
 
@@ -46,6 +51,8 @@ const Track = ({
 					onClick={() => {
 						deleteDoc(doc(db, "studios", studio, "tracks", track.id));
 					}}
+					aria-label={`Delete ${track.name}`}
+					title="Delete track"
 				>
 					<FaTrash />
 				</button>
@@ -74,6 +81,8 @@ const Track = ({
 						</div>
 						<button
 							className="text-2xl"
+							aria-label={`Delete cell ${index + 1} of ${track.name}`}
+							title="Delete cell"
 							onClick={() => {
 								removeCell(studio, track.id, index, note).catch(failed);
 							}}
@@ -85,6 +94,8 @@ const Track = ({
 
 				<button
 					className="pr-4"
+					aria-label={`Add a cell to ${track.name}`}
+					title="Add a cell"
 					onClick={() => {
 						addCell(studio, track.id).catch(failed);
 					}}
