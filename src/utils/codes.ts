@@ -2,8 +2,7 @@ import { Timestamp, doc, getDoc, runTransaction } from "firebase/firestore";
 import { db } from "./firebase";
 
 // studios and sounds both go by a random 6 digit code
-const randomCode = () =>
-	Math.floor(100000 + Math.random() * 900000).toString();
+const randomCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // how many codes to try before giving up. with 900000 of them a second try
 // is already rare.

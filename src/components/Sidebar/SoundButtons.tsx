@@ -1,12 +1,7 @@
 import { shareCode } from "@/utils/codes";
 import { playDrum, playPiano } from "@/utils/instruments";
 import { soundBars } from "@/utils/clips";
-import {
-	NAME_LENGTH,
-	copyName,
-	removeSound,
-	saveSound,
-} from "@/utils/sounds";
+import { NAME_LENGTH, copyName, removeSound, saveSound } from "@/utils/sounds";
 import { Sound } from "@/utils/types";
 import React, { useState } from "react";
 import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
@@ -103,9 +98,12 @@ const SoundThumbnail = ({
 						if (playing == -1) {
 							setPlaying(index);
 							playSound(sound);
-							setTimeout(() => {
-								setPlaying(-1);
-							}, (soundBars(sound.bars) * 240000) / Number(bpm));
+							setTimeout(
+								() => {
+									setPlaying(-1);
+								},
+								(soundBars(sound.bars) * 240000) / Number(bpm)
+							);
 						}
 					}}
 				>

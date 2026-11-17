@@ -8,11 +8,7 @@ import { cn } from "@/lib/utils";
 // One of these sits at the root of the app. A tooltip shows up after a short
 // wait, and it can't be hovered or clicked itself, so it never gets between
 // the mouse and what's under it.
-const TooltipProvider = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => (
+const TooltipProvider = ({ children }: { children: React.ReactNode }) => (
 	<TooltipPrimitive.Provider
 		delayDuration={300}
 		skipDelayDuration={200}

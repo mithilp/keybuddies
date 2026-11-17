@@ -188,7 +188,10 @@ test("a loop that was written down stays when its last cell is gone", () => {
 		"bass_1",
 		"piano_4",
 	]);
-	assert.deepEqual(ids(studioLoops([], kept, undefined)), ["bass_1", "piano_4"]);
+	assert.deepEqual(ids(studioLoops([], kept, undefined)), [
+		"bass_1",
+		"piano_4",
+	]);
 
 	// and then there's nothing left to write down
 	assert.deepEqual(cellOnlyLoops(before, kept, undefined), []);

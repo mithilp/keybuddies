@@ -137,10 +137,7 @@ export class Transport {
 
 		for (const voice of this.voices.values()) {
 			voice.gain.gain.setValueAtTime(0, when);
-			voice.gain.gain.linearRampToValueAtTime(
-				voice.muted ? 0 : 1,
-				when + FADE
-			);
+			voice.gain.gain.linearRampToValueAtTime(voice.muted ? 0 : 1, when + FADE);
 		}
 
 		this.begin(at, when);
@@ -199,10 +196,7 @@ export class Transport {
 		if (!this.song) return 0;
 
 		// before the sources have started this is still where they will
-		const elapsed = Math.max(
-			0,
-			crunker!.context.currentTime - this.startedAt
-		);
+		const elapsed = Math.max(0, crunker!.context.currentTime - this.startedAt);
 
 		// a looping song has been around a few times
 		return (this.offset + elapsed) % this.song.duration;

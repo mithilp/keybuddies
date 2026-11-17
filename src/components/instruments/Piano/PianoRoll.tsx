@@ -46,9 +46,7 @@ const PianoRoll = ({
 	const columns = Array.from({ length: steps }, (_, step) => step);
 
 	// the note the popup is open for, and the step it was opened from
-	const [picked, setPicked] = useState<{ key: Key; step: number } | null>(
-		null
-	);
+	const [picked, setPicked] = useState<{ key: Key; step: number } | null>(null);
 
 	// Escape closes the popup before the piano it's on
 	useEscape(() => setPicked(null), picked !== null);

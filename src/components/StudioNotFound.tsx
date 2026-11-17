@@ -10,8 +10,8 @@ const StudioNotFound = ({ studio }: { studio: string }) => {
 				<h1 className="text-3xl font-black">Studio not found</h1>
 				<p>
 					There&apos;s no studio with the code{" "}
-					<span className="font-black break-all">{studio}</span>. Check the
-					code and try again.
+					<span className="font-black break-all">{studio}</span>. Check the code
+					and try again.
 				</p>
 				<Link
 					href="/"

@@ -53,7 +53,7 @@ const Playhead = ({
 				}px)`;
 			}
 		},
-		[beats],
+		[beats]
 	);
 
 	// The drag that's going on, if one is. `from` is where the pointer went
@@ -118,10 +118,7 @@ const Playhead = ({
 		// the nearest beat, but never the very end
 		held.to = Math.max(
 			0,
-			Math.min(
-				Math.round((along(event) - held.offset) / BEAT_WIDTH),
-				beats - 1,
-			),
+			Math.min(Math.round((along(event) - held.offset) / BEAT_WIDTH), beats - 1)
 		);
 		show(held.to);
 	};

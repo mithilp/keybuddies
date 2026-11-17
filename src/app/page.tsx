@@ -2,13 +2,7 @@ import PendingButton from "@/components/PendingButton";
 import { db } from "@/utils/firebase";
 import { claimStudio } from "@/utils/codes";
 import { isStudioCode } from "@/utils/studio-code";
-import {
-	Timestamp,
-	addDoc,
-	collection,
-	doc,
-	getDoc,
-} from "firebase/firestore";
+import { Timestamp, addDoc, collection, doc, getDoc } from "firebase/firestore";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";

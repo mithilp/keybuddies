@@ -91,10 +91,19 @@ export const readTrack = (data: TrackDoc): TrackClips => {
 export const writeClips = (clips: Clip[]) =>
 	[...clips]
 		.sort((a, b) => a.start - b.start)
-		.map(({ type, name, id, start, bars }) => ({ type, name, id, start, bars }));
+		.map(({ type, name, id, start, bars }) => ({
+			type,
+			name,
+			id,
+			start,
+			bars,
+		}));
 
 export const sameClip = (a: Clip, b: Clip) =>
-	a.type === b.type && a.id === b.id && a.start === b.start && a.bars === b.bars;
+	a.type === b.type &&
+	a.id === b.id &&
+	a.start === b.start &&
+	a.bars === b.bars;
 
 // the clip that covers a bar, if one does
 export const clipAt = (clips: Clip[], bar: number) =>
@@ -138,7 +147,9 @@ export const placeItem = (
 		return longest(
 			track,
 			track.clips.map((clip) =>
-				sameClip(clip, old) ? { ...what, start: old.start, bars: old.bars } : clip
+				sameClip(clip, old)
+					? { ...what, start: old.start, bars: old.bars }
+					: clip
 			)
 		);
 	}

@@ -35,7 +35,12 @@ const sound = (bars?: 1 | 2 | 4): Item => ({
 
 test("an old track's cells are 2 bar clips where the cells were", () => {
 	const read = readTrack({
-		notes: [oldLoop("bass_1"), empty, { type: "sound", name: "Hum", id: "hum" }, empty],
+		notes: [
+			oldLoop("bass_1"),
+			empty,
+			{ type: "sound", name: "Hum", id: "hum" },
+			empty,
+		],
 	});
 
 	assert.deepEqual(read, {
@@ -81,7 +86,10 @@ test("a track with clips is read from them and not its cells", () => {
 });
 
 test("an entry in clips with no start is left out", () => {
-	const read = readTrack({ clips: [oldLoop("bass_1"), clip("hum", 2, 1)], bars: 4 });
+	const read = readTrack({
+		clips: [oldLoop("bass_1"), clip("hum", 2, 1)],
+		bars: 4,
+	});
 
 	assert.deepEqual(read.clips, [clip("hum", 2, 1)]);
 });
@@ -170,9 +178,11 @@ test("a clip put in a gap is cut down to what fits", () => {
 
 	// 2 bars free from bar 1, a 4 bar sound gets 2
 	assert.deepEqual(
-		placeItem(track, { bar: 1, clip: null }, sound(4))?.clips.map(
-			(clip) => [clip.id, clip.start, clip.bars]
-		),
+		placeItem(track, { bar: 1, clip: null }, sound(4))?.clips.map((clip) => [
+			clip.id,
+			clip.start,
+			clip.bars,
+		]),
 		[
 			["a", 0, 1],
 			["beat", 1, 2],
@@ -223,10 +233,7 @@ test("a pick on a clip that's changed since puts nothing in", () => {
 	const track = { clips: [clip("a", 2, 2)], bars: 8 };
 
 	// someone else made it longer
-	assert.equal(
-		placeItem(track, { bar: 2, clip: clip("a", 2, 4) }, bass),
-		null
-	);
+	assert.equal(placeItem(track, { bar: 2, clip: clip("a", 2, 4) }, bass), null);
 	// someone else took it out
 	assert.equal(
 		placeItem({ clips: [], bars: 8 }, { bar: 2, clip: clip("a", 2, 2) }, bass),
@@ -336,7 +343,10 @@ test("a repeat lands on the same sample a clip starting there would", () => {
 			for (let start = 0; start < 40; start++) {
 				const second = fill({ start, bars: 4 }, 2, at)[1];
 
-				assert.equal(second.at, fill({ start: start + 2, bars: 2 }, 2, at)[0].at);
+				assert.equal(
+					second.at,
+					fill({ start: start + 2, bars: 2 }, 2, at)[0].at
+				);
 			}
 		}
 	}

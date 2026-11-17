@@ -125,8 +125,8 @@ const PianoOptions = ({
 					{countdown > 0
 						? `Starting in ${countdown}s`
 						: recording
-						? "Stop Recording"
-						: "Start Recording"}
+							? "Stop Recording"
+							: "Start Recording"}
 				</button>
 
 				{/* always here, so the first note doesn't push everything down */}

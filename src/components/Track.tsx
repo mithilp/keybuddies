@@ -98,7 +98,10 @@ const Track = ({
 				</Tip>
 			</div>
 			<div className="flex items-center space-x-2">
-				<div className="relative h-24" style={{ width: track.bars * BAR_WIDTH }}>
+				<div
+					className="relative h-24"
+					style={{ width: track.bars * BAR_WIDTH }}
+				>
 					{Array.from({ length: track.bars }, (_, bar) => bar)
 						.filter((bar) => !clipAt(track.clips, bar))
 						.map((bar) => {
@@ -203,7 +206,9 @@ const Track = ({
 						className="pr-4 disabled:opacity-30"
 						aria-label={`Take the last bar off ${track.name}`}
 						// only an empty last bar can go
-						disabled={track.bars == 0 || clipAt(track.clips, track.bars - 1) !== null}
+						disabled={
+							track.bars == 0 || clipAt(track.clips, track.bars - 1) !== null
+						}
 						onClick={() => {
 							removeTrackBar(studio, track.id).catch(unsaved);
 						}}

@@ -105,7 +105,12 @@ const LibraryDialog = ({
 			)}
 
 			<div className="flex justify-end">
-				<button ref={done} type="button" onClick={close} className={quietButton}>
+				<button
+					ref={done}
+					type="button"
+					onClick={close}
+					className={quietButton}
+				>
 					Done
 				</button>
 			</div>

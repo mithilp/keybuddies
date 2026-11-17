@@ -61,10 +61,7 @@ const Tracks = ({
 
 									// the nearest beat, but never the very end
 									seek(
-										Math.max(
-											0,
-											Math.min(Math.round(x / BEAT_WIDTH), beats - 1)
-										)
+										Math.max(0, Math.min(Math.round(x / BEAT_WIDTH), beats - 1))
 									);
 								}}
 							>

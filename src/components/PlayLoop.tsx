@@ -1,10 +1,6 @@
 import { useEffect } from "react";
 import { FaStop, FaVolumeUp } from "react-icons/fa";
-import {
-	previewLoop,
-	stopLoopPreview,
-	useLoopPreview,
-} from "@/utils/preview";
+import { previewLoop, stopLoopPreview, useLoopPreview } from "@/utils/preview";
 import { Tip } from "./ui/tooltip";
 
 // Listens to a loop on its own, at the tempo the studio is on. Pressing it

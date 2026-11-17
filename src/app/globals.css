@@ -2,16 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-
 body {
-  color: rgb(0,0,0);
-  background: rgb(255,
-    144,
-    188);
+	color: rgb(0, 0, 0);
+	background: rgb(255, 144, 188);
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+	.text-balance {
+		text-wrap: balance;
+	}
 }

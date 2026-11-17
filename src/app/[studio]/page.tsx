@@ -70,9 +70,10 @@ function Studio({ studio }: { studio: string }) {
 
 	// The studio's `library` and `libraryRemoved` fields, as they came. A
 	// studio from before the library has neither.
-	const [library, setLibrary] = useState<{ added: unknown; removed: unknown }>(
-		{ added: undefined, removed: undefined }
-	);
+	const [library, setLibrary] = useState<{ added: unknown; removed: unknown }>({
+		added: undefined,
+		removed: undefined,
+	});
 
 	// whether those two came from the server, and not from what this browser
 	// remembered of the studio

@@ -110,8 +110,8 @@ const Header = ({
 						playback == "stopped"
 							? "Play"
 							: playback == "playing"
-							? "Pause"
-							: "Loading, press to cancel"
+								? "Pause"
+								: "Loading, press to cancel"
 					}
 					side="bottom"
 				>
@@ -121,8 +121,8 @@ const Header = ({
 							playback == "stopped"
 								? "Play the song"
 								: playback == "playing"
-								? "Pause the song"
-								: "Loading the song, press to cancel"
+									? "Pause the song"
+									: "Loading the song, press to cancel"
 						}
 						className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
 					>
