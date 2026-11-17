@@ -1,32 +1,21 @@
 import { db } from "@/utils/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { useState } from "react";
+import { Playback } from "@/utils/types";
 import { FaCircle, FaPause, FaPlay } from "react-icons/fa";
 
 const Header = ({
 	studio,
 	bpm,
+	playback,
 	play,
 	stop,
 }: {
 	studio: string;
 	bpm: string;
-	play: (onFinish: Function) => void;
+	playback: Playback;
+	play: () => void;
 	stop: () => void;
 }) => {
-	const [playing, setPlaying] = useState(false);
-
-	const playButton = () => {
-		setPlaying(!playing);
-		if (playing !== true) {
-			play(() => {
-				setPlaying(false);
-			});
-		} else {
-			stop();
-		}
-	};
-
 	return (
 		<div className="flex sticky top-0 justify-between border-black border-b-8 py-6 px-4">
 			<div>
@@ -54,10 +43,16 @@ const Header = ({
 					<FaCircle color="#ff6767" />
 				</button>
 				<button
-					onClick={playButton}
+					onClick={playback == "stopped" ? play : stop}
 					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
 				>
-					{playing ? <FaPause color="#000000" /> : <FaPlay color="#000000" />}
+					{playback == "loading" ? (
+						<div className="animate-spin w-8 h-8 border-4 border-black border-b-transparent rounded-full"></div>
+					) : playback == "playing" ? (
+						<FaPause color="#000000" />
+					) : (
+						<FaPlay color="#000000" />
+					)}
 				</button>
 			</div>
 		</div>

@@ -8,6 +8,9 @@ export type Track = {
 	id: string;
 };
 
+// "loading" is the gap between pressing play and the tracks starting
+export type Playback = "stopped" | "loading" | "playing";
+
 export type Cell = {
 	type: "sound" | "empty" | "loop";
 	name: string;
