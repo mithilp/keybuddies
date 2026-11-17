@@ -3,7 +3,7 @@ import Piano from "../instruments/Piano/Piano";
 import SoundButtons from "./SoundButtons";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
-import { FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
+import { FaDrum, FaGuitar, FaTrash, FaVolumeUp } from "react-icons/fa";
 import { Sound, Track } from "@/utils/types";
 import {
 	arrayRemove,
@@ -94,6 +94,8 @@ const Instruments = ({
 						<div className="flex items-center space-x-2">
 							{sound.type == "piano" ? (
 								<MdPiano size={32} />
+							) : sound.type == "drum" ? (
+								<FaDrum size={32} />
 							) : (
 								<FaGuitar size={32} />
 							)}
