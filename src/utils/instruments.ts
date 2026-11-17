@@ -5,10 +5,7 @@ import crunker, { wake } from "./crunker";
 import { mixDrums } from "./drum-synth";
 import { preview, stopPreview } from "./preview";
 import { hasPianoNote, loadPianoNote } from "./samples";
-import { cellFrames } from "./tempo";
-
-// piano notes are written in eighths of a beat, 64 to a cell
-const PIANO_STEPS = 64;
+import { cellFrames, PIANO_STEPS } from "./tempo";
 
 // seconds a piano note takes to fade when it's cut off before its sample
 // ends, so it doesn't click
