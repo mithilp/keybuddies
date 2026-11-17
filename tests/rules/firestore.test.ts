@@ -30,7 +30,7 @@ import {
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { after, before, beforeEach, describe, test } from "node:test";
-import { moveSounds } from "../../scripts/move-sounds.ts";
+import { backup, moveSounds } from "../../scripts/move-sounds.ts";
 
 const STUDIO = "482913";
 const OTHER = "751204";
@@ -751,6 +751,29 @@ describe("moving old sounds", () => {
 		// the script's notes are closed to the app
 		await assertFails(getDoc(doc(db, "movedSounds", A)));
 		await assertFails(setDoc(doc(db, "movedSounds", A), { in: [] }));
+	});
+
+	test("the backup has every sound and studio and writes nothing", async () => {
+		await seedOld();
+		await seedTrack("t1");
+		await seed(`studios/${STUDIO}/soundList/${A}`, {});
+
+		const saved = JSON.parse(JSON.stringify(await open(backup)));
+
+		assert.deepEqual(Object.keys(saved.sounds).sort(), [A, B, C]);
+		assert.deepEqual(saved.sounds[A].in, [STUDIO, OTHER, "999999", "abc"]);
+		assert.deepEqual(Object.keys(saved.studios).sort(), [STUDIO, OTHER].sort());
+		assert.equal(saved.studios[STUDIO].data.bpm, "120");
+		assert.deepEqual(Object.keys(saved.studios[STUDIO].tracks), ["t1"]);
+		assert.equal(saved.studios[STUDIO].tracks.t1.name, "Track 1");
+		assert.deepEqual(saved.studios[STUDIO].soundList, [A]);
+		assert.deepEqual(saved.studios[OTHER].tracks, {});
+
+		assert.deepEqual(await ids(OTHER), []);
+		assert.equal(
+			(await getDoc(doc(db, "shareCodes", "305118"))).exists(),
+			false,
+		);
 	});
 });
 

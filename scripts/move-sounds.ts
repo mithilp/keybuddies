@@ -15,6 +15,10 @@
 // already moved, so a second run only moves studios an old tab added since,
 // and a sound someone took out of a studio in the new app stays out. The
 // rules don't match movedSounds, so the app can't read it.
+//
+// Before writing anything it saves every sound, and every studio with its
+// tracks and soundList, to backup-<time>.json in the folder it's run from.
+// --backup <file> saves it somewhere else, and also works without --write.
 
 import { initializeApp } from "firebase/app";
 import {
@@ -26,10 +30,33 @@ import {
 	setDoc,
 	type Firestore,
 } from "firebase/firestore";
+import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const isCode = (value: unknown): value is string =>
 	typeof value === "string" && /^[0-9]{6}$/.test(value);
+
+// Every sound, and every studio with its tracks and soundList. Only reads.
+export const backup = async (db: Firestore) => {
+	const all = async (path: string) =>
+		Object.fromEntries(
+			(await getDocs(collection(db, path))).docs.map((entry) => [
+				entry.id,
+				entry.data(),
+			]),
+		);
+
+	const studios: Record<string, object> = {};
+	for (const studio of (await getDocs(collection(db, "studios"))).docs) {
+		studios[studio.id] = {
+			data: studio.data(),
+			tracks: await all(`studios/${studio.id}/tracks`),
+			soundList: Object.keys(await all(`studios/${studio.id}/soundList`)),
+		};
+	}
+
+	return { sounds: await all("sounds"), studios };
+};
 
 export const moveSounds = async (db: Firestore, write: boolean) => {
 	const counts = { sounds: 0, listed: 0, codes: 0, taken: 0 };
@@ -94,7 +121,19 @@ export const moveSounds = async (db: Firestore, write: boolean) => {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
 	const write = process.argv.includes("--write");
+	const flag = process.argv.indexOf("--backup");
+	const file =
+		flag === -1
+			? write
+				? `backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
+				: null
+			: process.argv[flag + 1];
 	const project = process.env.NEXT_PUBLIC_PROJECT_ID;
+
+	if (file === undefined || file?.startsWith("--")) {
+		console.error("--backup needs a file name.");
+		process.exit(1);
+	}
 
 	const db = getFirestore(
 		initializeApp({
@@ -103,6 +142,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 			appId: process.env.NEXT_PUBLIC_APP_ID,
 		}),
 	);
+
+	if (file) {
+		// wx: never writes over an older backup
+		writeFileSync(file, JSON.stringify(await backup(db), null, "\t"), {
+			flag: "wx",
+		});
+		console.log(`Saved every sound and studio in ${project} to ${file}.`);
+	}
 
 	const counts = await moveSounds(db, write);
 

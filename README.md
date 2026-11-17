@@ -114,6 +114,6 @@ node --env-file=.env.local scripts/move-sounds.ts          # says what it would 
 node --env-file=.env.local scripts/move-sounds.ts --write  # does it
 ```
 
-It only adds docs. Old sounds keep their `in`, so tabs still on the old app keep working until the rules are published. Running it again is safe: `movedSounds/{id}` keeps which studios each sound was already put in, so a second run only picks up studios an old tab added since, and a sound someone took out of a studio stays out.
+It only adds docs. Old sounds keep their `in`, so tabs still on the old app keep working until the rules are published. Before writing anything, `--write` saves every sound, and every studio with its tracks and `soundList`, to `backup-<time>.json` in the folder it's run from (gitignored). `--backup <file>` saves it somewhere else, and works without `--write` too. Running it again is safe: `movedSounds/{id}` keeps which studios each sound was already put in, so a second run only picks up studios an old tab added since, and a sound someone took out of a studio stays out.
 
 Then publish the rules by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.
