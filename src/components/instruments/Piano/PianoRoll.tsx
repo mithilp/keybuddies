@@ -206,15 +206,16 @@ const PianoRoll = ({
 													</button>
 												</Tip>
 											)}
-											{key.end - key.start > 1 && (
+											{/* a note held past the end gets shorter from the end */}
+											{Math.min(steps, key.end) - key.start > 1 && (
 												<Tip label="Shorter">
 													<button
 														aria-label="Make note shorter"
 														onClick={() =>
 															replace(
 																key,
-																{ ...key, end: key.end - 1 },
-																Math.min(step, key.end - 2)
+																{ ...key, end: Math.min(steps, key.end) - 1 },
+																Math.min(step, Math.min(steps, key.end) - 2)
 															)
 														}
 													>

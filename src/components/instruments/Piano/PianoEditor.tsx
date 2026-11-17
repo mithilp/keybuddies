@@ -22,7 +22,9 @@ const LAST_NOTE = 77;
 // are this with a different title and a different save.
 //
 // A new recording can be 1, 2 or 4 bars. A saved one is edited at the length
-// it was made with, passed in as `bars`.
+// it was made with, passed in as `bars`. Notes past the end stay in
+// `sequence` so a shorter length can be tried and undone, and are only cut
+// off what's played and saved, the same as the drum recorder.
 const PianoEditor = ({
 	bpm,
 	initial,
@@ -53,6 +55,9 @@ const PianoEditor = ({
 		pianoNotes(initial ?? [], steps)
 	);
 	const [recording, setRecording] = useState(false);
+
+	// what's heard and saved at this length
+	const inside = useMemo(() => pianoNotes(sequence, steps), [sequence, steps]);
 
 	// when the recording started, and the note of every key that's down
 	const startedAt = useRef(0);
@@ -156,13 +161,13 @@ const PianoEditor = ({
 		if (listening) return;
 
 		setListening(true);
-		playPiano(sequence, bpm, length);
+		playPiano(inside, bpm, length);
 		listenTimer.current = setTimeout(() => {
 			setListening(false);
 		}, multiplier * steps);
 	};
 
-	const idle = sequence.length === 0 || recording;
+	const idle = inside.length === 0 || recording;
 
 	return (
 		<div className="space-y-4">
@@ -176,15 +181,9 @@ const PianoEditor = ({
 				empty={sequence.length === 0}
 				onRecord={startRecording}
 				onStop={stopRecording}
-				// only a new recording can pick its length. notes past a
-				// shorter end are cut off it.
+				// only a new recording can pick its length
 				bars={bars === undefined ? chosen : undefined}
-				setBars={(next) => {
-					setChosen(next);
-					setSequence((sequence) =>
-						pianoNotes(sequence, next * PIANO_BAR_STEPS)
-					);
-				}}
+				setBars={setChosen}
 				// ends the take too. the timer that stops a recording by itself
 				// was set when it started and wouldn't know about a new start.
 				onReset={() => {
@@ -231,7 +230,7 @@ const PianoEditor = ({
 						)}
 					</button>
 					<button
-						onClick={() => onSave(sequence, length)}
+						onClick={() => onSave(inside, length)}
 						disabled={idle}
 						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 					>
