@@ -8,6 +8,7 @@ import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaTrash } from "react-icons/fa";
 import { FaXmark } from "react-icons/fa6";
 import { Tip } from "@/components/ui/tooltip";
+import { useEscape } from "@/utils/escape";
 
 const STEPS = Array.from({ length: PIANO_STEPS }, (_, step) => step);
 
@@ -47,6 +48,9 @@ const PianoRoll = ({
 	const [picked, setPicked] = useState<{ key: Key; step: number } | null>(
 		null
 	);
+
+	// Escape closes the popup before the piano it's on
+	useEscape(() => setPicked(null), picked !== null);
 
 	const replace = (key: Key, next: Key, step: number) => {
 		onChange(sequence.map((note) => (note === key ? next : note)));
