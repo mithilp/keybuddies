@@ -21,6 +21,7 @@ import { isStudioCode } from "@/utils/studio-code";
 import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
+import { sameCell } from "@/utils/cells";
 import { mixDown, save, toWav } from "@/utils/export";
 
 // how long firestore gets to answer before the studio counts as not loading
@@ -65,6 +66,16 @@ function Studio({ studio }: { studio: string }) {
 	const [selectedCell, setSelectedCell] = useState<SelectedCell>(null);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
+
+	// A pick is for the cell it was made on. When that cell isn't at its place
+	// any more (someone else took out a cell before it, or put something in
+	// it), the pick is let go, so a loop can't land in the cell that moved in.
+	if (selectedCell) {
+		const track = tracks.find((track) => track.id === selectedCell.track);
+		const cell = track?.notes[selectedCell.index];
+
+		if (!cell || !sameCell(cell, selectedCell.cell)) setSelectedCell(null);
+	}
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
 

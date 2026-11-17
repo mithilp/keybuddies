@@ -33,11 +33,13 @@ const Loops = ({
 							);
 							if (track) {
 								previewLoop(loop.id, bpm);
-								setCell(studio, track.id, selectedCell.index, {
-									type: "loop",
-									name: loop.name,
-									id: loop.id,
-								}).catch((error) => {
+								setCell(
+									studio,
+									track.id,
+									selectedCell.index,
+									selectedCell.cell,
+									{ type: "loop", name: loop.name, id: loop.id }
+								).catch((error) => {
 									console.error(error);
 									setNotice("Couldn't put the loop in. Try again.");
 								});

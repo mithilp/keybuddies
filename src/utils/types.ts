@@ -11,9 +11,11 @@ export type Track = {
 // "loading" is the gap between pressing play and the tracks starting
 export type Playback = "stopped" | "loading" | "playing";
 
-// The cell that's picked to take a loop or a sound: the id of its track and
-// its place on it. null when nothing is picked.
-export type SelectedCell = { track: string; index: number } | null;
+// The cell that's picked to take a loop or a sound: the id of its track, its
+// place on it and what was in it when it was picked. Cells go by position, so
+// the last one is how to tell that it's still the same cell. null when
+// nothing is picked.
+export type SelectedCell = { track: string; index: number; cell: Cell } | null;
 
 export type Cell = {
 	type: "sound" | "empty" | "loop";

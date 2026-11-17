@@ -74,7 +74,9 @@ const Track = ({
 								className="w-36"
 								onClick={() => {
 									setSelectedCell(
-										picked ? null : { track: track.id, index: index }
+										picked
+											? null
+											: { track: track.id, index: index, cell: note }
 									);
 								}}
 							>

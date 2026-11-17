@@ -27,17 +27,22 @@ const editCells = (
 		if (next) transaction.update(ref, { notes: next });
 	});
 
-const same = (a: Cell, b: Cell) => a.type === b.type && a.id === b.id;
+// two empty cells are the same to this, they have nothing to tell them apart
+export const sameCell = (a: Cell, b: Cell) =>
+	a.type === b.type && a.id === b.id;
 
-// puts a loop or a sound in a cell, if the cell is still there
+// Puts a loop or a sound in a cell. Cells go by position, so if the one at
+// this position isn't the one that was picked any more (someone else took
+// out a cell before it), nothing is written.
 export const setCell = (
 	studio: string,
 	track: string,
 	index: number,
+	seen: Cell,
 	cell: Cell
 ) =>
 	editCells(studio, track, (cells) =>
-		index < cells.length
+		index < cells.length && sameCell(cells[index], seen)
 			? cells.map((old, i) => (i === index ? cell : old))
 			: null
 	);
@@ -58,7 +63,7 @@ export const removeCell = (
 	seen: Cell
 ) =>
 	editCells(studio, track, (cells) =>
-		index < cells.length && same(cells[index], seen)
+		index < cells.length && sameCell(cells[index], seen)
 			? cells.filter((_, i) => i !== index)
 			: null
 	);

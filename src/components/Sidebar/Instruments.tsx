@@ -60,7 +60,7 @@ const Instruments = ({
 
 		const track = tracks.find((track) => track.id === selectedCell.track);
 		if (track) {
-			setCell(studio, track.id, selectedCell.index, {
+			setCell(studio, track.id, selectedCell.index, selectedCell.cell, {
 				name: sound.name,
 				id: sound.id,
 				type: "sound",
