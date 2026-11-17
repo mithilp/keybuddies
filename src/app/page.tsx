@@ -44,7 +44,9 @@ export default async function Home({
 				createdAt: Timestamp.now(),
 				name: `Track ${i + 1}`,
 				order: i,
+				// `notes` is only there so a tab still on the old app can show it
 				notes: [],
+				clips: [],
 				bars: 8,
 			});
 		}

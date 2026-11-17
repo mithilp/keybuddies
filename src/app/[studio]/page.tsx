@@ -231,7 +231,7 @@ function Studio({ studio }: { studio: string }) {
 					const data = doc.data();
 
 					// old tracks are cells, new ones are clips, both read the same
-					const { clips, bars } = readTrack(data.notes, data.bars);
+					const { clips, bars } = readTrack(data);
 
 					freshTracks.push({
 						name: data.name,

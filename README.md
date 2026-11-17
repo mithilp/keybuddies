@@ -46,12 +46,15 @@ Both lists can be missing. A studio made before the library has neither, and the
 | `createdAt` | timestamp |
 | `name` | track name |
 | `order` | where it sits in the list |
-| `notes` | the clips, in order |
-| `bars` | how many bars the track is. Tracks from before clips had lengths don't have it |
+| `clips` | the clips, in order. Tracks from before clips had lengths don't have it |
+| `bars` | how many bars the track is. Same as `clips` |
+| `notes` | the 8 beat cells from before clips had lengths. Empty on new tracks |
 
-A clip is `{ type, name, id, start, bars }`. `type` is `"loop"` (`id` is a loop from the library in `src/utils/loops.ts`) or `"sound"` (`id` is a document in `sounds`). `start` is the bar it starts on, from 0, and `bars` is 1, 2 or 4. Clips never overlap. They stay in the track doc's `notes` array, so one transaction still covers a whole track edit.
+A clip is `{ type, name, id, start, bars }`. `type` is `"loop"` (`id` is a loop from the library in `src/utils/loops.ts`) or `"sound"` (`id` is a document in `sounds`). `start` is the bar it starts on, from 0, and `bars` is 1, 2 or 4. Clips never overlap. They stay in an array on the track doc, so one transaction still covers a whole track edit.
 
-Tracks from before clips had lengths have a list of 8 beat cells in `notes`, `{ type, name, id }` with `type` `"empty"`, `"loop"` or `"sound"`, and no `bars`. They aren't migrated. `readTrack` in `src/utils/clips.ts` reads the cell at index i as a 2 bar clip on bar i * 2, and the track as 2 bars per cell. The first edit to one writes it the new way.
+Tracks from before clips had lengths have a list of 8 beat cells in `notes`, `{ type, name, id }` with `type` `"empty"`, `"loop"` or `"sound"`, and no `clips` or `bars`. They aren't migrated. `readTrack` in `src/utils/clips.ts` reads the cell at index i as a 2 bar clip on bar i * 2, and the track as 2 bars per cell. The first edit to one writes `clips` and `bars` and leaves `notes` as it was. A track with `clips` is only read from them.
+
+Once a track has `clips`, the rules turn down any change to its `notes`. A tab still on the old app only knows `notes`, so on those tracks it gets its "Couldn't save that change" message instead of an edit nobody sees. It still shows the cells the track had before its first new edit, and new tracks as empty, until it's reloaded.
 
 `sounds/{id}`
 

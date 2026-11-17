@@ -2,15 +2,17 @@ import type { Clip, ClipBars, Item } from "./types";
 
 // Clips on tracks, as plain math so it can be tested on its own.
 //
-// A track doc keeps its clips in `notes`, the field cells were kept in, and
-// how long it is in `bars`. A clip is `{ type, name, id, start, bars }`, with
-// `start` and `bars` counted in bars of 4 beats.
+// A track doc keeps its clips in `clips` and how long it is in `bars`. A
+// clip is `{ type, name, id, start, bars }`, with `start` and `bars` counted
+// in bars of 4 beats.
 //
-// Tracks from before clips had lengths are a list of 8 beat cells, some of
-// them empty, and no `bars`. Those are read as they are: the cell at index i
-// is a 2 bar clip on bar i * 2 and the track is 2 bars per cell. Nothing is
-// rewritten until someone changes the track, and then it's written the new
-// way.
+// Tracks from before clips had lengths have no `clips`, just a list of 8
+// beat cells in `notes`, some of them empty. Those are read as they are: the
+// cell at index i is a 2 bar clip on bar i * 2 and the track is 2 bars per
+// cell. Nothing is rewritten until someone changes the track, and then its
+// clips go in `clips`. `notes` is left as it was, and the rules turn down
+// any change to it once a track has `clips`, so a tab still on the old app
+// gets a save error there instead of writing cells over the clips.
 
 // the lengths a clip can be
 export const CLIP_BARS: ClipBars[] = [1, 2, 4];
@@ -36,12 +38,18 @@ const count = (value: unknown): value is number =>
 
 export const clipEnd = (clip: Clip) => clip.start + clip.bars;
 
-// A track doc's `notes` and `bars` as clips in order and a length. Empty
-// cells and anything that isn't a loop or a sound are left out. A clip that
-// would start inside the one before it can only come from a broken write,
-// it's left out too so two clips never play over each other.
-export const readTrack = (notes: unknown, bars: unknown): TrackClips => {
-	const list: unknown[] = Array.isArray(notes) ? notes : [];
+// what a track doc has that readTrack looks at
+export type TrackDoc = { clips?: unknown; notes?: unknown; bars?: unknown };
+
+// A track doc as clips in order and a length. Empty cells and anything that
+// isn't a loop or a sound are left out. A clip that would start inside the
+// one before it can only come from a broken write, it's left out too so two
+// clips never play over each other.
+export const readTrack = (data: TrackDoc): TrackClips => {
+	// a track with `clips` is read from them and nothing else
+	const placed = Array.isArray(data.clips);
+	const cells = Array.isArray(data.notes) ? data.notes : [];
+	const list: unknown[] = Array.isArray(data.clips) ? data.clips : cells;
 	const read: Clip[] = [];
 
 	list.forEach((note, index) => {
@@ -51,8 +59,8 @@ export const readTrack = (notes: unknown, bars: unknown): TrackClips => {
 		if (entry.type !== "loop" && entry.type !== "sound") return;
 		if (typeof entry.id !== "string" || entry.id === "") return;
 
-		// an old cell has no start, its place in the list is where it is
-		const placed = count(entry.start);
+		// a clip says where it is, an old cell is where its place in the list is
+		if (placed && !count(entry.start)) return;
 
 		read.push({
 			type: entry.type,
@@ -72,12 +80,14 @@ export const readTrack = (notes: unknown, bars: unknown): TrackClips => {
 	}
 
 	const last = clips[clips.length - 1];
-	const length = count(bars) ? bars : list.length * DEFAULT_BARS;
+	// an old track is 2 bars a cell, empty ones too
+	let length = list.length * DEFAULT_BARS;
+	if (placed) length = count(data.bars) ? data.bars : 0;
 
 	return { clips, bars: Math.max(length, last ? clipEnd(last) : 0) };
 };
 
-// what goes in the doc's `notes`, nothing but the fields a clip has
+// what goes in the doc's `clips`, nothing but the fields a clip has
 export const writeClips = (clips: Clip[]) =>
 	[...clips]
 		.sort((a, b) => a.start - b.start)

@@ -15,6 +15,7 @@ import {
 	collection,
 	collectionGroup,
 	deleteDoc,
+	deleteField,
 	doc,
 	getDoc,
 	getDocs,
@@ -251,6 +252,7 @@ describe("tracks", () => {
 		name: `Track ${i + 1}`,
 		order: i,
 		notes: [],
+		clips: [],
 		bars: 8,
 	});
 
@@ -307,6 +309,13 @@ describe("tracks", () => {
 				notes: Array.from({ length: 2001 }, () => empty),
 			}),
 		);
+		await assertFails(addDoc(tracks, { ...clipTrack(0), clips: "none" }));
+		await assertFails(
+			addDoc(tracks, {
+				...clipTrack(0),
+				clips: Array.from({ length: 2001 }, () => empty),
+			}),
+		);
 		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 0 }));
 		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 2000 }));
 		await assertFails(addDoc(tracks, { ...clipTrack(0), bars: 2001 }));
@@ -352,13 +361,13 @@ describe("tracks", () => {
 		await seedTrack("t1");
 		const ref = track("t1");
 
-		// editTrack in src/utils/track-edits.ts, which writes an old track
-		// the new way the first time it changes
-		const edit = (notes: object[], bars: number) =>
+		// editTrack in src/utils/track-edits.ts, which puts `clips` on an old
+		// track the first time it changes
+		const edit = (clips: object[], bars: number) =>
 			runTransaction(db, async (transaction) => {
 				const snapshot = await transaction.get(ref);
 				if (!snapshot.exists()) return;
-				transaction.update(ref, { notes, bars });
+				transaction.update(ref, { clips, bars });
 			});
 		const bass = { type: "loop", name: "Bass 1", id: "bass_1" };
 		const hum = { type: "sound", name: "Piano sound", id: SOUND };
@@ -378,9 +387,52 @@ describe("tracks", () => {
 		await assertSucceeds(edit([], 0));
 	});
 
+	test("an old tab can't write cells once a track has clips", async () => {
+		await seedStudio();
+		await seedTrack("t1", {
+			clips: [{ type: "loop", name: "Bass 1", id: "bass_1", start: 0, bars: 4 }],
+			bars: 4,
+		});
+		await seedTrack("t2", { notes: [], clips: [], bars: 8 });
+
+		// setCell and addCell from a tab that hasn't reloaded
+		await assertFails(
+			updateDoc(track("t1"), {
+				notes: [empty, { type: "loop", name: "Bass 2", id: "bass_2" }, empty, empty],
+			}),
+		);
+		await assertFails(updateDoc(track("t2"), { notes: [empty] }));
+
+		// the new app's edits still go through
+		await assertSucceeds(updateDoc(track("t1"), { clips: [], bars: 4 }));
+		await assertSucceeds(updateDoc(track("t2"), { bars: 9 }));
+	});
+
+	test("clips go in with the first edit and can't be taken off", async () => {
+		await seedStudio();
+		await seedTrack("t1");
+		const bass = { type: "loop", name: "Bass 1", id: "bass_1", start: 0, bars: 2 };
+
+		// cells and clips in the same write
+		await assertFails(
+			updateDoc(track("t1"), { notes: [], clips: [bass], bars: 8 }),
+		);
+		// a length on a track that's still cells
+		await assertFails(updateDoc(track("t1"), { bars: 8 }));
+
+		await assertSucceeds(updateDoc(track("t1"), { clips: [bass], bars: 8 }));
+		await assertFails(updateDoc(track("t1"), { clips: deleteField() }));
+		await assertFails(updateDoc(track("t1"), { clips: "none" }));
+		await assertFails(
+			updateDoc(track("t1"), {
+				clips: Array.from({ length: 2001 }, () => bass),
+			}),
+		);
+	});
+
 	test("a track's length is a whole number of bars", async () => {
 		await seedStudio();
-		await seedTrack("t1", { notes: [], bars: 8 });
+		await seedTrack("t1", { notes: [], clips: [], bars: 8 });
 
 		await assertSucceeds(updateDoc(track("t1"), { bars: 9 }));
 		await assertSucceeds(updateDoc(track("t1"), { bars: 2000 }));
@@ -398,6 +450,7 @@ describe("tracks", () => {
 		await assertFails(updateDoc(track("t1"), { order: 3 }));
 		await assertFails(updateDoc(track("t1"), { createdAt: Timestamp.now() }));
 		await assertFails(updateDoc(track("t1"), { notes: { 0: empty } }));
+		await assertFails(updateDoc(track("t1"), { muted: true }));
 	});
 
 	test("a track's cells have a cap", async () => {
@@ -416,7 +469,7 @@ describe("tracks", () => {
 		await assertSucceeds(
 			updateDoc(track("t1"), { notes: [...fourEmpty(), empty] }),
 		);
-		await assertSucceeds(updateDoc(track("t1"), { notes: [], bars: 8 }));
+		await assertSucceeds(updateDoc(track("t1"), { clips: [], bars: 8 }));
 	});
 
 	test("tracks are deleted with their delete button", async () => {

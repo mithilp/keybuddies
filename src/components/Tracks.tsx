@@ -120,7 +120,9 @@ const Tracks = ({
 									createdAt: Timestamp.now(),
 									name: `Track ${tracks.length + 1}`,
 									order: tracks.length,
+									// `notes` is only there so a tab still on the old app can show it
 									notes: [],
+									clips: [],
 									bars: 8,
 								});
 							}}

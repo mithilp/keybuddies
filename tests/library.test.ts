@@ -18,7 +18,7 @@ const empty: Cell = { type: "empty", name: "", id: "" };
 const loop = (id: string, name = id): Cell => ({ type: "loop", name, id });
 const sound = (id: string): Cell => ({ type: "sound", name: id, id });
 
-const track = (...notes: Cell[]) => readTrack(notes, undefined);
+const track = (...notes: Cell[]) => readTrack({ notes });
 
 const ids = (cells: Item[]) => cells.map((cell) => cell.id);
 

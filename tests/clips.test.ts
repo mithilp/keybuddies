@@ -34,10 +34,9 @@ const sound = (bars?: 1 | 2 | 4): Item => ({
 });
 
 test("an old track's cells are 2 bar clips where the cells were", () => {
-	const read = readTrack(
-		[oldLoop("bass_1"), empty, { type: "sound", name: "Hum", id: "hum" }, empty],
-		undefined
-	);
+	const read = readTrack({
+		notes: [oldLoop("bass_1"), empty, { type: "sound", name: "Hum", id: "hum" }, empty],
+	});
 
 	assert.deepEqual(read, {
 		clips: [
@@ -49,34 +48,63 @@ test("an old track's cells are 2 bar clips where the cells were", () => {
 	});
 
 	// every cell empty is a track with nothing on it that's still 8 bars
-	assert.deepEqual(readTrack([empty, empty, empty, empty], undefined), {
+	assert.deepEqual(readTrack({ notes: [empty, empty, empty, empty] }), {
 		clips: [],
 		bars: 8,
 	});
 });
 
-test("an old cell with a length on it is still read by its place", () => {
-	// only a start says a clip is the new kind
-	const read = readTrack([empty, { ...oldLoop("bass_1"), bars: 4 }], undefined);
+test("cells are always read by their place", () => {
+	const read = readTrack({
+		notes: [empty, { ...oldLoop("bass_1"), start: 0, bars: 4 }],
+	});
 
 	assert.deepEqual(read.clips, [clip("bass_1", 2, 2)]);
+});
+
+test("a track with clips is read from them and not its cells", () => {
+	// the cells an old track had before the new app first wrote it stay in
+	// notes, out of date
+	const read = readTrack({
+		notes: [oldLoop("old"), oldLoop("old"), empty],
+		clips: [clip("bass_1", 0, 4)],
+		bars: 4,
+	});
+
+	assert.deepEqual(read, { clips: [clip("bass_1", 0, 4)], bars: 4 });
+
+	// a new track with nothing on it
+	assert.deepEqual(readTrack({ notes: [], clips: [], bars: 8 }), {
+		clips: [],
+		bars: 8,
+	});
+});
+
+test("an entry in clips with no start is left out", () => {
+	const read = readTrack({ clips: [oldLoop("bass_1"), clip("hum", 2, 1)], bars: 4 });
+
+	assert.deepEqual(read.clips, [clip("hum", 2, 1)]);
 });
 
 test("a new track is read as it was written", () => {
 	const clips = [clip("bass_1", 0, 1), clip("beat", 3, 4, "sound")];
 
-	assert.deepEqual(readTrack(writeClips(clips), 9), { clips, bars: 9 });
+	assert.deepEqual(readTrack({ clips: writeClips(clips), bars: 9 }), {
+		clips,
+		bars: 9,
+	});
 });
 
 test("a track is at least as long as its last clip", () => {
-	assert.equal(readTrack([clip("bass_1", 6, 4)], 8).bars, 10);
-	assert.equal(readTrack([], 0).bars, 0);
-	assert.equal(readTrack(undefined, undefined).bars, 0);
+	assert.equal(readTrack({ clips: [clip("bass_1", 6, 4)], bars: 8 }).bars, 10);
+	assert.equal(readTrack({ clips: [clip("bass_1", 6, 4)] }).bars, 10);
+	assert.equal(readTrack({ clips: [], bars: 0 }).bars, 0);
+	assert.equal(readTrack({}).bars, 0);
 });
 
 test("broken entries are left out and clips never overlap", () => {
-	const read = readTrack(
-		[
+	const read = readTrack({
+		clips: [
 			clip("late", 5, 2),
 			null,
 			"bass",
@@ -88,8 +116,8 @@ test("broken entries are left out and clips never overlap", () => {
 			// a length a clip can't be is 2
 			{ ...clip("odd", 9, 1), bars: 3 },
 		],
-		12
-	);
+		bars: 12,
+	});
 
 	assert.deepEqual(read.clips, [
 		clip("first", 0, 4),

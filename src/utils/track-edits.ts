@@ -18,9 +18,9 @@ import { Clip, ClipBars, Item } from "./types";
 // Firestore runs the whole thing again on their version, so two people
 // working on different clips of a track both keep their change.
 //
-// An old track (cells, no `bars`) is read the way it's shown, and the first
-// change writes it as clips. `change` comes back with null when there's
-// nothing to write.
+// An old track (cells in `notes`, no `clips`) is read the way it's shown,
+// and the first change writes its clips to `clips`. `notes` isn't touched,
+// see clips.ts. `change` comes back with null when there's nothing to write.
 const editTrack = (
 	studio: string,
 	track: string,
@@ -34,11 +34,11 @@ const editTrack = (
 		if (!snapshot.exists()) return;
 
 		const data = snapshot.data();
-		const next = change(readTrack(data.notes, data.bars));
+		const next = change(readTrack(data));
 
 		if (next) {
 			transaction.update(ref, {
-				notes: writeClips(next.clips),
+				clips: writeClips(next.clips),
 				bars: next.bars,
 			});
 		}

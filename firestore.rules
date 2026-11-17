@@ -47,11 +47,16 @@ service cloud.firestore {
       return listUpTo(value, 100);
     }
 
-    // A track's clips, each { type, name, id, start, bars }, or on a track
-    // from before clips had lengths its 8 beat cells. A track is at most
-    // 2000 bars (an old one of 1000 cells), so it can't hold more clips than
-    // that. 1000 bars is 25 minutes at 160 BPM.
+    // A track's clips, each { type, name, id, start, bars }. A track is at
+    // most 2000 bars, so it can't hold more clips than that. 1000 bars is
+    // 25 minutes at 160 BPM.
     function clips(value) {
+      return listUpTo(value, 2000);
+    }
+
+    // A track's 8 beat cells, from before clips had lengths. Old tracks have
+    // up to 1000, and tabs still on the old app add more.
+    function cells(value) {
       return listUpTo(value, 2000);
     }
 
@@ -106,26 +111,40 @@ service cloud.firestore {
         // the studio page listens to all of them, clip edits read one
         allow read: if isCode(code);
 
-        // new studios get four, and the New Track button adds one
+        // new studios get four, and the New Track button adds one. The new
+        // app writes `clips` and `bars`, and an empty `notes` for tabs still
+        // on the old app to show.
         allow create: if studioExists(code)
-          && request.resource.data.keys().hasOnly(['createdAt', 'name', 'order', 'notes', 'bars'])
+          && request.resource.data.keys().hasOnly(['createdAt', 'name', 'order', 'notes', 'clips', 'bars'])
           && request.resource.data.keys().hasAll(['createdAt', 'name', 'order', 'notes'])
           && request.resource.data.createdAt is timestamp
           && text(request.resource.data.name, 1, 100)
           && request.resource.data.order is int
           && request.resource.data.order >= 0
           && request.resource.data.order <= 1000
-          && clips(request.resource.data.notes)
+          && cells(request.resource.data.notes)
+          && (!('clips' in request.resource.data) || clips(request.resource.data.clips))
           && (!('bars' in request.resource.data) || trackBars(request.resource.data.bars));
 
         // only the clips and the length change, see src/utils/track-edits.ts
-        allow update: if isCode(code)
-          && changed().hasOnly(['notes', 'bars'])
-          && clips(request.resource.data.notes)
-          && (!('bars' in changed()) || trackBars(request.resource.data.bars));
+        allow update: if isCode(code) && trackChange(request.resource.data);
 
         // the delete button on a track
         allow delete: if isCode(code);
+
+        // Cells only change on a track that has no `clips`, before or after.
+        // Once the new app has written a track, its cells are out of date and
+        // nothing reads them, so a tab still on the old app gets turned down
+        // there and shows its save error, instead of an edit that goes
+        // nowhere. `clips` can't be taken off, and `bars` only goes with it.
+        function trackChange(data) {
+          let keys = changed();
+          return keys.hasOnly(['notes', 'clips', 'bars'])
+            && (!('notes' in keys)
+              || (!('clips' in resource.data) && !('clips' in data) && cells(data.notes)))
+            && (!('clips' in keys) || clips(data.clips))
+            && (!('bars' in keys) || ('clips' in data && trackBars(data.bars)));
+        }
       }
 
       // Which sounds the studio has, an empty doc for each, named by the

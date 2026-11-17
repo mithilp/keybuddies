@@ -5,7 +5,8 @@ export type Track = {
 	name: string;
 	order: number;
 	// what's on the track, in order, never overlapping. read out of the doc's
-	// `notes` field by readTrack, see clips.ts.
+	// `clips`, or the cells in `notes` on an old track, by readTrack in
+	// clips.ts.
 	clips: Clip[];
 	// how long the track is in bars, empty ones after the last clip included
 	bars: number;
