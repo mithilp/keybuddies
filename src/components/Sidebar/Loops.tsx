@@ -1,6 +1,6 @@
 import loops from "@/utils/loops";
 import { previewLoop } from "@/utils/preview";
-import { Track } from "@/utils/types";
+import { SelectedCell, Track } from "@/utils/types";
 import { setCell } from "@/utils/cells";
 import { useState } from "react";
 import Notice from "../Notice";
@@ -13,8 +13,8 @@ const Loops = ({
 	bpm,
 	studio,
 }: {
-	setSelectedCell: Function;
-	selectedCell: any[];
+	setSelectedCell: (cell: SelectedCell) => void;
+	selectedCell: SelectedCell;
 	tracks: Track[];
 	bpm: string;
 	studio: string;
@@ -27,13 +27,13 @@ const Loops = ({
 				<div
 					key={index}
 					onClick={() => {
-						if (selectedCell[0] != -1) {
+						if (selectedCell) {
 							const track = tracks.find(
-								(track) => track.id === selectedCell[0]
+								(track) => track.id === selectedCell.track
 							);
 							if (track) {
 								previewLoop(loop.id, bpm);
-								setCell(studio, track.id, selectedCell[1], {
+								setCell(studio, track.id, selectedCell.index, {
 									type: "loop",
 									name: loop.name,
 									id: loop.id,
@@ -42,17 +42,17 @@ const Loops = ({
 									setNotice("Couldn't put the loop in. Try again.");
 								});
 							}
-							setSelectedCell([-1, -1]);
+							setSelectedCell(null);
 						}
 					}}
 					className={`bg-yellow cursor-pointer flex justify-between items-center p-4 rounded-xl border-8 ${
-						selectedCell[0] != -1 ? "border-pink" : "border-black"
+						selectedCell ? "border-pink" : "border-black"
 					}`}
 				>
 					<div>{loop.name}</div>
 					<PlayLoop
 						bpm={bpm}
-						selected={selectedCell[0] != -1}
+						selected={selectedCell !== null}
 						id={loop.id}
 						name={loop.name}
 					/>

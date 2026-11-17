@@ -1,13 +1,7 @@
 import { db } from "@/utils/firebase";
-import { Track as TrackType } from "@/utils/types";
-import {
-	Timestamp,
-	addDoc,
-	collection,
-	doc,
-	updateDoc,
-} from "firebase/firestore";
-import { FaPlus, FaPlusCircle, FaTrash, FaVolumeMute } from "react-icons/fa";
+import { SelectedCell, Track as TrackType } from "@/utils/types";
+import { Timestamp, addDoc, collection } from "firebase/firestore";
+import { FaPlus } from "react-icons/fa";
 import { CELL_BEATS } from "@/utils/tempo";
 import Playhead, { BEAT_WIDTH } from "./Playhead";
 import Track from "./Track";
@@ -25,10 +19,9 @@ const Tracks = ({
 	liveBeat,
 	seek,
 }: {
-	setSelectedCell: Function;
-	selectedCell: any[];
+	setSelectedCell: (cell: SelectedCell) => void;
+	selectedCell: SelectedCell;
 	tracks: TrackType[];
-	bpm: string;
 	studio: string;
 	loading: boolean;
 	mute: (track: TrackType) => void;
@@ -74,20 +67,18 @@ const Tracks = ({
 									);
 								}}
 							>
-								{new Array(cells).fill(0).map((_: any, i: number) => (
+								{Array.from({ length: cells }, (_, i) => (
 									<div className="relative" key={i}>
 										<div className="w-56 font-bold pl-1">
 											{i * CELL_BEATS + 1}
 										</div>
 										<div className="absolute flex">
-											{new Array(CELL_BEATS)
-												.fill(0)
-												.map((_: any, i: number) => (
-													<div
-														key={i}
-														className="h-4 w-7 border-l-2 border-black"
-													></div>
-												))}
+											{Array.from({ length: CELL_BEATS }, (_, i) => (
+												<div
+													key={i}
+													className="h-4 w-7 border-l-2 border-black"
+												></div>
+											))}
 										</div>
 									</div>
 								))}

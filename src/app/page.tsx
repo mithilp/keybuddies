@@ -34,7 +34,7 @@ export default async function Home({
 		}
 	}
 
-	async function createStudio(formData: FormData) {
+	async function createStudio() {
 		"use server";
 		const pin = await claimStudio();
 		if (!pin) redirect(`/?error=no-code`);

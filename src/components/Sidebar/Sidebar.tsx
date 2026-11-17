@@ -3,7 +3,7 @@
 import Image from "next/image";
 import logo from "../../../public/images/keybuddies-logo.png";
 import { useState } from "react";
-import { Track } from "@/utils/types";
+import { SelectedCell, Track } from "@/utils/types";
 import Instruments from "./Instruments";
 import Loops from "./Loops";
 
@@ -14,8 +14,8 @@ const Sidebar = ({
 	bpm,
 	studio,
 }: {
-	setSelectedCell: Function;
-	selectedCell: any[];
+	setSelectedCell: (cell: SelectedCell) => void;
+	selectedCell: SelectedCell;
 	tracks: Track[];
 	bpm: string;
 	studio: string;

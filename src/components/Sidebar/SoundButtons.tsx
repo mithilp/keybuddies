@@ -33,7 +33,7 @@ const SoundThumbnail = ({
 	playing: number;
 	index: number;
 	sound: Sound;
-	setPlaying: Function;
+	setPlaying: (index: number) => void;
 	bpm: string;
 	studio: string;
 }) => {

@@ -7,11 +7,7 @@ import { PIANO_STEPS } from "@/utils/tempo";
 import { Key } from "@/utils/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCheck, FaVolumeUp } from "react-icons/fa";
-import {
-	Piano as ReactPiano,
-	KeyboardShortcuts,
-	//@ts-ignore
-} from "react-piano";
+import { Piano as ReactPiano, KeyboardShortcuts } from "react-piano";
 import "react-piano/dist/styles.css";
 import PianoOptions from "./PianoOptions";
 import PianoRoll from "./PianoRoll";

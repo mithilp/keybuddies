@@ -9,7 +9,7 @@ import {
 	query,
 } from "firebase/firestore";
 import { use, useState, useEffect, useRef, useCallback } from "react";
-import { Playback, Track } from "@/utils/types";
+import { Playback, SelectedCell, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
@@ -62,7 +62,7 @@ function Studio({ studio }: { studio: string }) {
 
 	const [loading, setLoading] = useState(true);
 
-	const [selectedCell, setSelectedCell] = useState<Array<any>>([-1, -1]);
+	const [selectedCell, setSelectedCell] = useState<SelectedCell>(null);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
 
@@ -112,15 +112,20 @@ function Studio({ studio }: { studio: string }) {
 		transport.setLoop(!looping);
 	};
 
+	// stops the sound, and any play that's still getting ready
+	const silence = useCallback(() => {
+		run.current++;
+		transport.stop();
+	}, [transport]);
+
 	// stops everything and leaves the playhead at `at`
 	const halt = useCallback(
 		(at: number) => {
-			run.current++;
-			transport.stop();
+			silence();
 			setPlayback("stopped");
 			place(at);
 		},
-		[transport, place]
+		[silence, place]
 	);
 
 	useEffect(() => {
@@ -233,14 +238,15 @@ function Studio({ studio }: { studio: string }) {
 			// what this song was made from. the studio can have moved on since.
 			playingKey.current = songKey(tracks, bpm);
 
-			// the song is over when its longest track is, and only then
-			transport.onEnded = () => {
-				if (!stopped()) halt(0);
-			};
-
-			// muted tracks start silent instead of being turned down after
-			transport.start(song, (beatRef.current * 60) / song.bpm, (track) =>
-				mutedRef.current.has(track)
+			transport.start(
+				song,
+				(beatRef.current * 60) / song.bpm,
+				// muted tracks start silent instead of being turned down after
+				(track) => mutedRef.current.has(track),
+				// the song is over when its longest track is, and only then
+				() => {
+					if (!stopped()) halt(0);
+				}
 			);
 
 			setPlayback("playing");
@@ -365,12 +371,7 @@ function Studio({ studio }: { studio: string }) {
 	};
 
 	// leaving the studio stops the song
-	useEffect(() => {
-		return () => {
-			run.current++;
-			transport.stop();
-		};
-	}, [transport]);
+	useEffect(() => silence, [silence]);
 
 	const mute = (track: Track) => {
 		const next = new Set(mutedRef.current);
@@ -437,7 +438,6 @@ function Studio({ studio }: { studio: string }) {
 					setSelectedCell={setSelectedCell}
 					selectedCell={selectedCell}
 					tracks={tracks}
-					bpm={bpm}
 					loading={loading}
 					studio={studio}
 					mute={mute}

@@ -40,7 +40,7 @@ export class Transport {
 
 	// called once when the song gets to its end by itself. not when it's
 	// stopped, and not while it loops.
-	onEnded: (() => void) | null = null;
+	private onEnded: (() => void) | null = null;
 
 	get playing() {
 		return this.song !== null;
@@ -57,10 +57,17 @@ export class Transport {
 	}
 
 	// `at` is seconds into the song. `muted` says which tracks start silent.
-	start(song: Song, at: number, muted: (track: string) => boolean) {
+	// `ended` is called if the song gets to its end by itself.
+	start(
+		song: Song,
+		at: number,
+		muted: (track: string) => boolean,
+		ended: () => void
+	) {
 		this.stop();
 
 		this.song = song;
+		this.onEnded = ended;
 		this.voices = this.connect(song, muted);
 
 		this.begin(at, crunker!.context.currentTime + LEAD);

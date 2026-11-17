@@ -1,5 +1,5 @@
 import { db } from "@/utils/firebase";
-import { Track } from "@/utils/types";
+import { SelectedCell, Track } from "@/utils/types";
 import { addCell, removeCell } from "@/utils/cells";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState } from "react";
@@ -20,10 +20,10 @@ const Track = ({
 	muted,
 }: {
 	track: Track;
-	selectedCell: any[];
-	setSelectedCell: Function;
+	selectedCell: SelectedCell;
+	setSelectedCell: (cell: SelectedCell) => void;
 	studio: string;
-	onMute: Function;
+	onMute: () => void;
 	muted: boolean;
 }) => {
 	const [notice, setNotice] = useState("");
@@ -58,39 +58,41 @@ const Track = ({
 				</button>
 			</div>
 			<div className="flex items-center space-x-2">
-				{track.notes.map((note, index) => (
-					<div
-						key={index}
-						className={`flex bg-yellow p-4 rounded-xl border-8 cursor-pointer ${
-							track.id == selectedCell[0] && index == selectedCell[1]
-								? "border-blue"
-								: "border-black"
-						}`}
-					>
-						<div
-							className="w-36"
-							onClick={() => {
-								if (selectedCell[0] == track.id && selectedCell[1] == index) {
-									setSelectedCell([-1, -1]);
-								}
+				{track.notes.map((note, index) => {
+					const picked =
+						selectedCell?.track == track.id && selectedCell.index == index;
 
-								setSelectedCell([track.id, index]);
-							}}
+					return (
+						<div
+							key={index}
+							className={`flex bg-yellow p-4 rounded-xl border-8 cursor-pointer ${
+								picked ? "border-blue" : "border-black"
+							}`}
 						>
-							{note.type == "empty" ? "Select a loop" : note.name}
+							{/* a second click on the picked cell lets go of it */}
+							<div
+								className="w-36"
+								onClick={() => {
+									setSelectedCell(
+										picked ? null : { track: track.id, index: index }
+									);
+								}}
+							>
+								{note.type == "empty" ? "Select a loop" : note.name}
+							</div>
+							<button
+								className="text-2xl"
+								aria-label={`Delete cell ${index + 1} of ${track.name}`}
+								title="Delete cell"
+								onClick={() => {
+									removeCell(studio, track.id, index, note).catch(failed);
+								}}
+							>
+								<FaTrash />
+							</button>
 						</div>
-						<button
-							className="text-2xl"
-							aria-label={`Delete cell ${index + 1} of ${track.name}`}
-							title="Delete cell"
-							onClick={() => {
-								removeCell(studio, track.id, index, note).catch(failed);
-							}}
-						>
-							<FaTrash />
-						</button>
-					</div>
-				))}
+					);
+				})}
 
 				<button
 					className="pr-4"

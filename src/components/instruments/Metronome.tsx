@@ -4,7 +4,7 @@ const Metronome = ({ mspb }: { mspb: number }) => {
 	const [ticking, setTicking] = useState(false);
 
 	useEffect(() => {
-		let myInterval = setInterval(() => {
+		const myInterval = setInterval(() => {
 			if (ticking) {
 				new Audio("/sounds/metronome.mp3").play();
 			} else {
