@@ -3,6 +3,10 @@
 // every browser and can be run outside one. Recipes are the usual 808 ones:
 // sine sweeps for kick and tom, tone plus noise for the snare, filtered
 // metallic squares and noise for the hats, noise bursts for the clap.
+//
+// A phone or laptop speaker plays next to nothing under 150 Hz, so the low
+// drums also carry overtones and a click it can play, and the hats are wide
+// and loud enough to be heard next to the kick.
 
 export type DrumVoice =
 	| "clap"
@@ -89,75 +93,98 @@ const filter = (
 	return out;
 };
 
-// sine that glides from one pitch down to another
-const sweep = (
+// A tone that glides from one pitch down to another, built from partials.
+// Each partial is [how many times the pitch, how loud, seconds to die away].
+const tone = (
 	length: number,
 	sampleRate: number,
 	from: number,
 	to: number,
-	glide: number
+	glide: number,
+	partials: [number, number, number][]
 ) => {
 	const out = new Float32Array(length);
 	let phase = 0;
 	for (let i = 0; i < length; i++) {
 		const t = i / sampleRate;
-		out[i] = Math.sin(phase);
+		let sum = 0;
+		for (const [ratio, level, decay] of partials) {
+			sum += level * Math.sin(ratio * phase) * Math.exp(-t / decay);
+		}
+		out[i] = sum;
 		phase += (TAU * (to + (from - to) * Math.exp(-t / glide))) / sampleRate;
 	}
 	return out;
 };
 
+// the 48 Hz body is still most of it. the overtones on top die away faster
+// and the beater click is over in a few ms, so the tail stays a clean thump.
 const kick = (sampleRate: number) => {
 	const length = Math.round(0.5 * sampleRate);
-	const body = sweep(length, sampleRate, 165, 48, 0.035);
-	const click = filter(noise(length, 1), "lowpass", 3000, 0.7, sampleRate);
+	const body = tone(length, sampleRate, 165, 48, 0.035, [[1, 1, 0.13]]);
+	const overtones = tone(length, sampleRate, 165, 48, 0.035, [
+		[2, 0.5, 0.13],
+		[3, 0.5, 0.12],
+		[4, 0.85, 0.12],
+		[5, 0.65, 0.11],
+		[6, 0.45, 0.1],
+	]);
+	const click = filter(noise(length, 1), "bandpass", 1800, 0.7, sampleRate);
 	const out = new Float32Array(length);
 	for (let i = 0; i < length; i++) {
 		const t = i / sampleRate;
 		out[i] =
-			Math.tanh(1.6 * body[i] * Math.exp(-t / 0.13)) +
-			0.25 * click[i] * Math.exp(-t / 0.003);
+			Math.tanh(1.6 * body[i]) +
+			overtones[i] +
+			1.2 * click[i] * Math.exp(-t / 0.005);
 	}
 	return out;
 };
 
+// overtones a fifth, an octave and more above the 88 Hz head, and the slap
+// of the stick
 const tom = (sampleRate: number) => {
 	const length = Math.round(0.55 * sampleRate);
-	const body = sweep(length, sampleRate, 190, 88, 0.07);
-	const skin = filter(noise(length, 2), "bandpass", 900, 1, sampleRate);
+	const head = tone(length, sampleRate, 190, 88, 0.07, [
+		[1, 1, 0.15],
+		[1.5, 0.4, 0.12],
+		[2, 0.65, 0.14],
+		[3, 0.4, 0.12],
+	]);
+	const slap = filter(noise(length, 2), "bandpass", 1200, 0.8, sampleRate);
 	const out = new Float32Array(length);
 	for (let i = 0; i < length; i++) {
 		const t = i / sampleRate;
-		out[i] =
-			body[i] * Math.exp(-t / 0.15) + 0.3 * skin[i] * Math.exp(-t / 0.02);
+		out[i] = head[i] + 0.9 * slap[i] * Math.exp(-t / 0.012);
 	}
 	return out;
 };
 
 // two detuned tones for the drum head, loud bright noise for the wires.
-// the noise sits between 1 and 8 kHz so it cuts through on small speakers.
+// most of the snare is the wires, from 1 kHz up.
 const snare = (sampleRate: number) => {
 	const length = Math.round(0.32 * sampleRate);
-	const low = sweep(length, sampleRate, 240, 185, 0.02);
-	const high = sweep(length, sampleRate, 420, 330, 0.02);
+	const head = tone(length, sampleRate, 240, 185, 0.02, [
+		[1, 0.5, 0.055],
+		[1.77, 0.3, 0.055],
+	]);
 	const wires = filter(
-		filter(noise(length, 3), "highpass", 1000, 0.7, sampleRate),
+		filter(noise(length, 3), "highpass", 1200, 0.7, sampleRate),
 		"lowpass",
-		8000,
+		10000,
 		0.7,
 		sampleRate
 	);
 	const out = new Float32Array(length);
 	for (let i = 0; i < length; i++) {
 		const t = i / sampleRate;
-		out[i] =
-			(0.6 * low[i] + 0.35 * high[i]) * Math.exp(-t / 0.055) +
-			1.1 * wires[i] * Math.exp(-t / 0.075);
+		out[i] = head[i] + 1.5 * wires[i] * Math.exp(-t / 0.08);
 	}
 	return out;
 };
 
-// six square waves at the 808 cymbal ratios plus noise, high passed
+// six square waves at the 808 cymbal ratios plus noise, kept between about
+// 5 and 14 kHz
 const hihat = (sampleRate: number, seconds: number, decay: number) => {
 	const length = Math.round(seconds * sampleRate);
 	const partials = [205.3, 304.4, 369.6, 522.7, 540, 800];
@@ -172,9 +199,15 @@ const hihat = (sampleRate: number, seconds: number, decay: number) => {
 		metal[i] = sum / partials.length + 0.6 * hiss[i];
 	}
 	const bright = filter(
-		filter(metal, "bandpass", 10000, 0.8, sampleRate),
-		"highpass",
-		7000,
+		filter(
+			filter(metal, "bandpass", 8400, 0.7, sampleRate),
+			"highpass",
+			5500,
+			0.7,
+			sampleRate
+		),
+		"lowpass",
+		13000,
 		0.7,
 		sampleRate
 	);
@@ -219,19 +252,19 @@ const levels: Record<DrumVoice, number> = {
 	snare: 0.65,
 	"tom-low": 0.6,
 	clap: 0.55,
-	"hihat-open": 0.3,
-	"hihat-close": 0.3,
+	"hihat-open": 0.34,
+	"hihat-close": 0.4,
 };
 
 // noise is all spikes, so the noisy voices get squashed a little. that makes
-// them sound louder at the same peak, which the snare needs the most.
+// them sound louder at the same peak, which the snare and hats need the most.
 const squash: Record<DrumVoice, number> = {
-	kick: 0,
+	kick: 2.5,
 	snare: 2.5,
-	"tom-low": 0,
+	"tom-low": 2.5,
 	clap: 2,
-	"hihat-open": 1.5,
-	"hihat-close": 1.5,
+	"hihat-open": 2.5,
+	"hihat-close": 3,
 };
 
 const peakOf = (samples: Float32Array) => {
@@ -250,7 +283,7 @@ export const synthDrum = (voice: DrumVoice, sampleRate: number) => {
 	else if (voice === "snare") samples = snare(sampleRate);
 	else if (voice === "clap") samples = clap(sampleRate);
 	else if (voice === "hihat-open") samples = hihat(sampleRate, 0.45, 0.11);
-	else samples = hihat(sampleRate, 0.09, 0.02);
+	else samples = hihat(sampleRate, 0.12, 0.028);
 
 	const drive = squash[voice];
 	if (drive > 0) {
@@ -270,6 +303,9 @@ export const synthDrum = (voice: DrumVoice, sampleRate: number) => {
 
 	return samples;
 };
+
+// the loudest a mixed beat can get
+const CEILING = 0.87;
 
 const built = new Map<string, Float32Array>();
 
@@ -317,13 +353,16 @@ export const mixDrums = (
 		}
 	}
 
-	// hits on the same step add up, so round off anything that would clip
+	// hits on the same step add up, so anything over the loudest single voice
+	// is rounded off. however many land together it stays under the ceiling,
+	// which is a little more than 1 dB short of full scale.
 	const knee = 0.7;
+	const room = CEILING - knee;
 	for (let i = 0; i < length; i++) {
 		const size = Math.abs(out[i]);
 		if (size > knee) {
-			const over = (size - knee) / (1 - knee);
-			out[i] = Math.sign(out[i]) * (knee + (1 - knee) * Math.tanh(over));
+			out[i] =
+				Math.sign(out[i]) * (knee + room * Math.tanh((size - knee) / room));
 		}
 	}
 
