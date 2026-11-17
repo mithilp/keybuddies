@@ -121,6 +121,14 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	// play() reads this when the tracks start, which is after it was called
 	const mutedRef = useRef<boolean[]>([]);
 
+	// when it's on the song starts over at its end until it's paused
+	const [looping, setLooping] = useState(false);
+
+	const toggleLoop = () => {
+		setLooping(!looping);
+		transport.setLoop(!looping);
+	};
+
 	// stops everything and leaves the playhead at `at`
 	const halt = (at: number) => {
 		run.current++;
@@ -255,6 +263,8 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 					playback={playback}
 					play={play}
 					stop={stop}
+					looping={looping}
+					toggleLoop={toggleLoop}
 				/>
 
 				{/* rows content */}

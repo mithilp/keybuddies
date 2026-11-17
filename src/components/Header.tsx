@@ -2,6 +2,7 @@ import { db } from "@/utils/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { Playback } from "@/utils/types";
 import { FaPause, FaPlay } from "react-icons/fa";
+import { FaRepeat } from "react-icons/fa6";
 
 const Header = ({
 	studio,
@@ -9,12 +10,16 @@ const Header = ({
 	playback,
 	play,
 	stop,
+	looping,
+	toggleLoop,
 }: {
 	studio: string;
 	bpm: string;
 	playback: Playback;
 	play: () => void;
 	stop: () => void;
+	looping: boolean;
+	toggleLoop: () => void;
 }) => {
 	return (
 		<div className="flex sticky top-0 z-10 bg-pink justify-between border-black border-b-8 py-6 px-4">
@@ -39,6 +44,17 @@ const Header = ({
 					<option value="120">120</option>
 					<option value="160">160</option>
 				</select>
+				<button
+					onClick={toggleLoop}
+					aria-pressed={looping}
+					aria-label="Loop the song"
+					title="Loop the song"
+					className={`${
+						looping ? "bg-blue" : "bg-yellow"
+					} border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black`}
+				>
+					<FaRepeat color="#000000" />
+				</button>
 				<button
 					onClick={playback == "stopped" ? play : stop}
 					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"

@@ -15,7 +15,9 @@ type Voice = { gain: GainNode; source: AudioBufferSourceNode | null };
 // the same context time. That makes
 // - muting a gain change,
 // - the position a read of the context's clock,
-// - seeking a restart of the sources from somewhere else.
+// - seeking a restart of the sources from somewhere else,
+// - looping the sources' own loop, which wraps on the exact sample. Every
+//   track's buffer is as long as the song, so they all wrap together.
 export class Transport {
 	private song: Song | null = null;
 	private voices = new Map<string, Voice>();
@@ -24,8 +26,10 @@ export class Transport {
 	private startedAt = 0;
 	private offset = 0;
 
+	private looping = false;
+
 	// called once when the song gets to its end by itself. not when it's
-	// stopped.
+	// stopped, and not while it loops.
 	onEnded: (() => void) | null = null;
 
 	get playing() {
@@ -81,6 +85,16 @@ export class Transport {
 		);
 	}
 
+	// Takes effect right away, also on a song that's playing. Switched off
+	// mid song, the song plays to its end and stops there.
+	setLoop(looping: boolean) {
+		this.looping = looping;
+
+		for (const { source } of this.voices.values()) {
+			if (source) source.loop = looping;
+		}
+	}
+
 	// seconds into the song right now
 	position() {
 		if (!this.song) return 0;
@@ -91,7 +105,8 @@ export class Transport {
 			crunker!.context.currentTime - this.startedAt
 		);
 
-		return Math.min(this.offset + elapsed, this.song.duration);
+		// a looping song has been around a few times
+		return (this.offset + elapsed) % this.song.duration;
 	}
 
 	// a source can only be started once, so every start and every seek makes
@@ -110,6 +125,7 @@ export class Transport {
 
 			const source = context.createBufferSource();
 			source.buffer = buffer;
+			source.loop = this.looping;
 			source.connect(voice.gain);
 			source.start(when, at);
 
