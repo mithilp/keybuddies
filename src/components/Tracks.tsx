@@ -8,6 +8,8 @@ import {
 	updateDoc,
 } from "firebase/firestore";
 import { FaPlus, FaPlusCircle, FaTrash, FaVolumeMute } from "react-icons/fa";
+import { CELL_BEATS } from "@/utils/tempo";
+import Playhead, { BEAT_WIDTH } from "./Playhead";
 import Track from "./Track";
 
 const Tracks = ({
@@ -18,6 +20,10 @@ const Tracks = ({
 	loading,
 	mute,
 	muted,
+	beat,
+	playing,
+	liveBeat,
+	seek,
 }: {
 	setSelectedCell: Function;
 	selectedCell: any[];
@@ -27,7 +33,15 @@ const Tracks = ({
 	loading: boolean;
 	mute: (track: TrackType, index: number) => void;
 	muted: boolean[];
+	beat: number;
+	playing: boolean;
+	liveBeat: () => number;
+	seek: (beat: number) => void;
 }) => {
+	// the song is as long as its longest track
+	const cells = Math.max(0, ...tracks.map((track) => track.notes.length));
+	const beats = cells * CELL_BEATS;
+
 	return (
 		<div className="p-10 space-y-4 w-full overflow-x-scroll">
 			{loading ? (
@@ -36,41 +50,70 @@ const Tracks = ({
 				</div>
 			) : (
 				<>
-					<div className="flex border-b-8 border-black w-max">
-						{new Array(
-							Math.max(...tracks.map((track) => track.notes.length)) > 0
-								? Math.max(...tracks.map((track) => track.notes.length))
-								: 0
-						)
-							.fill(0)
-							.map((_: any, i: number) => (
-								<div className="relative" key={i}>
-									<div className="w-56 font-bold pl-1">{i * 8 + 1}</div>
-									<div className="absolute flex">
-										{new Array(8).fill(0).map((_: any, i: number) => (
-											<div
-												key={i}
-												className="h-4 w-7 border-l-2 border-black"
-											></div>
-										))}
-									</div>
-								</div>
-							))}
-					</div>
+					{/* the ruler and the tracks are in one box that's as wide as
+					    the song, so the playhead can run down all of them */}
+					<div className="relative w-max min-w-full">
+						<div className="space-y-4">
+							<div
+								className="flex border-b-8 border-black w-max cursor-pointer"
+								title="Click to move the playhead"
+								onClick={(event) => {
+									const x =
+										event.clientX -
+										event.currentTarget.getBoundingClientRect().left;
 
-					{tracks.map((track, index) => (
-						<Track
-							key={index}
-							track={track}
-							selectedCell={selectedCell}
-							setSelectedCell={setSelectedCell}
-							studio={studio}
-							onMute={() => {
-								mute(track, index);
-							}}
-							muted={muted[index]}
-						/>
-					))}
+									// the nearest beat, but never the very end
+									seek(
+										Math.max(
+											0,
+											Math.min(Math.round(x / BEAT_WIDTH), beats - 1)
+										)
+									);
+								}}
+							>
+								{new Array(cells).fill(0).map((_: any, i: number) => (
+									<div className="relative" key={i}>
+										<div className="w-56 font-bold pl-1">
+											{i * CELL_BEATS + 1}
+										</div>
+										<div className="absolute flex">
+											{new Array(CELL_BEATS)
+												.fill(0)
+												.map((_: any, i: number) => (
+													<div
+														key={i}
+														className="h-4 w-7 border-l-2 border-black"
+													></div>
+												))}
+										</div>
+									</div>
+								))}
+							</div>
+
+							{tracks.map((track, index) => (
+								<Track
+									key={index}
+									track={track}
+									selectedCell={selectedCell}
+									setSelectedCell={setSelectedCell}
+									studio={studio}
+									onMute={() => {
+										mute(track, index);
+									}}
+									muted={muted[index]}
+								/>
+							))}
+						</div>
+
+						{beats > 0 && (
+							<Playhead
+								beat={beat}
+								playing={playing}
+								liveBeat={liveBeat}
+								beats={beats}
+							/>
+						)}
+					</div>
 
 					<div className="border-t-8 border-black pt-4 sticky left-0">
 						<button

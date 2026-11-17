@@ -48,4 +48,9 @@ const loops: Cell[] = [
 	},
 ];
 
+// Loops are FLAC so they decode to exactly 8 beats in every browser. See
+// scripts/stretch-loop.py for how the files are made.
+export const loopUrl = (id: string, bpm: number | string) =>
+	`/loops/${id}_${bpm}.flac`;
+
 export default loops;

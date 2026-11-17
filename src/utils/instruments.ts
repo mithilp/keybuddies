@@ -1,71 +1,68 @@
 "use client";
 
 import { Key, Sound } from "./types";
-import crunker from "./crunker";
-import MIDI from "./MIDI";
+import crunker, { wake } from "./crunker";
 import { mixDrums } from "./drum-synth";
+import { preview, stopPreview } from "./preview";
+import { hasPianoNote, loadPianoNote } from "./samples";
+import { cellFrames } from "./tempo";
 
-// every note of a piano recording as its own buffer, padded with silence up
-// to where the note starts
-const pianoNotes = async (music: Array<Key>, bpm: number) => {
-	const time = 7500 / bpm;
+// piano notes are written in eighths of a beat, 64 to a cell
+const PIANO_STEPS = 64;
 
-	const audios: AudioBuffer[] = [];
+// seconds a piano note takes to fade when it's cut off before its sample
+// ends, so it doesn't click
+const RELEASE = 0.005;
 
-	for await (const key of music) {
-		const note: any = MIDI.filter((midi) => midi.value === key.note)[0].text;
-		const start = key.start;
-		const end = key.end;
+// A piano recording as a stereo buffer `frames` samples long. Every note is
+// added straight into the buffer at the sample it starts on.
+const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
+	const context = crunker!.context;
+	const step = cellFrames(bpm, context.sampleRate) / PIANO_STEPS;
 
-		const buffers = await crunker?.fetchAudio(`/sounds/piano/${note}.ogg`);
+	// keys past either end of the piano have no sample and stay silent
+	const playable = music.filter((key) => hasPianoNote(key.note));
 
-		if (buffers) {
-			// a note held longer than its sample ends where the sample does.
-			// slicing past the end fills the rest with NaN, which silences
-			// everything it gets merged with.
-			const trimmed = crunker?.sliceAudio(
-				buffers[0],
-				0,
-				Math.min(((end - start) * time) / 1000, buffers[0].duration)
+	// each different note is loaded once, and all of them at the same time
+	const notes = [...new Set(playable.map((key) => key.note))];
+	const buffers = await Promise.all(notes.map(loadPianoNote));
+	const samples = new Map(notes.map((note, index) => [note, buffers[index]]));
+
+	const cell = context.createBuffer(2, frames, context.sampleRate);
+	const fade = Math.round(RELEASE * context.sampleRate);
+
+	for (const key of playable) {
+		const sample = samples.get(key.note)!;
+		const at = Math.round(Math.max(0, key.start) * step);
+
+		// a note lasts until its end, the end of its sample or the end of the
+		// cell, whichever is first. one that was never let go of is one step.
+		const held = Math.round(Math.max(1, key.end - key.start) * step);
+		const length = Math.min(held, sample.length, frames - at);
+		if (length <= 0) continue;
+
+		// the sample has already rung out by its own end, so only fade a note
+		// that stops short of it
+		const release = length < sample.length ? Math.min(fade, length) : 0;
+
+		for (let channel = 0; channel < 2; channel++) {
+			const from = sample.getChannelData(
+				Math.min(channel, sample.numberOfChannels - 1)
 			);
-			const padded = crunker?.padAudio(trimmed!, 0, (start * time) / 1000);
+			const to = cell.getChannelData(channel);
 
-			audios.push(padded!);
-		} else {
-			console.log("Something went wrong loading key", note);
+			for (let i = 0; i < length; i++) {
+				const left = length - i;
+				to[at + i] += from[i] * (left < release ? left / release : 1);
+			}
 		}
 	}
 
-	return audios;
+	return cell;
 };
 
-export const playPiano = async (music: Array<Key>, bpm: number) => {
-	const merged = crunker?.mergeAudio(await pianoNotes(music, bpm));
-
-	const exported = crunker?.export(merged!, "audio/mp3");
-
-	const audio = new Audio(exported!.url);
-	audio.play();
-};
-
-// One recorded sound as a buffer that fills a cell, ready to go into a track.
-// `cell` is a cell of silence at this tempo and sets the length.
-export const renderSound = async (
-	type: Sound["type"],
-	music: Array<Key>,
-	bpm: number,
-	cell: AudioBuffer
-) => {
-	if (type === "drum") {
-		return renderDrum(music, bpm, cell.length);
-	}
-
-	return crunker!.mergeAudio([...(await pianoNotes(music, bpm)), cell]);
-};
-
-// A drum beat as a buffer on crunker's context, so it can be merged into a
-// track the same way piano is. Stereo, because crunker only fills the
-// channels a buffer has. `frames` forces an exact length.
+// A drum beat as a buffer on crunker's context. Stereo, so it sits in a
+// track the same way everything else does. `frames` forces an exact length.
 export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
 	const context = crunker!.context;
 	const samples = mixDrums(music, bpm, context.sampleRate, frames);
@@ -77,13 +74,24 @@ export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
 	return buffer;
 };
 
-const start = (buffer: AudioBuffer) => {
-	const context = crunker!.context;
+// One recorded sound as a buffer exactly one cell long, ready to go into a
+// track or to be listened to on its own.
+export const renderSound = async (
+	type: Sound["type"],
+	music: Array<Key>,
+	bpm: number
+) => {
+	const frames = cellFrames(bpm, crunker!.context.sampleRate);
 
-	// browsers keep the context suspended until the first click
-	if (context.state === "suspended") {
-		context.resume();
+	if (type === "drum") {
+		return renderDrum(music, bpm, frames);
 	}
+
+	return renderPiano(music, bpm, frames);
+};
+
+const start = (buffer: AudioBuffer) => {
+	const context = wake();
 
 	const source = context.createBufferSource();
 	source.buffer = buffer;
@@ -93,21 +101,15 @@ const start = (buffer: AudioBuffer) => {
 	return source;
 };
 
-let beat: AudioBufferSourceNode | null = null;
+// Listening to a sound on its own goes through the preview slot, so it
+// stops whatever loop or sound was being listened to before.
+export const playPiano = (music: Array<Key>, bpm: number) =>
+	preview("piano", () => renderSound("piano", music, bpm));
 
-export const playDrum = (music: Array<Key>, bpm: number) => {
-	if (!crunker) return;
+export const playDrum = (music: Array<Key>, bpm: number) =>
+	preview("drum", () => renderDrum(music, bpm));
 
-	stopDrum();
-	beat = start(renderDrum(music, bpm));
-};
-
-export const stopDrum = () => {
-	if (beat) {
-		beat.stop();
-		beat = null;
-	}
-};
+export const stopDrum = () => stopPreview("drum");
 
 const hits = new Map<number, AudioBuffer>();
 
@@ -122,4 +124,65 @@ export const playDrumHit = (note: number) => {
 	}
 
 	start(buffer);
+};
+
+// the piano keys that are down right now, by MIDI number
+const held = new Map<number, Set<() => void>>();
+
+// Plays a piano note until it's let go of. The first press of a note has to
+// fetch its sample, after that it's instant. Returns what lets go of this
+// one press.
+export const pressKey = (note: number) => {
+	if (!crunker || !hasPianoNote(note)) return () => {};
+
+	const context = wake();
+
+	let source: AudioBufferSourceNode | null = null;
+	let gain: GainNode | null = null;
+	let down = true;
+
+	const release = () => {
+		if (!down) return;
+		down = false;
+		held.get(note)?.delete(release);
+
+		if (source && gain) {
+			// a quick fade instead of a cut, so letting go doesn't click
+			gain.gain.setTargetAtTime(0, context.currentTime, 0.02);
+			source.stop(context.currentTime + 0.15);
+		}
+	};
+
+	if (!held.has(note)) held.set(note, new Set());
+	held.get(note)!.add(release);
+
+	loadPianoNote(note)
+		.then((buffer) => {
+			// let go of before the sample got here
+			if (!down) return;
+
+			gain = context.createGain();
+			gain.connect(context.destination);
+
+			source = context.createBufferSource();
+			source.buffer = buffer;
+			source.connect(gain);
+			source.onended = () => {
+				down = false;
+				held.get(note)?.delete(release);
+				gain?.disconnect();
+			};
+			source.start();
+		})
+		.catch((error) => {
+			held.get(note)?.delete(release);
+			console.error(error);
+		});
+
+	return release;
+};
+
+// lets go of every press of a note
+export const releaseKey = (note: number) => {
+	for (const release of [...(held.get(note) ?? [])]) release();
 };
