@@ -45,6 +45,13 @@ const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
+// Focus opens a tooltip too, but only the keyboard's. A dialog hands the
+// focus back to the button that opened it, and after a click that shouldn't
+// leave the tooltip sitting there.
+const keyboardOnly = (event: React.FocusEvent<HTMLElement>) => {
+	if (!event.target.matches(":focus-visible")) event.preventDefault();
+};
+
 // The tooltip of a button that only has an icon on it. It goes around the
 // button:
 //
@@ -62,7 +69,7 @@ const Tip = ({
 	children: React.ReactElement<{ disabled?: boolean }>;
 }) => (
 	<Tooltip>
-		<TooltipTrigger asChild>
+		<TooltipTrigger asChild onFocus={keyboardOnly}>
 			{children.props.disabled === undefined ? (
 				children
 			) : (
