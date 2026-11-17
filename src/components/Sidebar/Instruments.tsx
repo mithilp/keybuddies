@@ -1,5 +1,6 @@
 import { useState } from "react";
 import instruments from "../instruments/list";
+import { stopPreview } from "@/utils/preview";
 import { Tip } from "../ui/tooltip";
 
 // A square for every instrument. As many go on a row as fit, about four,
@@ -19,7 +20,12 @@ const Instruments = ({ bpm, studio }: { bpm: string; studio: string }) => {
 				{instruments.map(({ id, name, hint, icon: Icon }) => (
 					<Tip key={id} label={hint}>
 						<button
-							onClick={() => setOpen(id)}
+							// a loop that's being listened to would go on playing
+							// under the recorder, with its stop button covered
+							onClick={() => {
+								stopPreview();
+								setOpen(id);
+							}}
 							aria-label={hint}
 							className="aspect-square min-w-0 bg-yellow border-8 border-black rounded-xl flex flex-col items-center justify-center gap-1"
 						>
