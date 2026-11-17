@@ -177,6 +177,16 @@ export class Transport {
 	// Takes effect right away, also on a song that's playing. Switched off
 	// mid song, the song plays to its end and stops there.
 	setLoop(looping: boolean) {
+		const now = crunker!.context.currentTime;
+
+		// Once it has wrapped, offset + elapsed is how long the sources have
+		// been going, not a place in the song. Without the loop that's what
+		// swap() takes it for, so it's counted from here again.
+		if (this.song && this.looping && !looping && now > this.startedAt) {
+			this.offset = (this.offset + now - this.startedAt) % this.song.duration;
+			this.startedAt = now;
+		}
+
 		this.looping = looping;
 
 		for (const { source } of this.voices.values()) {
