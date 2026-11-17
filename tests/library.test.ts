@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync } from "node:fs";
 import { test } from "node:test";
-import loops, { library, loopUrl, studioLoops } from "../src/utils/loops.ts";
+import loops, {
+	cellOnlyLoops,
+	library,
+	loopUrl,
+	studioLoops,
+} from "../src/utils/loops.ts";
 import { TEMPOS } from "../src/utils/tempo.ts";
 import type { Cell } from "../src/utils/types.ts";
 
@@ -137,4 +142,49 @@ test("ids the library doesn't know and fields that aren't lists are ignored", ()
 		{ type: "loop", id: "bass_1", name: "Bass 1" },
 	]);
 	assert.deepEqual(studioLoops([], { bass_1: true }, 3), []);
+});
+
+test("the loops that only cells hold are the ones to write down", () => {
+	const tracks = [
+		track(loop("piano_2"), empty, loop("bass_1")),
+		track(sound("abc"), loop("piano_2"), loop("bass_3")),
+	];
+
+	// once each, in the library's order
+	assert.deepEqual(cellOnlyLoops(tracks, undefined, undefined), [
+		"bass_1",
+		"bass_3",
+		"piano_2",
+	]);
+
+	// not the ones that were added, and not the ones that were removed
+	assert.deepEqual(cellOnlyLoops(tracks, ["bass_1"], ["piano_2"]), ["bass_3"]);
+
+	assert.deepEqual(cellOnlyLoops([], ["bass_1"], undefined), []);
+	assert.deepEqual(cellOnlyLoops([track(empty, sound("abc"))], [], []), []);
+});
+
+test("a loop that was written down stays when its last cell is gone", () => {
+	const before = [track(loop("bass_1"), loop("piano_4"))];
+	const after = [track(empty, loop("piano_4"))];
+
+	// left alone it would go with the cell
+	assert.deepEqual(ids(studioLoops(after, undefined, undefined)), ["piano_4"]);
+
+	const kept = cellOnlyLoops(before, undefined, undefined);
+
+	assert.deepEqual(ids(studioLoops(after, kept, undefined)), [
+		"bass_1",
+		"piano_4",
+	]);
+	assert.deepEqual(ids(studioLoops([], kept, undefined)), ["bass_1", "piano_4"]);
+
+	// and then there's nothing left to write down
+	assert.deepEqual(cellOnlyLoops(before, kept, undefined), []);
+});
+
+test("a loop the library doesn't have isn't written down", () => {
+	const tracks = [track(loop("old_synth", "Old Synth"), loop("bass_1"))];
+
+	assert.deepEqual(cellOnlyLoops(tracks, undefined, undefined), ["bass_1"]);
 });

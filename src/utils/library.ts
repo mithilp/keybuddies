@@ -9,6 +9,9 @@ import { db } from "./firebase";
 //
 // The studio page reads them off the studio it's already listening to, and
 // `studioLoops` makes the list out of them.
+//
+// A studio from before the library has loops in its cells and neither list.
+// The studio page puts those in `library` with `keepLoops` when it opens.
 
 export const addLoop = (studio: string, id: string) =>
 	updateDoc(doc(db, "studios", studio), {
@@ -22,4 +25,11 @@ export const removeLoop = (studio: string, id: string) =>
 	updateDoc(doc(db, "studios", studio), {
 		library: arrayRemove(id),
 		libraryRemoved: arrayUnion(id),
+	});
+
+// Writes down loops that are only in the list because a cell holds them, so
+// they stay in it when the cell is gone.
+export const keepLoops = (studio: string, ids: string[]) =>
+	updateDoc(doc(db, "studios", studio), {
+		library: arrayUnion(...ids),
 	});

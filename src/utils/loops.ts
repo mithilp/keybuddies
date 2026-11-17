@@ -88,13 +88,28 @@ const ids = (field: unknown) =>
 			: []
 	);
 
+// the first cell of every loop that's on a track
+const inCells = (tracks: { notes: Cell[] }[]) => {
+	const used = new Map<string, Cell>();
+
+	for (const track of tracks) {
+		for (const cell of track.notes) {
+			if (cell.type == "loop" && !used.has(cell.id)) used.set(cell.id, cell);
+		}
+	}
+
+	return used;
+};
+
 // The library loops a studio has, as the cells they make, for the sidebar.
 //
 // `added` and `removed` are the studio's `library` and `libraryRemoved`
 // fields. A loop is in the studio when it was added from the library. It's
 // also in when a cell holds it, unless it was taken out of the list since:
 // studios from before the library have loops in their cells and neither
-// field, and those loops have to show up.
+// field, and those loops have to show up. The studio page writes those into
+// `library` when it opens (see `cellOnlyLoops`), so this only carries them
+// until that's done.
 //
 // They come in the library's order, so the list is the same for everyone.
 // A loop in a cell that the library doesn't have any more goes last, under
@@ -106,14 +121,7 @@ export const studioLoops = (
 ): Cell[] => {
 	const has = ids(added);
 	const out = ids(removed);
-
-	// the first cell of every loop that's on a track
-	const used = new Map<string, Cell>();
-	for (const track of tracks) {
-		for (const cell of track.notes) {
-			if (cell.type == "loop" && !used.has(cell.id)) used.set(cell.id, cell);
-		}
-	}
+	const used = inCells(tracks);
 
 	const known = loops.filter(
 		(loop) => has.has(loop.id) || (used.has(loop.id) && !out.has(loop.id))
@@ -126,6 +134,28 @@ export const studioLoops = (
 	return [...known, ...gone].map(
 		({ id, name }): Cell => ({ type: "loop", id: id, name: name })
 	);
+};
+
+// The ids of the loops that are only in the list because a cell holds them.
+// Left like that, a loop would leave the list for everyone when its last
+// cell is overwritten or its track is deleted, with nobody having removed
+// it. So these get written into `library`, and then they stay the way an
+// added loop does.
+//
+// A loop the library doesn't have any more isn't one of them. Its name is
+// only in its cell, so there's nothing to list it by once the cell is gone.
+export const cellOnlyLoops = (
+	tracks: { notes: Cell[] }[],
+	added: unknown,
+	removed: unknown
+): string[] => {
+	const has = ids(added);
+	const out = ids(removed);
+	const used = inCells(tracks);
+
+	return loops
+		.filter(({ id }) => used.has(id) && !has.has(id) && !out.has(id))
+		.map(({ id }) => id);
 };
 
 export default loops;

@@ -36,7 +36,7 @@ Firestore only holds the arrangement. All audio is made in the browser:
 | `library` | ids of the loops added from the library |
 | `libraryRemoved` | ids of the loops taken out of the sidebar list while a cell still held them |
 
-Both lists can be missing. A studio made before the library has neither, and the loops its cells hold show up in the sidebar anyway. `studioLoops` in `src/utils/loops.ts` makes the list.
+Both lists can be missing. A studio made before the library has neither, and the loops its cells hold show up in the sidebar anyway. The first time it's opened those loops are written into `library`, so they stay in the list when their cells are overwritten. `studioLoops` in `src/utils/loops.ts` makes the list.
 
 `studios/{code}/tracks/{id}`
 
