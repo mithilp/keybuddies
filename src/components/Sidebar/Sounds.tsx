@@ -3,7 +3,7 @@ import SoundButtons from "./SoundButtons";
 import { IconType } from "react-icons";
 import { MdLibraryMusic, MdPiano } from "react-icons/md";
 import { FaDrum, FaTrash } from "react-icons/fa";
-import { Cell, Sound } from "@/utils/types";
+import { Item, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/utils/firebase";
@@ -24,9 +24,9 @@ const Kind = ({ label, icon: Icon }: { label: string; icon: IconType }) => (
 	</Tip>
 );
 
-// Everything in this studio that can go in a cell, in one list: the sounds
+// Everything in this studio that can go on a track, in one list: the sounds
 // that were recorded here or added by code, and then the loops that were
-// added from the library. A row is picked and put in a cell the same way
+// added from the library. A row is picked and put on a track the same way
 // whichever it is.
 const Sounds = ({
 	placing,
@@ -38,7 +38,7 @@ const Sounds = ({
 	bpm: string;
 	studio: string;
 	// the library loops this studio has
-	loops: Cell[];
+	loops: Item[];
 }) => {
 	const [sounds, setSounds] = useState<Array<Sound>>([]);
 
@@ -102,6 +102,7 @@ const Sounds = ({
 												id: sound.id,
 												code: sound.data().code,
 												steps: sound.data().steps,
+												bars: sound.data().bars,
 											}
 										: null
 								);
@@ -146,8 +147,8 @@ const Sounds = ({
 		}
 	}, [item, sounds, loops, dropItem]);
 
-	// The loop leaves the list. The cells that hold it keep it.
-	const remove = (loop: Cell) => {
+	// The loop leaves the list. The clips that hold it keep it.
+	const remove = (loop: Item) => {
 		removeLoop(studio, loop.id).catch((error) => {
 			console.error(error);
 			setNotice(`Couldn't remove ${loop.name}. Try again.`);
@@ -164,12 +165,18 @@ const Sounds = ({
 				<div
 					key={index}
 					onClick={() => {
-						placing.pickItem({ type: "sound", name: sound.name, id: sound.id });
+						placing.pickItem({
+							type: "sound",
+							name: sound.name,
+							id: sound.id,
+							bars: sound.bars,
+						});
 					}}
-					// Pink is what a click does something to. While a cell is
-					// picked that's every sound, otherwise it's the picked one.
+					// Pink is what a click does something to. While a clip or an
+					// empty bar is picked that's every sound, otherwise it's the
+					// picked one.
 					className={`bg-yellow flex justify-between p-4 rounded-xl border-8 ${
-						placing.cell || (item?.type == "sound" && item.id == sound.id)
+						placing.slot || (item?.type == "sound" && item.id == sound.id)
 							? "border-pink"
 							: "border-black"
 					} ${
@@ -210,7 +217,7 @@ const Sounds = ({
 					key={loop.id}
 					onClick={() => placing.pickItem(loop)}
 					className={`bg-yellow flex items-center justify-between space-x-2 p-4 rounded-xl border-8 ${
-						placing.cell || (item?.type == "loop" && item.id == loop.id)
+						placing.slot || (item?.type == "loop" && item.id == loop.id)
 							? "border-pink"
 							: "border-black"
 					} ${busy ? "opacity-50" : "cursor-pointer"}`}

@@ -1,6 +1,8 @@
 import MIDI from "@/utils/MIDI";
 import Metronome from "../Metronome";
 import { useEffect, useRef, useState } from "react";
+import { ClipBars } from "@/utils/types";
+import LengthPicker from "../LengthPicker";
 
 const PianoOptions = ({
 	firstNote,
@@ -13,6 +15,8 @@ const PianoOptions = ({
 	onRecord,
 	onStop,
 	onReset,
+	bars,
+	setBars,
 }: {
 	firstNote: number;
 	setFirstNote: (note: number) => void;
@@ -24,6 +28,9 @@ const PianoOptions = ({
 	onRecord: () => void;
 	onStop: () => void;
 	onReset: () => void;
+	// how long a new recording is, not there when editing a saved one
+	bars?: ClipBars;
+	setBars: (bars: ClipBars) => void;
 }) => {
 	const [countdown, setCountdown] = useState(0);
 
@@ -58,7 +65,16 @@ const PianoOptions = ({
 
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-4">
-			<div className="flex space-x-4">
+			<div className="flex flex-wrap gap-4">
+				{bars !== undefined && (
+					<LengthPicker
+						id="pianoLength"
+						bars={bars}
+						setBars={setBars}
+						disabled={recording || countdown > 0}
+					/>
+				)}
+
 				<div className="flex items-center space-x-2">
 					<label className="text-lg whitespace-nowrap" htmlFor="firstNote">
 						First Note:

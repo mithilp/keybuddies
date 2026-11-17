@@ -37,7 +37,7 @@ const PlayLoop = ({
 				disabled={disabled}
 				aria-label={state == "idle" ? `Listen to ${name}` : `Stop ${name}`}
 				onClick={(event) => {
-					// the row behind this button is what puts a loop in a cell.
+					// the row behind this button is what puts a loop on a track.
 					// this one only listens.
 					event.stopPropagation();
 

@@ -44,12 +44,8 @@ export default async function Home({
 				createdAt: Timestamp.now(),
 				name: `Track ${i + 1}`,
 				order: i,
-				notes: [
-					{ type: "empty", name: "", id: "" },
-					{ type: "empty", name: "", id: "" },
-					{ type: "empty", name: "", id: "" },
-					{ type: "empty", name: "", id: "" },
-				],
+				notes: [],
+				bars: 8,
 			});
 		}
 

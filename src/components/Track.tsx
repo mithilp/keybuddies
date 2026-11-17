@@ -1,17 +1,33 @@
 import { db } from "@/utils/firebase";
-import { Track } from "@/utils/types";
+import { Clip, ClipBars, Track } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { addCell, removeCell } from "@/utils/cells";
+import { CLIP_BARS, clipAt, fits } from "@/utils/clips";
+import {
+	addTrackBar,
+	removeTrackBar,
+	setClipBars,
+	takeOutClip,
+} from "@/utils/track-edits";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState } from "react";
 import { ConfirmDialog } from "./Dialog";
 import { Tip } from "./ui/tooltip";
 import {
+	FaMinusCircle,
 	FaPlusCircle,
 	FaTrash,
 	FaVolumeMute,
 	FaVolumeUp,
 } from "react-icons/fa";
+import { BEAT_WIDTH } from "./Playhead";
+import { BAR_BEATS } from "@/utils/tempo";
+
+// a bar on a track lines up with 4 beats on the ruler. what's in it is a gap
+// narrower, so clips next to each other don't touch.
+const BAR_WIDTH = BAR_BEATS * BEAT_WIDTH;
+const GAP = 8;
+
+const barsLabel = (bars: number) => (bars == 1 ? "1 bar" : `${bars} bars`);
 
 const Track = ({
 	track,
@@ -37,6 +53,15 @@ const Track = ({
 	};
 
 	const unsaved = couldnt("Couldn't save that change. Try again.");
+
+	const resize = (clip: Clip, bars: ClipBars) => {
+		setClipBars(studio, track.id, clip, bars).catch(unsaved);
+	};
+
+	// What's picked is blue. While a loop or a sound is picked instead,
+	// every clip and empty bar is pink: any of them can take it.
+	const border = (picked: boolean) =>
+		picked ? "border-blue" : placing.item ? "border-pink" : "border-black";
 
 	// whether the "delete this track?" dialog is open
 	const [deleting, setDeleting] = useState(false);
@@ -73,56 +98,117 @@ const Track = ({
 				</Tip>
 			</div>
 			<div className="flex items-center space-x-2">
-				{track.notes.map((note, index) => {
-					const picked =
-						placing.cell?.track == track.id && placing.cell.index == index;
+				<div className="relative h-24" style={{ width: track.bars * BAR_WIDTH }}>
+					{Array.from({ length: track.bars }, (_, bar) => bar)
+						.filter((bar) => !clipAt(track.clips, bar))
+						.map((bar) => {
+							const picked =
+								placing.slot?.track == track.id &&
+								!placing.slot.clip &&
+								placing.slot.bar == bar;
 
-					// The picked cell is blue. While a loop or a sound is picked
-					// instead, every cell is pink: any of them can take it.
-					const border = picked
-						? "border-blue"
-						: placing.item
-						? "border-pink"
-						: "border-black";
-
-					return (
-						<div
-							key={index}
-							className={`flex bg-yellow p-4 rounded-xl border-8 cursor-pointer ${border}`}
-							onClick={() => {
-								placing.pickCell({ track: track.id, index: index, cell: note });
-							}}
-						>
-							<div className="w-36">
-								{note.type == "empty" ? "Select a loop" : note.name}
-							</div>
-							<Tip label="Delete cell">
-								<button
-									className="text-2xl"
-									aria-label={`Delete cell ${index + 1} of ${track.name}`}
-									onClick={(event) => {
-										// the cell behind this button is what gets picked
-										event.stopPropagation();
-
-										removeCell(studio, track.id, index, note).catch(unsaved);
+							return (
+								<div
+									key={`empty ${bar}`}
+									className={`absolute top-0 h-24 bg-white/60 p-1 rounded-xl border-8 cursor-pointer text-sm ${border(picked)}`}
+									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - GAP }}
+									aria-label={`Bar ${bar + 1} of ${track.name}, empty`}
+									onClick={() => {
+										placing.pickSlot({ track: track.id, bar: bar, clip: null });
 									}}
 								>
-									<FaTrash />
-								</button>
-							</Tip>
-						</div>
-					);
-				})}
+									Empty
+								</div>
+							);
+						})}
 
-				<Tip label="Add a cell">
+					{track.clips.map((clip) => {
+						const picked =
+							placing.slot?.track == track.id &&
+							placing.slot.clip?.start == clip.start;
+
+						return (
+							<div
+								key={`clip ${clip.start}`}
+								className={`absolute top-0 h-24 flex flex-col justify-between bg-yellow p-1 rounded-xl border-8 cursor-pointer ${border(picked)}`}
+								style={{
+									left: clip.start * BAR_WIDTH,
+									width: clip.bars * BAR_WIDTH - GAP,
+								}}
+								onClick={() => {
+									placing.pickSlot({
+										track: track.id,
+										bar: clip.start,
+										clip: clip,
+									});
+								}}
+							>
+								<div className="truncate font-bold" title={clip.name}>
+									{clip.name}
+								</div>
+								<div className="flex items-center justify-between space-x-1">
+									<select
+										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0"
+										aria-label={`Length of ${clip.name} on bar ${clip.start + 1} of ${track.name}`}
+										value={clip.bars}
+										// the clip behind this is what gets picked otherwise
+										onClick={(event) => event.stopPropagation()}
+										onChange={(event) => {
+											resize(clip, Number(event.target.value) as ClipBars);
+										}}
+									>
+										{CLIP_BARS.map((bars) => (
+											<option
+												key={bars}
+												value={bars}
+												disabled={!fits(track, clip, bars)}
+											>
+												{barsLabel(bars)}
+											</option>
+										))}
+									</select>
+									<Tip label="Take out">
+										<button
+											className="text-lg"
+											aria-label={`Take ${clip.name} off bar ${clip.start + 1} of ${track.name}`}
+											onClick={(event) => {
+												// the clip behind this button is what gets picked
+												event.stopPropagation();
+
+												takeOutClip(studio, track.id, clip).catch(unsaved);
+											}}
+										>
+											<FaTrash />
+										</button>
+									</Tip>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+
+				<Tip label="Add a bar">
 					<button
-						className="pr-4"
-						aria-label={`Add a cell to ${track.name}`}
+						aria-label={`Add a bar to ${track.name}`}
 						onClick={() => {
-							addCell(studio, track.id).catch(unsaved);
+							addTrackBar(studio, track.id).catch(unsaved);
 						}}
 					>
 						<FaPlusCircle color="black" size={32} />
+					</button>
+				</Tip>
+
+				<Tip label="Take off the last bar">
+					<button
+						className="pr-4 disabled:opacity-30"
+						aria-label={`Take the last bar off ${track.name}`}
+						// only an empty last bar can go
+						disabled={track.bars == 0 || clipAt(track.clips, track.bars - 1) !== null}
+						onClick={() => {
+							removeTrackBar(studio, track.id).catch(unsaved);
+						}}
+					>
+						<FaMinusCircle color="black" size={32} />
 					</button>
 				</Tip>
 			</div>

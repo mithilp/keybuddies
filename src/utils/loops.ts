@@ -1,9 +1,9 @@
-import type { Cell } from "./types";
+import type { Item } from "./types";
 
 // The library: the loops that come with the app. They're kept in sets, and
 // another set is one more entry in `library`.
 //
-// A loop's id is what a cell keeps and what its files are named after, so
+// A loop's id is what a clip keeps and what its files are named after, so
 // an id that's been out in the world doesn't change.
 export type LibraryLoop = {
   id: string;
@@ -89,72 +89,72 @@ const ids = (field: unknown) =>
       : [],
   );
 
-// the first cell of every loop that's on a track
-const inCells = (tracks: { notes: Cell[] }[]) => {
-  const used = new Map<string, Cell>();
+// the first clip of every loop that's on a track
+const onTracks = (tracks: { clips: Item[] }[]) => {
+  const used = new Map<string, Item>();
 
   for (const track of tracks) {
-    for (const cell of track.notes) {
-      if (cell.type == "loop" && !used.has(cell.id)) used.set(cell.id, cell);
+    for (const clip of track.clips) {
+      if (clip.type == "loop" && !used.has(clip.id)) used.set(clip.id, clip);
     }
   }
 
   return used;
 };
 
-// The library loops a studio has, as the cells they make, for the sidebar.
+// The library loops a studio has, as what the sidebar puts on tracks.
 //
 // `added` and `removed` are the studio's `library` and `libraryRemoved`
 // fields. A loop is in the studio when it was added from the library. It's
-// also in when a cell holds it, unless it was taken out of the list since:
-// studios from before the library have loops in their cells and neither
+// also in when a clip holds it, unless it was taken out of the list since:
+// studios from before the library have loops on their tracks and neither
 // field, and those loops have to show up. The studio page writes those into
 // `library` when it opens (see `cellOnlyLoops`), so this only carries them
 // until that's done.
 //
 // They come in the library's order, so the list is the same for everyone.
-// A loop in a cell that the library doesn't have any more goes last, under
-// the name its cell has.
+// A loop on a track that the library doesn't have any more goes last, under
+// the name its clip has.
 export const studioLoops = (
-  tracks: { notes: Cell[] }[],
+  tracks: { clips: Item[] }[],
   added: unknown,
   removed: unknown,
-): Cell[] => {
+): Item[] => {
   const has = ids(added);
   const out = ids(removed);
-  const used = inCells(tracks);
+  const used = onTracks(tracks);
 
   const known = loops.filter(
     (loop) => has.has(loop.id) || (used.has(loop.id) && !out.has(loop.id)),
   );
 
   const gone = [...used.values()].filter(
-    (cell) => !out.has(cell.id) && !loops.some((loop) => loop.id == cell.id),
+    (clip) => !out.has(clip.id) && !loops.some((loop) => loop.id == clip.id),
   );
 
-  return [...known, ...gone].map(({ id, name }): Cell => ({
+  return [...known, ...gone].map(({ id, name }): Item => ({
     type: "loop",
     id: id,
     name: name,
   }));
 };
 
-// The ids of the loops that are only in the list because a cell holds them.
+// The ids of the loops that are only in the list because a clip holds them.
 // Left like that, a loop would leave the list for everyone when its last
-// cell is overwritten or its track is deleted, with nobody having removed
+// clip is replaced or its track is deleted, with nobody having removed
 // it. So these get written into `library`, and then they stay the way an
 // added loop does.
 //
 // A loop the library doesn't have any more isn't one of them. Its name is
-// only in its cell, so there's nothing to list it by once the cell is gone.
+// only on its clips, so there's nothing to list it by once they're gone.
 export const cellOnlyLoops = (
-  tracks: { notes: Cell[] }[],
+  tracks: { clips: Item[] }[],
   added: unknown,
   removed: unknown,
 ): string[] => {
   const has = ids(added);
   const out = ids(removed);
-  const used = inCells(tracks);
+  const used = onTracks(tracks);
 
   return loops
     .filter(({ id }) => used.has(id) && !has.has(id) && !out.has(id))

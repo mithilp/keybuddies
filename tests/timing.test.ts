@@ -5,16 +5,22 @@ import {
 	DRUM_STEPS,
 	OLD_DRUM_STEPS,
 	drumBeat,
+	drumSteps,
 	drumVoices,
 	mixDrums,
 	synthDrum,
 } from "../src/utils/drum-synth.ts";
-import { CELL_BEATS, PIANO_STEPS, cellFrames } from "../src/utils/tempo.ts";
+import { BAR_BEATS, PIANO_BAR_STEPS, framesOf } from "../src/utils/tempo.ts";
+
+// 2 bars, what a cell was and what every loop is
+const CELL_BEATS = 2 * BAR_BEATS;
+const PIANO_STEPS = 2 * PIANO_BAR_STEPS;
+const cellFrames = (bpm: number, rate: number) => framesOf(2, bpm, rate);
 
 const TEMPOS = [80, 120, 160];
 const RATES = [44100, 48000, 96000];
 
-test("a cell is 8 beats long at every tempo", () => {
+test("2 bars is 8 beats long at every tempo", () => {
 	assert.equal(cellFrames(120, 44100), 176400);
 	assert.equal(cellFrames(80, 44100), 264600);
 	assert.equal(cellFrames(160, 44100), 132300);
@@ -182,4 +188,52 @@ test("a beat saved on sixteenths is read as it is", () => {
 	assert.equal(drumBeat(beat, DRUM_STEPS), beat);
 	assert.equal(drumBeat(oldBeat(), undefined).length, oldBeat().length);
 	assert.ok(drumBeat(oldBeat(), undefined).every((key) => key.start % 2 === 0));
+});
+
+test("bar lines are whole samples and never drift", () => {
+	for (const bpm of [...TEMPOS, 77, 133]) {
+		for (const rate of RATES) {
+			const bar = (BAR_BEATS * 60 * rate) / bpm;
+
+			for (let n = 0; n <= 1000; n += 37) {
+				const at = framesOf(n, bpm, rate);
+				assert.ok(Number.isInteger(at));
+				// never more than half a sample off the exact place
+				assert.ok(Math.abs(at - n * bar) <= 0.5);
+			}
+		}
+	}
+});
+
+test("a beat has 16 sixteenths per bar", () => {
+	assert.equal(drumSteps(1), 16);
+	assert.equal(drumSteps(2), 32);
+	assert.equal(drumSteps(4), 64);
+	// an old sound is 2 bars
+	assert.equal(drumSteps(undefined), 32);
+	assert.equal(drumSteps(3), 32);
+});
+
+test("a 1 or 4 bar beat is read as it was saved", () => {
+	const short = [{ note: 1, start: 15, end: 16 }];
+	const long = [{ note: 1, start: 63, end: 64 }];
+
+	assert.equal(drumBeat(short, 16, 1), short);
+	assert.equal(drumBeat(long, 64, 4), long);
+	// a 2 bar beat saved with a length is the same as one without
+	assert.equal(drumBeat(long, DRUM_STEPS, 2), long);
+});
+
+test("a 4 bar beat plays its last step and nothing after", () => {
+	const beat = [
+		{ note: 1, start: 63 },
+		{ note: 1, start: 64 },
+	];
+	const kick = synthDrum("kick", 44100);
+	const out = mixDrums(beat, 120, 44100, undefined, drumSteps(4));
+	const at = Math.round(63 * (15 / 120) * 44100);
+
+	assert.equal(out.length, at + kick.length);
+	// a 2 bar beat leaves both out
+	assert.equal(mixDrums(beat, 120, 44100).length, 1);
 });

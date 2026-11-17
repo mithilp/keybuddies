@@ -4,18 +4,18 @@ import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
 import { NAME_LENGTH, saveSound } from "@/utils/sounds";
 import { FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { useRef, useState } from "react";
-import { Key } from "@/utils/types";
+import { ClipBars, Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
-import { DRUM_STEPS } from "@/utils/drum-synth";
-import { CELL_BEATS } from "@/utils/tempo";
+import { DRUM_BAR_STEPS, drumSteps } from "@/utils/drum-synth";
+import { BAR_BEATS } from "@/utils/tempo";
+import { DEFAULT_BARS } from "@/utils/clips";
 import { PromptDialog } from "@/components/Dialog";
 import Panel from "@/components/Panel";
-
-const BEATS = Array.from({ length: CELL_BEATS }, (_, beat) => beat);
+import LengthPicker from "./LengthPicker";
 
 // the sixteenth note steps in one beat
 const QUARTERS = Array.from(
-	{ length: DRUM_STEPS / CELL_BEATS },
+	{ length: DRUM_BAR_STEPS / BAR_BEATS },
 	(_, quarter) => quarter
 );
 
@@ -36,6 +36,12 @@ const Drum = ({
 	const [sequence, setSequence] = useState<Array<Key>>([]);
 	const [isPlaying, setIsPlaying] = useState(false);
 
+	// how long the beat is. hits past the end stay on the grid in case it's
+	// made longer again, but they aren't heard or saved.
+	const [bars, setBars] = useState<ClipBars>(DEFAULT_BARS);
+	const beats = Array.from({ length: bars * BAR_BEATS }, (_, beat) => beat);
+	const inside = sequence.filter((note) => note.start < drumSteps(bars));
+
 	const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const stopListening = () => {
@@ -53,9 +59,9 @@ const Drum = ({
 			return;
 		}
 
-		playDrum(sequence, bpm, DRUM_STEPS);
+		playDrum(inside, bpm, drumSteps(bars), bars);
 		setIsPlaying(true);
-		listenTimer.current = setTimeout(stopListening, 480000 / bpm);
+		listenTimer.current = setTimeout(stopListening, (bars * 240000) / bpm);
 	};
 
 	const shut = () => {
@@ -84,10 +90,11 @@ const Drum = ({
 		await saveSound(studio, {
 			name: name || "Drum beat",
 			type: "drum",
-			sequence: sequence,
-			// the grid this beat was made on. beats saved before there was one
-			// are on the old half beat grid, see drumBeat.
-			steps: DRUM_STEPS,
+			sequence: inside,
+			// the grid this beat was made on and how long it is. beats saved
+			// before there was a grid are on half beats, see drumBeat.
+			steps: drumSteps(bars),
+			bars: bars,
 		});
 
 		setNaming(false);
@@ -101,13 +108,22 @@ const Drum = ({
 				// Escape closes it the same way the X does, the beat stops too
 				<Panel title="Record a Drum Sound" close={shut}>
 					<div className="space-y-4">
+						<LengthPicker
+							id="drumLength"
+							bars={bars}
+							setBars={(next) => {
+								stopListening();
+								setBars(next);
+							}}
+						/>
+
 						{/* sideways scroll stays inside the panel on a narrow window */}
 						<div className="overflow-x-auto">
 							<div className="w-max">
 								{/* the beat numbers, over the first step of each beat */}
 								<div className="flex" aria-hidden>
 									<div className="w-32 shrink-0"></div>
-									{BEATS.map((beat) => (
+									{beats.map((beat) => (
 										<div
 											key={beat}
 											className="flex gap-0.5 px-1 border-l-4 border-black font-bold"
@@ -124,7 +140,7 @@ const Drum = ({
 								{sounds.map((sound) => (
 									<div key={sound.value} className="flex items-center">
 										<div className="w-32 shrink-0">{sound.note}</div>
-										{BEATS.map((beat) => (
+										{beats.map((beat) => (
 											// a beat is 4 steps, with a thick line before it
 											<div
 												key={beat}
@@ -157,7 +173,7 @@ const Drum = ({
 						<div className="space-x-4 flex">
 							<button
 								onClick={listen}
-								disabled={sequence.length == 0}
+								disabled={inside.length == 0}
 								className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 							>
 								<div id="ButtonListen">
@@ -167,7 +183,7 @@ const Drum = ({
 							</button>
 							<button
 								onClick={() => setNaming(true)}
-								disabled={sequence.length == 0}
+								disabled={inside.length == 0}
 								className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 							>
 								<div>Save Recording</div>

@@ -3,7 +3,7 @@ import { FaCheck } from "react-icons/fa";
 import { MdLibraryMusic } from "react-icons/md";
 import { addLoop } from "@/utils/library";
 import { library, LibraryLoop } from "@/utils/loops";
-import { Cell } from "@/utils/types";
+import { Item } from "@/utils/types";
 import { Dialog, quietButton } from "../Dialog";
 import PlayLoop from "../PlayLoop";
 
@@ -18,7 +18,7 @@ const LibraryDialog = ({
 }: {
 	studio: string;
 	bpm: string;
-	loops: Cell[];
+	loops: Item[];
 	close: () => void;
 }) => {
 	const [problem, setProblem] = useState("");
@@ -122,7 +122,7 @@ const Library = ({
 	studio: string;
 	bpm: string;
 	// the library loops this studio already has
-	loops: Cell[];
+	loops: Item[];
 }) => {
 	const [open, setOpen] = useState(false);
 

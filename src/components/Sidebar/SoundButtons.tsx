@@ -1,5 +1,6 @@
 import { shareCode } from "@/utils/codes";
 import { playDrum, playPiano } from "@/utils/instruments";
+import { soundBars } from "@/utils/clips";
 import {
 	NAME_LENGTH,
 	copyName,
@@ -34,9 +35,9 @@ const SoundThumbnail = ({
 
 	function playSound(sound: Sound) {
 		if (sound.type == "piano") {
-			playPiano(sound.sequence, Number(bpm));
+			playPiano(sound.sequence, Number(bpm), sound.bars);
 		} else if (sound.type == "drum") {
-			playDrum(sound.sequence, Number(bpm), sound.steps);
+			playDrum(sound.sequence, Number(bpm), sound.steps, sound.bars);
 		}
 	}
 
@@ -68,9 +69,10 @@ const SoundThumbnail = ({
 			name: name || copyName(sound.name),
 			type: sound.type,
 			sequence: sound.sequence,
-			// a copy of a beat is on the same grid as the beat. an old one has
-			// no steps and its copy has none either.
+			// a copy of a beat is on the same grid and as long as the beat. an
+			// old one has no steps or length and its copy has none either.
 			steps: sound.steps,
+			bars: sound.bars,
 		});
 
 		setAsking(null);
@@ -103,7 +105,7 @@ const SoundThumbnail = ({
 							playSound(sound);
 							setTimeout(() => {
 								setPlaying(-1);
-							}, 480000 / Number(bpm));
+							}, (soundBars(sound.bars) * 240000) / Number(bpm));
 						}
 					}}
 				>

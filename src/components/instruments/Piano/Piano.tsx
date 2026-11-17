@@ -3,7 +3,7 @@
 import { NAME_LENGTH, saveSound } from "@/utils/sounds";
 import { useState } from "react";
 import PianoEditor from "./PianoEditor";
-import { Key } from "@/utils/types";
+import { ClipBars, Key } from "@/utils/types";
 import { PromptDialog } from "@/components/Dialog";
 import Panel from "@/components/Panel";
 
@@ -21,7 +21,10 @@ const Piano = ({
 	close: () => void;
 }) => {
 	// the recording that's being named, once Save Recording has been pressed
-	const [naming, setNaming] = useState<Key[] | null>(null);
+	const [naming, setNaming] = useState<{
+		sequence: Key[];
+		bars: ClipBars;
+	} | null>(null);
 
 	const save = async (name: string) => {
 		if (!naming) return;
@@ -29,7 +32,8 @@ const Piano = ({
 		await saveSound(studio, {
 			name: name || "Piano sound",
 			type: "piano",
-			sequence: naming,
+			sequence: naming.sequence,
+			bars: naming.bars,
 		});
 
 		setNaming(null);
@@ -43,7 +47,7 @@ const Piano = ({
 					<PianoEditor
 						bpm={bpm}
 						saveLabel="Save Recording"
-						onSave={setNaming}
+						onSave={(sequence, bars) => setNaming({ sequence, bars })}
 						paused={naming !== null}
 					/>
 				</Panel>

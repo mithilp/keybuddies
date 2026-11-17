@@ -130,7 +130,7 @@ const Playhead = ({
 	// it passes would be a jump of its own.
 	//
 	// A press that never turned into a drag was meant for whatever is under
-	// the playhead (a cell, the ruler), so it gets the click instead.
+	// the playhead (a clip, the ruler), so it gets the click instead.
 	const release = (event: PointerEvent<HTMLDivElement>) => {
 		const held = drag.current;
 		if (!held) return;

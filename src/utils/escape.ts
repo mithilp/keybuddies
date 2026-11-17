@@ -16,7 +16,7 @@ export const escapeKey = (
 ) => {
 	if (event.key !== "Escape" || open.length === 0) return;
 
-	// nothing under it hears this press, a picked cell stays picked
+	// nothing under it hears this press, a picked clip stays picked
 	event.stopPropagation();
 	open[open.length - 1].current();
 };

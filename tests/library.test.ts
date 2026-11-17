@@ -8,15 +8,19 @@ import loops, {
 	studioLoops,
 } from "../src/utils/loops.ts";
 import { TEMPOS } from "../src/utils/tempo.ts";
-import type { Cell } from "../src/utils/types.ts";
+import { readTrack } from "../src/utils/clips.ts";
+import type { Item } from "../src/utils/types.ts";
 
+// tracks as old docs have them, cells with empty ones in between, read the
+// way the studio page reads them
+type Cell = { type: string; name: string; id: string };
 const empty: Cell = { type: "empty", name: "", id: "" };
 const loop = (id: string, name = id): Cell => ({ type: "loop", name, id });
 const sound = (id: string): Cell => ({ type: "sound", name: id, id });
 
-const track = (...notes: Cell[]) => ({ notes });
+const track = (...notes: Cell[]) => readTrack(notes, undefined);
 
-const ids = (cells: Cell[]) => cells.map((cell) => cell.id);
+const ids = (cells: Item[]) => cells.map((cell) => cell.id);
 
 test("every library loop has a file at every tempo", () => {
 	for (const { id } of loops) {

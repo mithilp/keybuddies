@@ -22,6 +22,7 @@ import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
 import { usePlacing } from "@/utils/placing";
+import { readTrack } from "@/utils/clips";
 import { cellOnlyLoops, studioLoops } from "@/utils/loops";
 import { keepLoops } from "@/utils/library";
 import { mixDown, save, toWav } from "@/utils/export";
@@ -83,7 +84,7 @@ function Studio({ studio }: { studio: string }) {
 		[tracks, library]
 	);
 
-	// the loops that are only in that list because a cell holds them
+	// the loops that are only in that list because a clip holds them
 	const cellOnly = useMemo(
 		() => cellOnlyLoops(tracks, library.added, library.removed),
 		[tracks, library]
@@ -93,9 +94,9 @@ function Studio({ studio }: { studio: string }) {
 	// was turned down brings them back, and it isn't tried again.
 	const kept = useRef(new Set<string>());
 
-	// A studio from before the library has loops in its cells and no list of
+	// A studio from before the library has loops on its tracks and no list of
 	// them. They're written into `library` here, so they don't leave the
-	// sidebar when their last cell is overwritten. It waits for the server:
+	// sidebar when their last clip is replaced. It waits for the server:
 	// a remembered studio can be missing a loop that was removed since.
 	useEffect(() => {
 		if (!synced || loading) return;
@@ -105,7 +106,7 @@ function Studio({ studio }: { studio: string }) {
 
 		ids.forEach((id) => kept.current.add(id));
 
-		// the list still has them while a cell does, so this can fail quietly
+		// the list still has them while a clip does, so this can fail quietly
 		keepLoops(studio, ids).catch(console.error);
 	}, [synced, loading, cellOnly, studio]);
 
@@ -113,7 +114,7 @@ function Studio({ studio }: { studio: string }) {
 
 	const [notice, setNotice] = useState("");
 
-	// which cell or which loop or sound is picked, and putting one in the other
+	// which bar or clip, or which loop or sound, is picked, and putting one in the other
 	const placing = usePlacing(studio, tracks, setNotice);
 
 	// Where the playhead rests while nothing is playing, in beats from the
@@ -227,11 +228,17 @@ function Studio({ studio }: { studio: string }) {
 				const freshTracks: Array<Track> = [];
 
 				querySnapshot.forEach((doc) => {
+					const data = doc.data();
+
+					// old tracks are cells, new ones are clips, both read the same
+					const { clips, bars } = readTrack(data.notes, data.bars);
+
 					freshTracks.push({
-						name: doc.data().name,
-						createdAt: doc.data().createdAt,
-						order: doc.data().order,
-						notes: doc.data().notes,
+						name: data.name,
+						createdAt: data.createdAt,
+						order: data.order,
+						clips: clips,
+						bars: bars,
 						id: doc.id,
 					});
 				});
@@ -328,7 +335,7 @@ function Studio({ studio }: { studio: string }) {
 		}
 	};
 
-	// An edit while the song plays: a loop swapped, a cell added or taken
+	// An edit while the song plays: a loop swapped, a clip added or taken
 	// out, another tempo. The song is rendered again and the new one takes
 	// over from the one that's playing, on the same beat. Until it's ready
 	// the old one keeps playing.
@@ -388,8 +395,7 @@ function Studio({ studio }: { studio: string }) {
 	const download = async () => {
 		if (exporting !== null) return;
 
-		const hasSound = (track: Track) =>
-			track.notes.some((cell) => cell.type != "empty");
+		const hasSound = (track: Track) => track.clips.length > 0;
 
 		if (!tracks.some(hasSound)) {
 			setNotice("There's nothing to export yet.");

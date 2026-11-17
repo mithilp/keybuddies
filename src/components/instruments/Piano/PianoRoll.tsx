@@ -2,7 +2,6 @@
 
 import MIDI from "@/utils/MIDI";
 import { pressKey } from "@/utils/instruments";
-import { PIANO_STEPS } from "@/utils/tempo";
 import { Key } from "@/utils/types";
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaTrash } from "react-icons/fa";
@@ -10,14 +9,12 @@ import { FaXmark } from "react-icons/fa6";
 import { Tip } from "@/components/ui/tooltip";
 import { useEscape } from "@/utils/escape";
 
-const STEPS = Array.from({ length: PIANO_STEPS }, (_, step) => step);
-
 // a note takes up every step from its start up to, not including, its end.
 // one that was saved without a length still takes up the step it starts on.
 const covers = (key: Key, step: number) =>
 	key.start === step || (key.start < step && key.end > step);
 
-// where a step is in the cell, in beats: 0, 1/8, 2/8 ... 7 7/8
+// where a step is in the sound, in beats: 0, 1/8, 2/8 ... 7 7/8
 const StepLabel = ({ step }: { step: number }) =>
 	step % 8 === 0 ? (
 		<>{step / 8}</>
@@ -29,21 +26,25 @@ const StepLabel = ({ step }: { step: number }) =>
 	);
 
 // The grid a piano recording is drawn on. One row per note between
-// `firstNote` and `lastNote`, one column per step. Recording a new sound and
-// editing a saved one both use this.
+// `firstNote` and `lastNote`, one column per step, `steps` of them.
+// Recording a new sound and editing a saved one both use this.
 const PianoRoll = ({
 	sequence,
 	onChange,
 	firstNote,
 	lastNote,
 	bpm,
+	steps,
 }: {
 	sequence: Key[];
 	onChange: (sequence: Key[]) => void;
 	firstNote: number;
 	lastNote: number;
 	bpm: number;
+	steps: number;
 }) => {
+	const columns = Array.from({ length: steps }, (_, step) => step);
+
 	// the note the popup is open for, and the step it was opened from
 	const [picked, setPicked] = useState<{ key: Key; step: number } | null>(
 		null
@@ -72,7 +73,7 @@ const PianoRoll = ({
 				<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
 					Note
 				</div>
-				{STEPS.map((step) => (
+				{columns.map((step) => (
 					<div
 						key={step}
 						className="bg-white w-10 h-12 grid place-items-center border-r-2 border-black"
@@ -94,7 +95,7 @@ const PianoRoll = ({
 							{row.label}
 						</div>
 
-						{STEPS.map((step) => {
+						{columns.map((step) => {
 							// where two notes meet, the one that starts here is on top
 							const key =
 								notes.find((note) => note.start === step) ??
@@ -171,7 +172,7 @@ const PianoRoll = ({
 													</button>
 												</Tip>
 											)}
-											{key.start < PIANO_STEPS - 1 && (
+											{key.start < steps - 1 && (
 												<Tip label="Move right">
 													<button
 														aria-label="Move note right"
@@ -181,9 +182,9 @@ const PianoRoll = ({
 																{
 																	...key,
 																	start: key.start + 1,
-																	end: Math.min(PIANO_STEPS, key.end + 1),
+																	end: Math.min(steps, key.end + 1),
 																},
-																Math.min(PIANO_STEPS - 1, step + 1)
+																Math.min(steps - 1, step + 1)
 															)
 														}
 													>
@@ -191,7 +192,7 @@ const PianoRoll = ({
 													</button>
 												</Tip>
 											)}
-											{key.end < PIANO_STEPS && (
+											{key.end < steps && (
 												<Tip label="Longer">
 													<button
 														aria-label="Make note longer"
