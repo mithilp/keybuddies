@@ -67,11 +67,18 @@ const loudness = (samples: Float32Array) => {
 	return 10 * Math.log10(most / span);
 };
 
+// The floors are between the old synth and this one: the kick went from 0.333
+// to 0.466 and the low tom from 0.500 to 0.619.
 test("the low drums can be heard on a small speaker", () => {
-	for (const voice of ["kick", "tom-low"] as DrumVoice[]) {
+	const floors: [DrumVoice, number][] = [
+		["kick", 0.4],
+		["tom-low", 0.55],
+	];
+
+	for (const [voice, floor] of floors) {
 		const [mids] = energy(synthDrum(voice, RATE), [[150, 3000]]);
 
-		assert.ok(mids >= 0.25, `${voice} has ${mids} between 150 Hz and 3 kHz`);
+		assert.ok(mids >= floor, `${voice} has ${mids} between 150 Hz and 3 kHz`);
 	}
 });
 
