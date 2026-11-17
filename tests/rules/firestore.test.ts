@@ -245,12 +245,24 @@ describe("tracks", () => {
 		notes: fourEmpty(),
 	});
 
+	// createStudio and the New Track button now, an empty track 8 bars long
+	const clipTrack = (i: number) => ({
+		createdAt: Timestamp.now(),
+		name: `Track ${i + 1}`,
+		order: i,
+		notes: [],
+		bars: 8,
+	});
+
 	test("a new studio gets its four tracks", async () => {
 		await seedStudio();
 
 		for (let i = 0; i < 4; i++) {
 			await assertSucceeds(
 				addDoc(collection(db, `studios/${STUDIO}/tracks`), newTrack(i)),
+			);
+			await assertSucceeds(
+				addDoc(collection(db, `studios/${STUDIO}/tracks`), clipTrack(i)),
 			);
 		}
 	});
@@ -292,9 +304,15 @@ describe("tracks", () => {
 		await assertFails(
 			addDoc(tracks, {
 				...newTrack(0),
-				notes: Array.from({ length: 1001 }, () => empty),
+				notes: Array.from({ length: 2001 }, () => empty),
 			}),
 		);
+		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 0 }));
+		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 2000 }));
+		await assertFails(addDoc(tracks, { ...clipTrack(0), bars: 2001 }));
+		await assertFails(addDoc(tracks, { ...clipTrack(0), bars: -1 }));
+		await assertFails(addDoc(tracks, { ...clipTrack(0), bars: "8" }));
+		await assertFails(addDoc(tracks, { ...clipTrack(0), bars: 1.5 }));
 	});
 
 	test("cells are set, added and taken out in transactions", async () => {
@@ -302,7 +320,8 @@ describe("tracks", () => {
 		await seedTrack("t1");
 		const ref = track("t1");
 
-		// setCell, addCell and removeCell in src/utils/cells.ts
+		// setCell, addCell and removeCell from before clips had lengths. a tab
+		// that hasn't reloaded since still writes these.
 		const edit = (change: (cells: (typeof empty)[]) => object[]) =>
 			runTransaction(db, async (transaction) => {
 				const snapshot = await transaction.get(ref);
@@ -328,7 +347,50 @@ describe("tracks", () => {
 		await assertSucceeds(edit((cells) => cells.filter((_, i) => i !== 2)));
 	});
 
-	test("only the cells of a track change", async () => {
+	test("clips are put in, resized and taken out in transactions", async () => {
+		await seedStudio();
+		await seedTrack("t1");
+		const ref = track("t1");
+
+		// editTrack in src/utils/track-edits.ts, which writes an old track
+		// the new way the first time it changes
+		const edit = (notes: object[], bars: number) =>
+			runTransaction(db, async (transaction) => {
+				const snapshot = await transaction.get(ref);
+				if (!snapshot.exists()) return;
+				transaction.update(ref, { notes, bars });
+			});
+		const bass = { type: "loop", name: "Bass 1", id: "bass_1" };
+		const hum = { type: "sound", name: "Piano sound", id: SOUND };
+
+		await assertSucceeds(edit([{ ...bass, start: 0, bars: 2 }], 8));
+		await assertSucceeds(
+			edit(
+				[
+					{ ...bass, start: 0, bars: 1 },
+					{ ...hum, start: 6, bars: 4 },
+				],
+				10,
+			),
+		);
+		await assertSucceeds(edit([{ ...hum, start: 6, bars: 4 }], 10));
+		await assertSucceeds(edit([{ ...hum, start: 6, bars: 4 }], 11));
+		await assertSucceeds(edit([], 0));
+	});
+
+	test("a track's length is a whole number of bars", async () => {
+		await seedStudio();
+		await seedTrack("t1", { notes: [], bars: 8 });
+
+		await assertSucceeds(updateDoc(track("t1"), { bars: 9 }));
+		await assertSucceeds(updateDoc(track("t1"), { bars: 2000 }));
+		await assertFails(updateDoc(track("t1"), { bars: 2001 }));
+		await assertFails(updateDoc(track("t1"), { bars: -1 }));
+		await assertFails(updateDoc(track("t1"), { bars: "9" }));
+		await assertFails(updateDoc(track("t1"), { bars: 8.5 }));
+	});
+
+	test("only the clips of a track change", async () => {
 		await seedStudio();
 		await seedTrack("t1");
 
@@ -343,8 +405,8 @@ describe("tracks", () => {
 		await seedTrack("t1");
 		const cells = (length: number) => Array.from({ length }, () => empty);
 
-		await assertSucceeds(updateDoc(track("t1"), { notes: cells(1000) }));
-		await assertFails(updateDoc(track("t1"), { notes: cells(1001) }));
+		await assertSucceeds(updateDoc(track("t1"), { notes: cells(2000) }));
+		await assertFails(updateDoc(track("t1"), { notes: cells(2001) }));
 	});
 
 	test("a track from 2024 with odd fields still takes cell edits", async () => {
@@ -354,6 +416,7 @@ describe("tracks", () => {
 		await assertSucceeds(
 			updateDoc(track("t1"), { notes: [...fourEmpty(), empty] }),
 		);
+		await assertSucceeds(updateDoc(track("t1"), { notes: [], bars: 8 }));
 	});
 
 	test("tracks are deleted with their delete button", async () => {
@@ -418,6 +481,37 @@ describe("sounds", () => {
 		await assertSucceeds(saveSound(newSound({ ...drum, steps: 32 })));
 		await assertFails(saveSound(newSound({ ...drum, steps: 17 })));
 		await assertFails(saveSound(newSound({ steps: 16 })));
+		// 64 is a 4 bar beat, which says so
+		await assertFails(saveSound(newSound({ ...drum, steps: 64 })));
+	});
+
+	test("piano and drum sounds can be 1, 2 or 4 bars", async () => {
+		await seedStudio();
+		const drum = { name: "Drum beat", type: "drum", sequence: drums };
+
+		// Piano and Drum save
+		await assertSucceeds(saveSound(newSound({ bars: 1 })));
+		await assertSucceeds(saveSound(newSound({ bars: 2 })));
+		await assertSucceeds(saveSound(newSound({ bars: 4 })));
+		await assertSucceeds(saveSound(newSound({ ...drum, steps: 16, bars: 1 })));
+		await assertSucceeds(saveSound(newSound({ ...drum, steps: 32, bars: 2 })));
+		await assertSucceeds(saveSound(newSound({ ...drum, steps: 64, bars: 4 })));
+
+		await assertFails(saveSound(newSound({ bars: 3 })));
+		await assertFails(saveSound(newSound({ bars: 0 })));
+		await assertFails(saveSound(newSound({ bars: "2" })));
+		// a beat's steps go with its length
+		await assertFails(saveSound(newSound({ ...drum, steps: 32, bars: 1 })));
+		await assertFails(saveSound(newSound({ ...drum, steps: 16, bars: 4 })));
+		await assertFails(saveSound(newSound({ steps: 64, bars: 4 })));
+	});
+
+	test("a sound's length doesn't change", async () => {
+		await seedSound({ type: "drum", sequence: drums, steps: 64, bars: 4 });
+
+		await assertFails(updateDoc(sound(), { bars: 2 }));
+		await assertFails(updateDoc(sound(), { steps: 32 }));
+		await assertSucceeds(updateDoc(sound(), { sequence: drums }));
 	});
 
 	test("a new sound has the app's shape", async () => {

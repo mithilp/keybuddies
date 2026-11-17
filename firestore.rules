@@ -47,9 +47,17 @@ service cloud.firestore {
       return listUpTo(value, 100);
     }
 
-    // a track's cells, 8 beats each. 1000 is over 30 minutes at 160 BPM.
-    function cells(value) {
-      return listUpTo(value, 1000);
+    // A track's clips, each { type, name, id, start, bars }, or on a track
+    // from before clips had lengths its 8 beat cells. A track is at most
+    // 2000 bars (an old one of 1000 cells), so it can't hold more clips than
+    // that. 1000 bars is 25 minutes at 160 BPM.
+    function clips(value) {
+      return listUpTo(value, 2000);
+    }
+
+    // how many bars a track is. old tracks don't say.
+    function trackBars(value) {
+      return value is int && value >= 0 && value <= 2000;
     }
 
     // a sound's notes, each { note, start, end }
@@ -57,9 +65,16 @@ service cloud.firestore {
       return listUpTo(value, 5000);
     }
 
-    // drum sounds can say how many steps their grid has
-    function drumSteps(value) {
-      return value in [16, 32];
+    // how many bars a recorded sound is. old sounds don't say, they're 2.
+    function soundBars(value) {
+      return value in [1, 2, 4];
+    }
+
+    // Drum sounds can say how many steps their grid has. One with a length
+    // has 16 to a bar, one without is 2 bars on half beats or sixteenths.
+    function drumSteps(data) {
+      return ('bars' in data && data.steps == data.bars * 16)
+        || (!('bars' in data) && data.steps in [16, 32]);
     }
 
     match /studios/{code} {
@@ -88,24 +103,26 @@ service cloud.firestore {
       }
 
       match /tracks/{track} {
-        // the studio page listens to all of them, cell edits read one
+        // the studio page listens to all of them, clip edits read one
         allow read: if isCode(code);
 
         // new studios get four, and the New Track button adds one
         allow create: if studioExists(code)
-          && request.resource.data.keys().hasOnly(['createdAt', 'name', 'order', 'notes'])
+          && request.resource.data.keys().hasOnly(['createdAt', 'name', 'order', 'notes', 'bars'])
           && request.resource.data.keys().hasAll(['createdAt', 'name', 'order', 'notes'])
           && request.resource.data.createdAt is timestamp
           && text(request.resource.data.name, 1, 100)
           && request.resource.data.order is int
           && request.resource.data.order >= 0
           && request.resource.data.order <= 1000
-          && cells(request.resource.data.notes);
+          && clips(request.resource.data.notes)
+          && (!('bars' in request.resource.data) || trackBars(request.resource.data.bars));
 
-        // only the cells change, see src/utils/cells.ts
+        // only the clips and the length change, see src/utils/track-edits.ts
         allow update: if isCode(code)
-          && changed().hasOnly(['notes'])
-          && cells(request.resource.data.notes);
+          && changed().hasOnly(['notes', 'bars'])
+          && clips(request.resource.data.notes)
+          && (!('bars' in changed()) || trackBars(request.resource.data.bars));
 
         // the delete button on a track
         allow delete: if isCode(code);
@@ -150,13 +167,14 @@ service cloud.firestore {
       // one
 
       function newSound(data) {
-        return data.keys().hasOnly(['name', 'type', 'sequence', 'steps'])
+        return data.keys().hasOnly(['name', 'type', 'sequence', 'steps', 'bars'])
           && data.keys().hasAll(['name', 'type', 'sequence'])
           // NAME_LENGTH in src/utils/sounds.ts
           && text(data.name, 1, 200)
           && data.type in ['piano', 'drum']
           && notes(data.sequence)
-          && (!('steps' in data) || (data.type == 'drum' && drumSteps(data.steps)));
+          && (!('bars' in data) || soundBars(data.bars))
+          && (!('steps' in data) || (data.type == 'drum' && drumSteps(data)));
       }
 
       function soundChange(data) {
@@ -164,7 +182,7 @@ service cloud.firestore {
         return keys.hasOnly(['sequence', 'code', 'steps'])
           && (!('sequence' in keys) || notes(data.sequence))
           && (!('code' in keys) || ownCode(data.code))
-          && (!('steps' in keys) || drumSteps(data.steps));
+          && (!('steps' in keys) || drumSteps(data));
       }
 
       // a sound's code is one shareCode took for it, in the same transaction
