@@ -1,4 +1,4 @@
-import type { Item } from "./types";
+import type { ClipBars, Item } from "./types";
 
 // The library: the loops that come with the app. They're kept in sets, and
 // another set is one more entry in `library`.
@@ -10,6 +10,9 @@ export type LibraryLoop = {
   name: string;
   // one line on what it is
   description: string;
+  // how many bars the file is. every loop so far is 2, and one without
+  // this is 2
+  bars?: ClipBars;
 };
 
 export type LibrarySet = {
@@ -76,10 +79,15 @@ export const library: LibrarySet[] = [
 // every loop of every set, in the order the library shows them
 const loops = library.flatMap((set) => set.loops);
 
-// Loops are FLAC so they decode to exactly 8 beats in every browser. See
-// scripts/stretch-loop.py for how the files are made.
+// Loops are FLAC so they decode to exactly their length in every browser.
+// See scripts/stretch-loop.py for how the files are made.
 export const loopUrl = (id: string, bpm: number | string) =>
   `/loops/${id}_${bpm}.flac`;
+
+// How many bars a loop's file is. A loop the library doesn't have any more
+// still has its files, and those are all 2 bars.
+export const loopBars = (id: string): ClipBars =>
+  loops.find((loop) => loop.id == id)?.bars ?? 2;
 
 // the ids in a field of the studio document, whatever is really in it
 const ids = (field: unknown) =>
@@ -136,6 +144,7 @@ export const studioLoops = (
     type: "loop",
     id: id,
     name: name,
+    bars: loopBars(id),
   }));
 };
 

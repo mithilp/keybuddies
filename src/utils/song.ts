@@ -5,7 +5,8 @@ import crunker from "./crunker";
 import { db } from "./firebase";
 import { renderSound } from "./instruments";
 import { loadLoop } from "./samples";
-import { DEFAULT_BARS, fill, soundBars } from "./clips";
+import { loopBars } from "./loops";
+import { fill, soundBars } from "./clips";
 import { framesOf } from "./tempo";
 import { Clip, Track } from "./types";
 
@@ -110,12 +111,14 @@ export const renderSong = async (
 		return buffer;
 	};
 
-	// every library loop is 2 bars
 	const renderClip = (clip: Clip): Promise<Source> => {
 		if (clip.type == "loop") {
 			return once(`loop ${clip.id}`, async () => {
 				try {
-					return { buffer: await loadLoop(clip.id, bpm), bars: DEFAULT_BARS };
+					return {
+						buffer: await loadLoop(clip.id, bpm),
+						bars: loopBars(clip.id),
+					};
 				} catch (error) {
 					console.error(error);
 					throw new SongError(
