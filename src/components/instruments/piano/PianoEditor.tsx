@@ -6,7 +6,14 @@ import { stopPreview } from "@/utils/preview";
 import { PIANO_BAR_STEPS } from "@/utils/tempo";
 import { DEFAULT_BARS } from "@/utils/clips";
 import { ClipBars, Key } from "@/utils/types";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	TouchEvent,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Piano as ReactPiano, KeyboardShortcuts } from "react-piano";
 import "react-piano/dist/styles.css";
 import PianoOptions from "./PianoOptions";
@@ -16,6 +23,30 @@ import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, ICON, SoundIcon } from "@/components/ui/icons";
 import { ErrorMessage } from "@/components/ui/feedback";
 import { panelFooter } from "@/components/Panel";
+import { cn } from "@/utils/cn";
+
+// What's written on a piano key: the letter that plays it, dark on the
+// white keys and light on the black ones. It also says which note the key
+// is, for the first touch below.
+const NoteLabel = ({
+	keyboardShortcut,
+	midiNumber,
+	isAccidental,
+}: {
+	keyboardShortcut?: string;
+	midiNumber: number;
+	isAccidental: boolean;
+}) => (
+	<span
+		data-midi={midiNumber}
+		className={cn(
+			"block mb-1 text-center text-xs font-bold uppercase pointer-events-none",
+			isAccidental ? "text-paper" : "text-ink"
+		)}
+	>
+		{keyboardShortcut}
+	</span>
+);
 
 // the keys shown to start with, C3 to F5
 const FIRST_NOTE = 48;
@@ -154,6 +185,33 @@ const PianoEditor = ({
 		);
 	};
 
+	// react-piano listens to the mouse until it sees a touch, and only then
+	// to touches, so the first tap on a phone would make no sound. That first
+	// one is played here instead, from the label on the key it landed on.
+	const touched = useRef(false);
+	const pending = useRef<number | null>(null);
+
+	const firstTouch = (event: TouchEvent<HTMLDivElement>) => {
+		if (touched.current || paused) return;
+		touched.current = true;
+
+		const key = (event.target as Element).closest(".ReactPiano__Key");
+		const label = key?.querySelector<HTMLElement>("[data-midi]");
+		const note = Number(label?.dataset.midi);
+		if (!Number.isInteger(note)) return;
+
+		pending.current = note;
+		press(note);
+	};
+
+	const endFirstTouch = () => {
+		const note = pending.current;
+		if (note === null) return;
+
+		pending.current = null;
+		release(note);
+	};
+
 	useEffect(
 		() => () => {
 			if (listenTimer.current) clearTimeout(listenTimer.current);
@@ -215,13 +273,21 @@ const PianoEditor = ({
 				}}
 			/>
 
-			<div className="w-full h-12">
+			{/* taller under a finger. the first touch is played from here, see
+			    firstTouch. */}
+			<div
+				className="w-full h-12 pointer-coarse:h-24 select-none"
+				onTouchStart={firstTouch}
+				onTouchEnd={endFirstTouch}
+				onTouchCancel={endFirstTouch}
+			>
 				<ReactPiano
 					noteRange={{ first: firstNote, last: lastNote }}
 					playNote={press}
 					stopNote={release}
 					keyboardShortcuts={keyboardShortcuts}
 					disabled={paused}
+					renderNoteLabel={NoteLabel}
 				/>
 			</div>
 
