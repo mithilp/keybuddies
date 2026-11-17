@@ -7,8 +7,7 @@ import { loadLoop } from "./samples";
 // Listening to a loop or a recorded sound on its own, outside the song.
 // There is one slot for it. Starting a preview stops the one before, so two
 // never play over each other.
-let current: { id: string; source: AudioBufferSourceNode | null } | null =
-	null;
+let current: { id: string; source: AudioBufferSourceNode | null } | null = null;
 
 const watchers = new Set<() => void>();
 const changed = () => watchers.forEach((watcher) => watcher());

@@ -22,9 +22,9 @@ export const DEFAULT_BARS: ClipBars = 2;
 
 // how long a track can get in the app. old tracks can be up to 2000 bars
 // (1000 cells), those are left as long as they are.
-export const MAX_BARS = 1000;
+const MAX_BARS = 1000;
 
-export const isClipBars = (value: unknown): value is ClipBars =>
+const isClipBars = (value: unknown): value is ClipBars =>
 	value === 1 || value === 2 || value === 4;
 
 // how long a sound or a loop is on its own
@@ -36,7 +36,7 @@ export type TrackClips = { clips: Clip[]; bars: number };
 const count = (value: unknown): value is number =>
 	typeof value === "number" && Number.isInteger(value) && value >= 0;
 
-export const clipEnd = (clip: Clip) => clip.start + clip.bars;
+const clipEnd = (clip: Clip) => clip.start + clip.bars;
 
 // what a track doc has that readTrack looks at
 export type TrackDoc = { clips?: unknown; notes?: unknown; bars?: unknown };
@@ -91,10 +91,19 @@ export const readTrack = (data: TrackDoc): TrackClips => {
 export const writeClips = (clips: Clip[]) =>
 	[...clips]
 		.sort((a, b) => a.start - b.start)
-		.map(({ type, name, id, start, bars }) => ({ type, name, id, start, bars }));
+		.map(({ type, name, id, start, bars }) => ({
+			type,
+			name,
+			id,
+			start,
+			bars,
+		}));
 
 export const sameClip = (a: Clip, b: Clip) =>
-	a.type === b.type && a.id === b.id && a.start === b.start && a.bars === b.bars;
+	a.type === b.type &&
+	a.id === b.id &&
+	a.start === b.start &&
+	a.bars === b.bars;
 
 // the clip that covers a bar, if one does
 export const clipAt = (clips: Clip[], bar: number) =>
@@ -138,7 +147,9 @@ export const placeItem = (
 		return longest(
 			track,
 			track.clips.map((clip) =>
-				sameClip(clip, old) ? { ...what, start: old.start, bars: old.bars } : clip
+				sameClip(clip, old)
+					? { ...what, start: old.start, bars: old.bars }
+					: clip
 			)
 		);
 	}

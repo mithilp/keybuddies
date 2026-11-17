@@ -7,11 +7,14 @@ import { PIANO_BAR_STEPS } from "@/utils/tempo";
 import { DEFAULT_BARS } from "@/utils/clips";
 import { ClipBars, Key } from "@/utils/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaCheck, FaVolumeUp } from "react-icons/fa";
 import { Piano as ReactPiano, KeyboardShortcuts } from "react-piano";
 import "react-piano/dist/styles.css";
 import PianoOptions from "./PianoOptions";
 import PianoRoll from "./PianoRoll";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { CheckIcon, ICON, SoundIcon } from "@/components/ui/icons";
+import { ErrorMessage } from "@/components/ui/feedback";
 
 // the keys shown to start with, C3 to F5
 const FIRST_NOTE = 48;
@@ -37,7 +40,8 @@ const PianoEditor = ({
 	initial?: Key[];
 	bars?: ClipBars;
 	saveLabel: string;
-	onSave: (sequence: Key[], bars: ClipBars) => void;
+	// can be a write. the button waits for it and says when it didn't work.
+	onSave: (sequence: Key[], bars: ClipBars) => void | Promise<void>;
 	// the keyboard stops listening, for when something is being typed
 	paused?: boolean;
 }) => {
@@ -169,6 +173,23 @@ const PianoEditor = ({
 
 	const idle = inside.length === 0 || recording;
 
+	const [saving, setSaving] = useState(false);
+	const [problem, setProblem] = useState("");
+
+	const save = async () => {
+		setSaving(true);
+		setProblem("");
+
+		try {
+			await onSave(inside, length);
+		} catch (error) {
+			console.error(error);
+			setProblem("Couldn't save the recording. Try again.");
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	return (
 		<div className="space-y-4">
 			<PianoOptions
@@ -215,29 +236,30 @@ const PianoEditor = ({
 			{/* always here too, greyed out until there's something to hear */}
 			<div className="space-y-2">
 				<div className="text-lg">Done Recording?</div>
-				<div className="space-x-4 flex">
-					<button
-						onClick={listen}
-						disabled={idle || listening}
-						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
-					>
-						<div>Listen to Recording</div>
-
+				<div className="flex gap-4">
+					<Button size="lg" onClick={listen} disabled={idle || listening}>
 						{listening ? (
-							<div className="animate-spin w-6 h-6 border-4 border-black border-b-transparent rounded-full"></div>
+							<Spinner size="sm" label="Playing" />
 						) : (
-							<FaVolumeUp size={32} />
+							<SoundIcon size={ICON} aria-hidden />
 						)}
-					</button>
-					<button
-						onClick={() => onSave(inside, length)}
-						disabled={idle}
-						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+						Listen to Recording
+					</Button>
+					<Button
+						size="lg"
+						variant="primary"
+						onClick={save}
+						disabled={idle || saving}
 					>
-						<div>{saveLabel}</div>
-						<FaCheck size={32} />
-					</button>
+						{saving ? (
+							<Spinner size="sm" label="Saving" />
+						) : (
+							<CheckIcon size={ICON} aria-hidden />
+						)}
+						{saveLabel}
+					</Button>
 				</div>
+				{problem && <ErrorMessage>{problem}</ErrorMessage>}
 			</div>
 		</div>
 	);

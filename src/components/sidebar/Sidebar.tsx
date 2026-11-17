@@ -14,22 +14,31 @@ const Sidebar = ({
 	bpm,
 	studio,
 	loops,
+	failed,
 }: {
 	placing: Placing;
 	bpm: string;
 	studio: string;
 	// the library loops this studio has
 	loops: Item[];
+	// gets a message when something couldn't be loaded or saved
+	failed: (message: string) => void;
 }) => {
 	return (
-		<div className="col-span-1 bg-blue text-black overflow-y-scroll h-screen border-r-8 border-black">
+		<div className="col-span-1 bg-accent overflow-y-scroll h-screen border-r-frame border-ink">
 			<div className="pt-[10px] px-4">
 				<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
 			</div>
 
 			<Instruments bpm={bpm} studio={studio} />
 
-			<Sounds placing={placing} bpm={bpm} studio={studio} loops={loops} />
+			<Sounds
+				placing={placing}
+				bpm={bpm}
+				studio={studio}
+				loops={loops}
+				failed={failed}
+			/>
 
 			<div className="p-4 pt-2">
 				<Library bpm={bpm} studio={studio} loops={loops} />

@@ -1,4 +1,4 @@
-import { HIGHEST_NOTE, LOWEST_NOTE } from "./MIDI";
+import { HIGHEST_NOTE, LOWEST_NOTE } from "./midi";
 import { Key } from "./types";
 
 // A saved piano recording as notes that can be drawn and played. The piano
@@ -15,9 +15,7 @@ export const pianoNotes = (sequence: Array<Key>, steps: number): Array<Key> =>
 	sequence
 		.filter(
 			(key) =>
-				key.note >= LOWEST_NOTE &&
-				key.note <= HIGHEST_NOTE &&
-				key.start < steps
+				key.note >= LOWEST_NOTE && key.note <= HIGHEST_NOTE && key.start < steps
 		)
 		.map((key) => {
 			const start = Math.max(0, key.start);

@@ -54,7 +54,7 @@ export const backup = async (db: Firestore) => {
 			(await getDocs(collection(db, path))).docs.map((entry) => [
 				entry.id,
 				entry.data(),
-			]),
+			])
 		);
 
 	const studios: Record<string, object> = {};
@@ -90,7 +90,7 @@ export const moveSounds = async (db: Firestore, write: boolean) => {
 			const moved = doc(db, "movedSounds", sound.id);
 			const done: string[] = (await getDoc(moved)).get("in") ?? [];
 			const fresh = data.in.filter(
-				(code: unknown) => typeof code === "string" && !done.includes(code),
+				(code: unknown) => typeof code === "string" && !done.includes(code)
 			);
 
 			for (const code of fresh) {
@@ -151,7 +151,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 			apiKey: process.env.NEXT_PUBLIC_FIREBASE_API,
 			projectId: project,
 			appId: process.env.NEXT_PUBLIC_APP_ID,
-		}),
+		})
 	);
 
 	if (file) {
@@ -168,7 +168,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		`${write ? "Moved" : "Would move"} ${counts.sounds} sounds in ${project}: ` +
 			`${counts.listed} put in a studio's soundList, ` +
 			`${counts.codes} share codes made, ` +
-			`${counts.taken} sounds whose code another sound has.`,
+			`${counts.taken} sounds whose code another sound has.`
 	);
 	if (!write) console.log("Nothing was written. Run with --write to do it.");
 

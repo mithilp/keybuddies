@@ -1,45 +1,77 @@
 import { shareCode } from "@/utils/codes";
 import { playDrum, playPiano } from "@/utils/instruments";
 import { soundBars } from "@/utils/clips";
-import {
-	NAME_LENGTH,
-	copyName,
-	removeSound,
-	saveSound,
-} from "@/utils/sounds";
+import { NAME_LENGTH, copyName, removeSound, saveSound } from "@/utils/sounds";
 import { Sound } from "@/utils/types";
-import React, { useState } from "react";
-import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
-
-import { Tip } from "@/components/ui/tooltip";
+import { useEffect, useRef, useState } from "react";
+import { IconButton } from "../ui/button";
+import {
+	CopyIcon,
+	DeleteIcon,
+	EditIcon,
+	ShareIcon,
+	SoundIcon,
+} from "../ui/icons";
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
-import Notice from "../Notice";
 
-const SoundThumbnail = ({
+// The buttons on a recorded sound's row in the sidebar. `playing` is the id
+// of the sound being listened to, if one is. The other rows wait for it.
+const SoundButtons = ({
 	playing,
-	index,
 	sound,
 	setPlaying,
 	bpm,
 	studio,
+	failed,
 }: {
-	playing: number;
-	index: number;
+	playing: string | null;
 	sound: Sound;
-	setPlaying: (index: number) => void;
+	setPlaying: (id: string | null) => void;
 	bpm: string;
 	studio: string;
+	// gets a message when something couldn't be done
+	failed: (message: string) => void;
 }) => {
 	const [open, setOpen] = useState(false);
 
-	function playSound(sound: Sound) {
-		if (sound.type == "piano") {
+	// another sound is being listened to
+	const waiting = playing !== null && playing !== sound.id;
+
+	// ends the listen once the sound is over
+	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// a row that goes away mid-listen ends the listen now, so the other rows
+	// don't wait on it and it doesn't spin if the sound comes back
+	useEffect(
+		() => () => {
+			if (timer.current) {
+				clearTimeout(timer.current);
+				setPlaying(null);
+			}
+		},
+		[setPlaying]
+	);
+
+	const listen = () => {
+		if (playing !== null) return;
+
+		setPlaying(sound.id);
+
+		if (sound.type === "piano") {
 			playPiano(sound.sequence, Number(bpm), sound.bars);
-		} else if (sound.type == "drum") {
+		} else if (sound.type === "drum") {
 			playDrum(sound.sequence, Number(bpm), sound.steps, sound.bars);
 		}
-	}
+
+		timer.current = setTimeout(
+			() => {
+				timer.current = null;
+				setPlaying(null);
+			},
+			(soundBars(sound.bars) * 240000) / Number(bpm)
+		);
+	};
 
 	const edit = () => {
 		setOpen(true);
@@ -49,7 +81,6 @@ const SoundThumbnail = ({
 	const [asking, setAsking] = useState<"share" | "copy" | "delete" | null>(
 		null
 	);
-	const [notice, setNotice] = useState("");
 
 	// the code that's being shared, once it's known to be this sound's alone
 	const [code, setCode] = useState("");
@@ -60,7 +91,7 @@ const SoundThumbnail = ({
 			setAsking("share");
 		} catch (error) {
 			console.error(error);
-			setNotice("Couldn't get the code for this sound. Try again.");
+			failed("Couldn't get the code for this sound. Try again.");
 		}
 	};
 
@@ -87,82 +118,50 @@ const SoundThumbnail = ({
 			await removeSound(studio, sound.id);
 		} catch (error) {
 			console.error(error);
-			setNotice("Couldn't delete the sound. Try again.");
+			failed("Couldn't delete the sound. Try again.");
 		}
 	};
 
 	return (
 		<>
-			{/* buttons */}
-			<Tip label="Play">
-				<button
-					disabled={playing != index && playing != -1}
-					className="h-5 w-5"
-					aria-label={`Play ${sound.name}`}
-					onClick={() => {
-						if (playing == -1) {
-							setPlaying(index);
-							playSound(sound);
-							setTimeout(() => {
-								setPlaying(-1);
-							}, (soundBars(sound.bars) * 240000) / Number(bpm));
-						}
-					}}
-				>
-					{playing == index ? (
-						<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-					) : (
-						<FaVolumeUp className="w-full h-full" />
-					)}
-				</button>
-			</Tip>
+			<IconButton
+				label={`Play ${sound.name}`}
+				icon={SoundIcon}
+				busy={playing === sound.id}
+				disabled={waiting}
+				onClick={listen}
+			/>
 
 			{/* only piano has an editor so far */}
-			{sound.type == "piano" && (
-				<Tip label="Edit">
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						aria-label={`Edit ${sound.name}`}
-						onClick={edit}
-					>
-						<FaEdit className="w-full h-full" />
-					</button>
-				</Tip>
+			{sound.type === "piano" && (
+				<IconButton
+					label={`Edit ${sound.name}`}
+					icon={EditIcon}
+					disabled={waiting}
+					onClick={edit}
+				/>
 			)}
 
-			<Tip label="Duplicate">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Duplicate ${sound.name}`}
-					onClick={() => setAsking("copy")}
-				>
-					<FaCopy className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Duplicate ${sound.name}`}
+				icon={CopyIcon}
+				disabled={waiting}
+				onClick={() => setAsking("copy")}
+			/>
 
-			<Tip label="Share">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Share ${sound.name}`}
-					onClick={share}
-				>
-					<FaShare className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Share ${sound.name}`}
+				icon={ShareIcon}
+				disabled={waiting}
+				onClick={share}
+			/>
 
-			<Tip label="Delete">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Delete ${sound.name}`}
-					onClick={() => setAsking("delete")}
-				>
-					<FaTrash className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Delete ${sound.name}`}
+				icon={DeleteIcon}
+				disabled={waiting}
+				onClick={() => setAsking("delete")}
+			/>
 
 			{asking === "share" && (
 				<ShareDialog
@@ -190,16 +189,13 @@ const SoundThumbnail = ({
 					title="Delete this sound?"
 					message={`${sound.name} will be taken out of this studio.`}
 					confirm="Delete"
+					danger
 					onConfirm={remove}
 					onCancel={() => setAsking(null)}
 				/>
 			)}
 
-			{notice && <Notice message={notice} close={() => setNotice("")} />}
-
-			{/* edit sound modal */}
-			{/* if piano */}
-			{open && sound.type == "piano" && (
+			{open && sound.type === "piano" && (
 				<EditPianoSound
 					bpm={Number(bpm)}
 					sound={sound}
@@ -210,4 +206,4 @@ const SoundThumbnail = ({
 	);
 };
 
-export default SoundThumbnail;
+export default SoundButtons;

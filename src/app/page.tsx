@@ -1,17 +1,13 @@
 import PendingButton from "@/components/PendingButton";
-import { db } from "@/utils/firebase";
 import { claimStudio } from "@/utils/codes";
 import { isStudioCode } from "@/utils/studio-code";
-import {
-	Timestamp,
-	addDoc,
-	collection,
-	doc,
-	getDoc,
-} from "firebase/firestore";
+import { addTrack, studioExists } from "@/utils/studio";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ErrorMessage } from "@/components/ui/feedback";
 
 export default async function Home({
 	searchParams,
@@ -26,8 +22,7 @@ export default async function Home({
 		// firestore isn't asked about something that can't be a code
 		if (!isStudioCode(pin)) redirect(`/?error=not-found`);
 
-		const snapshot = await getDoc(doc(db, "studios", pin));
-		if (snapshot.exists()) {
+		if (await studioExists(pin)) {
 			redirect(`/${pin}`);
 		} else {
 			redirect(`/?error=not-found`);
@@ -40,15 +35,7 @@ export default async function Home({
 		if (!pin) redirect(`/?error=no-code`);
 
 		for (let i = 0; i < 4; i++) {
-			await addDoc(collection(db, `studios/${pin}/tracks`), {
-				createdAt: Timestamp.now(),
-				name: `Track ${i + 1}`,
-				order: i,
-				// `notes` is only there so a tab still on the old app can show it
-				notes: [],
-				clips: [],
-				bars: 8,
-			});
+			await addTrack(pin, i);
 		}
 
 		redirect(`/${pin}`);
@@ -56,39 +43,38 @@ export default async function Home({
 
 	return (
 		<main className="p-24 h-screen w-screen grid place-items-center">
-			<div className="w-96 space-y-2 flex items-center flex-col bg-blue border-8 border-black p-10 rounded-xl">
+			<Card className="w-96 space-y-4 flex items-center flex-col p-10">
 				<Image alt={"Keybuddies"} src={logo} width={200} height={0} />
 				<form
 					action={joinStudio}
-					className="w-full space-y-2 border-b-8 border-black pb-2"
+					className="w-full space-y-2 border-b-hair border-ink pb-4"
 				>
 					{error === "not-found" && (
-						<div>
-							<p className="text-red-500 text-center">Studio not found!</p>
-						</div>
+						<ErrorMessage className="justify-center">
+							Studio not found!
+						</ErrorMessage>
 					)}
-					<input
+					<Input
 						type="text"
 						maxLength={6}
 						required
 						minLength={6}
 						name="pin"
-						className="w-full bg-yellow border-8 border-black p-2 rounded-xl black text-black text-center"
+						aria-label="Studio code"
+						className="w-full text-center"
 						placeholder="Studio Code"
 					/>
 					<PendingButton text="Join a Studio!" />
 				</form>
 				<form action={createStudio} className="w-full space-y-2">
 					{error === "no-code" && (
-						<div>
-							<p className="text-red-500 text-center">
-								Couldn&apos;t make a studio. Try again!
-							</p>
-						</div>
+						<ErrorMessage className="justify-center">
+							Couldn&apos;t make a studio. Try again!
+						</ErrorMessage>
 					)}
-					<PendingButton text="Create a Studio!" />
+					<PendingButton text="Create a Studio!" variant="primary" />
 				</form>
-			</div>
+			</Card>
 		</main>
 	);
 }

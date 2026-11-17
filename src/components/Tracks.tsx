@@ -1,11 +1,20 @@
-import { db } from "@/utils/firebase";
 import { Track as TrackType } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { Timestamp, addDoc, collection } from "firebase/firestore";
-import { FaPlus } from "react-icons/fa";
+import { addTrack } from "@/utils/studio";
 import { BAR_BEATS } from "@/utils/tempo";
-import Playhead, { BEAT_WIDTH } from "./Playhead";
+import Playhead from "./Playhead";
+import {
+	BAR_WIDTH,
+	BEAT_WIDTH,
+	RULER_HEIGHT,
+	TICK_HEIGHT,
+	TICK_WIDTH,
+	beatAt,
+} from "@/utils/grid";
 import Track from "./Track";
+import { Button } from "./ui/button";
+import { Spinner } from "./ui/spinner";
+import { AddIcon, ICON } from "./ui/icons";
 
 const Tracks = ({
 	tracks,
@@ -44,7 +53,7 @@ const Tracks = ({
 		<div className="flex-1 min-h-0 overflow-auto p-10 space-y-4">
 			{loading ? (
 				<div className="w-full grid place-items-center">
-					<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
+					<Spinner size="lg" label="Loading the tracks" />
 				</div>
 			) : (
 				<>
@@ -53,33 +62,39 @@ const Tracks = ({
 					<div className="relative w-max min-w-full">
 						<div className="space-y-4">
 							<div
-								className="flex border-b-8 border-black w-max cursor-pointer"
+								className="flex border-b-control border-ink w-max cursor-pointer"
 								onClick={(event) => {
 									const x =
 										event.clientX -
 										event.currentTarget.getBoundingClientRect().left;
 
-									// the nearest beat, but never the very end
-									seek(
-										Math.max(
-											0,
-											Math.min(Math.round(x / BEAT_WIDTH), beats - 1)
-										)
-									);
+									seek(beatAt(x, beats));
 								}}
 							>
 								{Array.from({ length: bars }, (_, i) => (
 									<div className="relative" key={i}>
-										{/* one bar, numbered. h-6, the playhead starts right
+										{/* one bar, numbered. the playhead starts right
 										    under it */}
-										<div className="w-28 h-6 leading-6 font-bold pl-1">
+										<div
+											className="font-bold pl-1"
+											style={{
+												width: BAR_WIDTH,
+												height: RULER_HEIGHT,
+												lineHeight: `${RULER_HEIGHT}px`,
+											}}
+										>
 											{i + 1}
 										</div>
 										<div className="absolute flex">
 											{Array.from({ length: BAR_BEATS }, (_, i) => (
 												<div
 													key={i}
-													className="h-4 w-7 border-l-2 border-black"
+													className="border-ink"
+													style={{
+														width: BEAT_WIDTH,
+														height: TICK_HEIGHT,
+														borderLeftWidth: TICK_WIDTH,
+													}}
 												></div>
 											))}
 										</div>
@@ -113,24 +128,19 @@ const Tracks = ({
 						)}
 					</div>
 
-					<div className="border-t-8 border-black pt-4 sticky left-0">
-						<button
-							onClick={async () => {
-								await addDoc(collection(db, `studios/${studio}/tracks`), {
-									createdAt: Timestamp.now(),
-									name: `Track ${tracks.length + 1}`,
-									order: tracks.length,
-									// `notes` is only there so a tab still on the old app can show it
-									notes: [],
-									clips: [],
-									bars: 8,
+					<div className="border-t-hair border-ink pt-4 sticky left-0">
+						<Button
+							onClick={() => {
+								addTrack(studio, tracks.length).catch((error) => {
+									console.error(error);
+									failed("Couldn't add a track. Try again.");
 								});
 							}}
-							className="bg-yellow border-8 p-2 border-black flex items-center space-x-2 rounded-xl text-xl"
+							size="lg"
 						>
-							<FaPlus />
-							<div>New Track</div>
-						</button>
+							<AddIcon size={ICON} aria-hidden />
+							<span>New Track</span>
+						</Button>
 					</div>
 				</>
 			)}

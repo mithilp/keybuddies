@@ -2,7 +2,6 @@
 
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
 import { NAME_LENGTH, saveSound } from "@/utils/sounds";
-import { FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { useRef, useState } from "react";
 import { ClipBars, Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
@@ -12,6 +11,10 @@ import { DEFAULT_BARS } from "@/utils/clips";
 import { PromptDialog } from "@/components/Dialog";
 import Panel from "@/components/Panel";
 import LengthPicker from "./LengthPicker";
+import { Button } from "@/components/ui/button";
+import { CheckIcon, ICON, PauseIcon, SoundIcon } from "@/components/ui/icons";
+import { selected } from "@/components/ui/state";
+import { cn } from "@/utils/cn";
 
 // the sixteenth note steps in one beat
 const QUARTERS = Array.from(
@@ -73,12 +76,12 @@ const Drum = ({
 
 	// whether a drum is hit on a step
 	const on = (voice: number, step: number) =>
-		sequence.some((note) => note.note == voice && note.start == step);
+		sequence.some((note) => note.note === voice && note.start === step);
 
 	const toggle = (voice: number, step: number) => {
 		if (on(voice, step)) {
 			setSequence(
-				sequence.filter((note) => note.note != voice || note.start != step)
+				sequence.filter((note) => note.note !== voice || note.start !== step)
 			);
 		} else {
 			playDrumHit(voice);
@@ -126,7 +129,7 @@ const Drum = ({
 									{beats.map((beat) => (
 										<div
 											key={beat}
-											className="flex gap-0.5 px-1 border-l-4 border-black font-bold"
+											className="flex gap-0.5 px-1 border-l-hair border-ink font-bold"
 										>
 											{QUARTERS.map((quarter) => (
 												<div key={quarter} className="w-6">
@@ -144,7 +147,7 @@ const Drum = ({
 											// a beat is 4 steps, with a thick line before it
 											<div
 												key={beat}
-												className="flex gap-0.5 px-1 py-0.5 border-l-4 border-black"
+												className="flex gap-0.5 px-1 py-0.5 border-l-hair border-ink"
 											>
 												{QUARTERS.map((quarter) => {
 													const step = beat * QUARTERS.length + quarter;
@@ -158,9 +161,10 @@ const Drum = ({
 															}`}
 															aria-pressed={hit}
 															onClick={() => toggle(sound.value, step)}
-															className={`w-6 h-8 rounded-sm ${
-																hit ? "bg-yellow" : "bg-pink"
-															}`}
+															className={cn(
+																"w-6 h-8 border-hair border-ink",
+																hit ? selected : "bg-paper hover:bg-surface"
+															)}
 														></button>
 													);
 												})}
@@ -170,25 +174,24 @@ const Drum = ({
 								))}
 							</div>
 						</div>
-						<div className="space-x-4 flex">
-							<button
-								onClick={listen}
-								disabled={inside.length == 0}
-								className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
-							>
-								<div id="ButtonListen">
-									{isPlaying ? "Stop Playback" : "Listen to Recording"}
-								</div>
-								{isPlaying ? <FaPause size={32} /> : <FaVolumeUp size={32} />}
-							</button>
-							<button
+						<div className="flex gap-4">
+							<Button size="lg" onClick={listen} disabled={inside.length === 0}>
+								{isPlaying ? (
+									<PauseIcon size={ICON} aria-hidden />
+								) : (
+									<SoundIcon size={ICON} aria-hidden />
+								)}
+								{isPlaying ? "Stop Playback" : "Listen to Recording"}
+							</Button>
+							<Button
+								size="lg"
+								variant="primary"
 								onClick={() => setNaming(true)}
-								disabled={inside.length == 0}
-								className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
+								disabled={inside.length === 0}
 							>
-								<div>Save Recording</div>
-								<FaCheck size={32} />
-							</button>
+								<CheckIcon size={ICON} aria-hidden />
+								Save Recording
+							</Button>
 						</div>
 					</div>
 				</Panel>

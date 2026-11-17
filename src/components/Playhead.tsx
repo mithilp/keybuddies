@@ -7,9 +7,14 @@ import {
 	useState,
 } from "react";
 import { Tip } from "./ui/tooltip";
-
-// a beat on the ruler is one w-7 tick
-export const BEAT_WIDTH = 28;
+import {
+	ARROW_LEFT,
+	BEAT_WIDTH,
+	PLAYHEAD_LEFT,
+	PLAYHEAD_WIDTH,
+	RULER_HEIGHT,
+	beatAt,
+} from "@/utils/grid";
 
 // how far the pointer has to go before a press on the playhead is a drag, in px
 const SLACK = 3;
@@ -17,7 +22,7 @@ const SLACK = 3;
 // The line that shows where the song is, with an arrow on top of it. It lives
 // inside the box that scrolls sideways with the ruler and the tracks, so it
 // stays lined up with them. It starts at the ruler's thick line (the numbers
-// above it are one h-6 row) and runs down through the tracks.
+// above it are RULER_HEIGHT tall) and runs down through the tracks.
 //
 // `beat` is where it rests. While the song plays it asks `liveBeat` on every
 // frame and moves itself, without re-rendering anything.
@@ -53,7 +58,7 @@ const Playhead = ({
 				}px)`;
 			}
 		},
-		[beats],
+		[beats]
 	);
 
 	// The drag that's going on, if one is. `from` is where the pointer went
@@ -116,13 +121,7 @@ const Playhead = ({
 		}
 
 		// the nearest beat, but never the very end
-		held.to = Math.max(
-			0,
-			Math.min(
-				Math.round((along(event) - held.offset) / BEAT_WIDTH),
-				beats - 1,
-			),
-		);
+		held.to = beatAt(along(event) - held.offset, beats);
 		show(held.to);
 	};
 
@@ -167,27 +166,30 @@ const Playhead = ({
 		onLostPointerCapture: cancel,
 	};
 
-	// The line is 8px wide and pulled left so its middle sits on the middle of
-	// a tick. The arrow is one beat wide and centered on the same spot.
+	// The line's middle sits on the middle of a tick, and the arrow is one
+	// beat wide and centered on the same spot. See grid.ts.
 	return (
 		<div
 			ref={line}
 			aria-hidden
-			className="pointer-events-none absolute top-6 bottom-0 left-0 w-0"
+			className="pointer-events-none absolute bottom-0 left-0 w-0"
+			style={{ top: RULER_HEIGHT }}
 		>
 			<div
 				{...handle}
-				className="pointer-events-auto absolute inset-y-0 -left-[3px] w-2 bg-blue border-x-2 border-black cursor-ew-resize touch-none select-none"
+				className="pointer-events-auto absolute inset-y-0 bg-accent border-x-hair border-ink cursor-ew-resize touch-none select-none"
+				style={{ left: PLAYHEAD_LEFT, width: PLAYHEAD_WIDTH }}
 			></div>
 
 			<Tip label="Drag to move through the song">
 				<div
 					{...handle}
-					className="pointer-events-auto absolute top-0 -left-[13px] w-7 h-6 touch-none select-none cursor-ew-resize"
+					className="pointer-events-auto absolute top-0 touch-none select-none cursor-ew-resize"
+					style={{ left: ARROW_LEFT, width: BEAT_WIDTH, height: RULER_HEIGHT }}
 				>
 					<svg
 						viewBox="0 0 28 24"
-						className="block w-full h-full fill-blue stroke-black"
+						className="block w-full h-full fill-accent stroke-ink"
 					>
 						<path
 							d="M2 2H26V9L14 21L2 9Z"

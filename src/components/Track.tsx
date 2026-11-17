@@ -1,4 +1,3 @@
-import { db } from "@/utils/firebase";
 import { Clip, ClipBars, Track } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { CLIP_BARS, clipAt, fits } from "@/utils/clips";
@@ -8,26 +7,24 @@ import {
 	setClipBars,
 	takeOutClip,
 } from "@/utils/track-edits";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteTrack } from "@/utils/studio";
 import { useState } from "react";
 import { ConfirmDialog } from "./Dialog";
 import { Tip } from "./ui/tooltip";
+import { IconButton } from "./ui/button";
 import {
-	FaMinusCircle,
-	FaPlusCircle,
-	FaTrash,
-	FaVolumeMute,
-	FaVolumeUp,
-} from "react-icons/fa";
-import { BEAT_WIDTH } from "./Playhead";
-import { BAR_BEATS } from "@/utils/tempo";
+	AddBarIcon,
+	DeleteIcon,
+	ICON,
+	MutedIcon,
+	RemoveBarIcon,
+	SoundIcon,
+} from "./ui/icons";
+import { dropTarget, empty, selected } from "./ui/state";
+import { cn } from "@/utils/cn";
+import { BAR_WIDTH, CLIP_GAP } from "@/utils/grid";
 
-// a bar on a track lines up with 4 beats on the ruler. what's in it is a gap
-// narrower, so clips next to each other don't touch.
-const BAR_WIDTH = BAR_BEATS * BEAT_WIDTH;
-const GAP = 8;
-
-const barsLabel = (bars: number) => (bars == 1 ? "1 bar" : `${bars} bars`);
+const barsLabel = (bars: number) => (bars === 1 ? "1 bar" : `${bars} bars`);
 
 const Track = ({
 	track,
@@ -58,82 +55,87 @@ const Track = ({
 		setClipBars(studio, track.id, clip, bars).catch(unsaved);
 	};
 
-	// What's picked is blue. While a loop or a sound is picked instead,
-	// every clip and empty bar is pink: any of them can take it.
-	const border = (picked: boolean) =>
-		picked ? "border-blue" : placing.item ? "border-pink" : "border-black";
+	// What's picked is filled with ink. While a loop or a sound is picked
+	// instead, every clip and empty bar gets a dashed border: any of them can
+	// take it.
+	const look = (picked: boolean) =>
+		picked ? selected : placing.item ? dropTarget : "";
 
 	// whether the "delete this track?" dialog is open
 	const [deleting, setDeleting] = useState(false);
 
 	const remove = () => {
 		setDeleting(false);
-		deleteDoc(doc(db, "studios", studio, "tracks", track.id)).catch(
+		deleteTrack(studio, track.id).catch(
 			couldnt(`Couldn't delete ${track.name}. Try again.`)
 		);
 	};
 
 	return (
 		<div>
-			<div className="flex items-center space-x-4">
-				<h3 className="text-lg uppercase font-black">{track.name}</h3>
+			<div className="flex items-center space-x-2">
+				<h3 className="text-lg uppercase font-bold">{track.name}</h3>
 
-				<Tip label={muted ? "Unmute track" : "Mute track"}>
-					<button
-						onClick={() => onMute()}
-						aria-pressed={muted}
-						aria-label={`Mute ${track.name}`}
-					>
-						{muted ? <FaVolumeMute /> : <FaVolumeUp />}
-					</button>
-				</Tip>
+				<IconButton
+					label={`Mute ${track.name}`}
+					icon={muted ? MutedIcon : SoundIcon}
+					aria-pressed={muted}
+					onClick={() => onMute()}
+				/>
 
-				<Tip label="Delete track">
-					<button
-						onClick={() => setDeleting(true)}
-						aria-label={`Delete ${track.name}`}
-					>
-						<FaTrash />
-					</button>
-				</Tip>
+				<IconButton
+					label={`Delete ${track.name}`}
+					icon={DeleteIcon}
+					onClick={() => setDeleting(true)}
+				/>
 			</div>
 			<div className="flex items-center space-x-2">
-				<div className="relative h-24" style={{ width: track.bars * BAR_WIDTH }}>
+				<div
+					className="relative h-24"
+					style={{ width: track.bars * BAR_WIDTH }}
+				>
 					{Array.from({ length: track.bars }, (_, bar) => bar)
 						.filter((bar) => !clipAt(track.clips, bar))
 						.map((bar) => {
 							const picked =
-								placing.slot?.track == track.id &&
+								placing.slot?.track === track.id &&
 								!placing.slot.clip &&
-								placing.slot.bar == bar;
+								placing.slot.bar === bar;
 
 							return (
 								<div
 									key={`empty ${bar}`}
-									className={`absolute top-0 h-24 bg-white/60 p-1 rounded-xl border-8 cursor-pointer text-sm ${border(picked)}`}
-									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - GAP }}
+									className={cn(
+										"absolute top-0 h-24 grid place-items-center rounded border-control cursor-pointer text-xl font-bold",
+										empty,
+										look(picked)
+									)}
+									style={{ left: bar * BAR_WIDTH, width: BAR_WIDTH - CLIP_GAP }}
 									aria-label={`Bar ${bar + 1} of ${track.name}, empty`}
 									onClick={() => {
 										placing.pickSlot({ track: track.id, bar: bar, clip: null });
 									}}
 								>
-									Empty
+									<span aria-hidden>+</span>
 								</div>
 							);
 						})}
 
 					{track.clips.map((clip) => {
 						const picked =
-							placing.slot?.track == track.id &&
-							placing.slot.clip?.start == clip.start;
+							placing.slot?.track === track.id &&
+							placing.slot.clip?.start === clip.start;
 
 						return (
 							<div
 								key={`clip ${clip.start}`}
-								className={`absolute top-0 h-24 flex flex-col justify-between bg-yellow p-1 rounded-xl border-8 cursor-pointer ${border(picked)}`}
+								className={cn(
+									"absolute top-0 h-24 flex flex-col justify-between bg-surface p-1 rounded border-control border-ink cursor-pointer",
+									look(picked)
+								)}
 								style={{
 									left: clip.start * BAR_WIDTH,
-									width: clip.bars * BAR_WIDTH - GAP,
+									width: clip.bars * BAR_WIDTH - CLIP_GAP,
 								}}
 								onClick={() => {
 									placing.pickSlot({
@@ -169,7 +171,8 @@ const Track = ({
 									</select>
 									<Tip label="Take out">
 										<button
-											className="text-lg"
+											type="button"
+											className="grid place-items-center rounded"
 											aria-label={`Take ${clip.name} off bar ${clip.start + 1} of ${track.name}`}
 											onClick={(event) => {
 												// the clip behind this button is what gets picked
@@ -178,7 +181,7 @@ const Track = ({
 												takeOutClip(studio, track.id, clip).catch(unsaved);
 											}}
 										>
-											<FaTrash />
+											<DeleteIcon size={ICON} aria-hidden />
 										</button>
 									</Tip>
 								</div>
@@ -187,30 +190,28 @@ const Track = ({
 					})}
 				</div>
 
-				<Tip label="Add a bar">
-					<button
-						aria-label={`Add a bar to ${track.name}`}
-						onClick={() => {
-							addTrackBar(studio, track.id).catch(unsaved);
-						}}
-					>
-						<FaPlusCircle color="black" size={32} />
-					</button>
-				</Tip>
+				<IconButton
+					label={`Add a bar to ${track.name}`}
+					icon={AddBarIcon}
+					big
+					onClick={() => {
+						addTrackBar(studio, track.id).catch(unsaved);
+					}}
+				/>
 
-				<Tip label="Take off the last bar">
-					<button
-						className="pr-4 disabled:opacity-30"
-						aria-label={`Take the last bar off ${track.name}`}
-						// only an empty last bar can go
-						disabled={track.bars == 0 || clipAt(track.clips, track.bars - 1) !== null}
-						onClick={() => {
-							removeTrackBar(studio, track.id).catch(unsaved);
-						}}
-					>
-						<FaMinusCircle color="black" size={32} />
-					</button>
-				</Tip>
+				<IconButton
+					label={`Take the last bar off ${track.name}`}
+					icon={RemoveBarIcon}
+					big
+					className="mr-4"
+					// only an empty last bar can go
+					disabled={
+						track.bars === 0 || clipAt(track.clips, track.bars - 1) !== null
+					}
+					onClick={() => {
+						removeTrackBar(studio, track.id).catch(unsaved);
+					}}
+				/>
 			</div>
 
 			{deleting && (
@@ -218,6 +219,7 @@ const Track = ({
 					title="Delete this track?"
 					message={`${track.name} and everything in it will be gone for everyone in the studio.`}
 					confirm="Delete"
+					danger
 					onConfirm={remove}
 					onCancel={() => setDeleting(false)}
 				/>

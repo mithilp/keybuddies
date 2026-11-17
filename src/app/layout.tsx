@@ -3,7 +3,12 @@ import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const font = Space_Grotesk({ subsets: ["latin"] });
+// the one typeface, as a CSS variable that tailwind's font-sans points at
+const font = Space_Grotesk({
+	subsets: ["latin"],
+	weight: ["400", "700"],
+	variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
 	title: "KeyBuddies",
@@ -16,8 +21,8 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
-			<body className={font.className}>
+		<html lang="en" className={font.variable}>
+			<body className="font-sans">
 				<TooltipProvider>{children}</TooltipProvider>
 			</body>
 		</html>

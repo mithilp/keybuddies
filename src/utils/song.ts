@@ -112,7 +112,7 @@ export const renderSong = async (
 	};
 
 	const renderClip = (clip: Clip): Promise<Source> => {
-		if (clip.type == "loop") {
+		if (clip.type === "loop") {
 			return once(`loop ${clip.id}`, async () => {
 				try {
 					return {

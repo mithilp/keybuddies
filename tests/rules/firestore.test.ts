@@ -63,7 +63,7 @@ before(async () => {
 		firestore: {
 			rules: readFileSync(
 				new URL("../../firestore.rules", import.meta.url),
-				"utf8",
+				"utf8"
 			),
 		},
 	});
@@ -125,7 +125,7 @@ describe("studios", () => {
 				if ((await transaction.get(ref)).exists()) return false;
 				transaction.set(ref, { createdAt: Timestamp.now(), bpm: "120" });
 				return true;
-			}),
+			})
 		);
 	});
 
@@ -150,22 +150,22 @@ describe("studios", () => {
 
 	test("a new studio has only what claimStudio writes", async () => {
 		await assertFails(
-			setDoc(studio(), { createdAt: Timestamp.now(), bpm: "120", x: 1 }),
+			setDoc(studio(), { createdAt: Timestamp.now(), bpm: "120", x: 1 })
 		);
 		await assertFails(setDoc(studio(), { bpm: "120" }));
 		await assertFails(setDoc(studio(), { createdAt: "now", bpm: "120" }));
 		await assertFails(
-			setDoc(studio(), { createdAt: Timestamp.now(), bpm: "999" }),
+			setDoc(studio(), { createdAt: Timestamp.now(), bpm: "999" })
 		);
 		await assertFails(
-			setDoc(studio(), { createdAt: Timestamp.now(), bpm: 120 }),
+			setDoc(studio(), { createdAt: Timestamp.now(), bpm: 120 })
 		);
 		await assertFails(
 			setDoc(studio(), {
 				createdAt: Timestamp.now(),
 				bpm: "120",
 				library: [],
-			}),
+			})
 		);
 	});
 
@@ -188,18 +188,18 @@ describe("studios", () => {
 			updateDoc(studio(), {
 				library: arrayUnion("bass_1"),
 				libraryRemoved: arrayRemove("bass_1"),
-			}),
+			})
 		);
 		await assertSucceeds(
 			updateDoc(studio(), {
 				library: arrayRemove("bass_1"),
 				libraryRemoved: arrayUnion("bass_1"),
-			}),
+			})
 		);
 		await assertSucceeds(
 			updateDoc(studio(), {
 				library: arrayUnion("piano_2", "love_story_drums"),
-			}),
+			})
 		);
 	});
 
@@ -228,7 +228,7 @@ describe("studios", () => {
 
 		await assertSucceeds(updateDoc(studio(), { bpm: "160" }));
 		await assertSucceeds(
-			updateDoc(studio(), { library: arrayUnion("bass_2") }),
+			updateDoc(studio(), { library: arrayUnion("bass_2") })
 		);
 	});
 
@@ -261,10 +261,10 @@ describe("tracks", () => {
 
 		for (let i = 0; i < 4; i++) {
 			await assertSucceeds(
-				addDoc(collection(db, `studios/${STUDIO}/tracks`), newTrack(i)),
+				addDoc(collection(db, `studios/${STUDIO}/tracks`), newTrack(i))
 			);
 			await assertSucceeds(
-				addDoc(collection(db, `studios/${STUDIO}/tracks`), clipTrack(i)),
+				addDoc(collection(db, `studios/${STUDIO}/tracks`), clipTrack(i))
 			);
 		}
 	});
@@ -275,17 +275,17 @@ describe("tracks", () => {
 
 		await assertSucceeds(
 			getDocs(
-				query(collection(db, `studios/${STUDIO}/tracks`), orderBy("order")),
-			),
+				query(collection(db, `studios/${STUDIO}/tracks`), orderBy("order"))
+			)
 		);
 	});
 
 	test("tracks only go in a studio that's there", async () => {
 		await assertFails(
-			addDoc(collection(db, `studios/${STUDIO}/tracks`), newTrack(0)),
+			addDoc(collection(db, `studios/${STUDIO}/tracks`), newTrack(0))
 		);
 		await assertFails(
-			addDoc(collection(db, "studios/abc/tracks"), newTrack(0)),
+			addDoc(collection(db, "studios/abc/tracks"), newTrack(0))
 		);
 	});
 
@@ -296,7 +296,7 @@ describe("tracks", () => {
 		await assertFails(addDoc(tracks, { ...newTrack(0), muted: true }));
 		await assertFails(addDoc(tracks, { ...newTrack(0), name: "" }));
 		await assertFails(
-			addDoc(tracks, { ...newTrack(0), name: "x".repeat(101) }),
+			addDoc(tracks, { ...newTrack(0), name: "x".repeat(101) })
 		);
 		await assertFails(addDoc(tracks, { ...newTrack(0), order: "0" }));
 		await assertFails(addDoc(tracks, { ...newTrack(0), order: -1 }));
@@ -307,14 +307,14 @@ describe("tracks", () => {
 			addDoc(tracks, {
 				...newTrack(0),
 				notes: Array.from({ length: 2001 }, () => empty),
-			}),
+			})
 		);
 		await assertFails(addDoc(tracks, { ...clipTrack(0), clips: "none" }));
 		await assertFails(
 			addDoc(tracks, {
 				...clipTrack(0),
 				clips: Array.from({ length: 2001 }, () => empty),
-			}),
+			})
 		);
 		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 0 }));
 		await assertSucceeds(addDoc(tracks, { ...clipTrack(0), bars: 2000 }));
@@ -341,16 +341,16 @@ describe("tracks", () => {
 		await assertSucceeds(
 			edit((cells) =>
 				cells.map((old, i) =>
-					i === 0 ? { type: "loop", name: "Bass 1", id: "bass_1" } : old,
-				),
-			),
+					i === 0 ? { type: "loop", name: "Bass 1", id: "bass_1" } : old
+				)
+			)
 		);
 		await assertSucceeds(
 			edit((cells) =>
 				cells.map((old, i) =>
-					i === 1 ? { type: "sound", name: "Piano sound", id: SOUND } : old,
-				),
-			),
+					i === 1 ? { type: "sound", name: "Piano sound", id: SOUND } : old
+				)
+			)
 		);
 		await assertSucceeds(edit((cells) => [...cells, empty]));
 		await assertSucceeds(edit((cells) => cells.filter((_, i) => i !== 2)));
@@ -379,8 +379,8 @@ describe("tracks", () => {
 					{ ...bass, start: 0, bars: 1 },
 					{ ...hum, start: 6, bars: 4 },
 				],
-				10,
-			),
+				10
+			)
 		);
 		await assertSucceeds(edit([{ ...hum, start: 6, bars: 4 }], 10));
 		await assertSucceeds(edit([{ ...hum, start: 6, bars: 4 }], 11));
@@ -390,7 +390,9 @@ describe("tracks", () => {
 	test("an old tab can't write cells once a track has clips", async () => {
 		await seedStudio();
 		await seedTrack("t1", {
-			clips: [{ type: "loop", name: "Bass 1", id: "bass_1", start: 0, bars: 4 }],
+			clips: [
+				{ type: "loop", name: "Bass 1", id: "bass_1", start: 0, bars: 4 },
+			],
 			bars: 4,
 		});
 		await seedTrack("t2", { notes: [], clips: [], bars: 8 });
@@ -398,8 +400,13 @@ describe("tracks", () => {
 		// setCell and addCell from a tab that hasn't reloaded
 		await assertFails(
 			updateDoc(track("t1"), {
-				notes: [empty, { type: "loop", name: "Bass 2", id: "bass_2" }, empty, empty],
-			}),
+				notes: [
+					empty,
+					{ type: "loop", name: "Bass 2", id: "bass_2" },
+					empty,
+					empty,
+				],
+			})
 		);
 		await assertFails(updateDoc(track("t2"), { notes: [empty] }));
 
@@ -411,11 +418,17 @@ describe("tracks", () => {
 	test("clips go in with the first edit and can't be taken off", async () => {
 		await seedStudio();
 		await seedTrack("t1");
-		const bass = { type: "loop", name: "Bass 1", id: "bass_1", start: 0, bars: 2 };
+		const bass = {
+			type: "loop",
+			name: "Bass 1",
+			id: "bass_1",
+			start: 0,
+			bars: 2,
+		};
 
 		// cells and clips in the same write
 		await assertFails(
-			updateDoc(track("t1"), { notes: [], clips: [bass], bars: 8 }),
+			updateDoc(track("t1"), { notes: [], clips: [bass], bars: 8 })
 		);
 		// a length on a track that's still cells
 		await assertFails(updateDoc(track("t1"), { bars: 8 }));
@@ -426,7 +439,7 @@ describe("tracks", () => {
 		await assertFails(
 			updateDoc(track("t1"), {
 				clips: Array.from({ length: 2001 }, () => bass),
-			}),
+			})
 		);
 	});
 
@@ -467,7 +480,7 @@ describe("tracks", () => {
 		await seedTrack("t1", { instrument: "piano", order: "0" });
 
 		await assertSucceeds(
-			updateDoc(track("t1"), { notes: [...fourEmpty(), empty] }),
+			updateDoc(track("t1"), { notes: [...fourEmpty(), empty] })
 		);
 		await assertSucceeds(updateDoc(track("t1"), { clips: [], bars: 8 }));
 	});
@@ -519,8 +532,8 @@ describe("sounds", () => {
 					type: "drum",
 					sequence: drums,
 					steps: 32,
-				}),
-			),
+				})
+			)
 		);
 		await assertSucceeds(saveSound(newSound({ name: "Piano sound copy" })));
 		await assertSucceeds(saveSound(newSound({ sequence: [] })));
@@ -581,8 +594,8 @@ describe("sounds", () => {
 				sounds,
 				newSound({
 					sequence: Array.from({ length: 5001 }, () => piano[0]),
-				}),
-			),
+				})
+			)
 		);
 		await assertFails(addDoc(sounds, newSound({ owner: "someone" })));
 		// the code comes from sharing, and studios keep their own list
@@ -598,12 +611,12 @@ describe("sounds", () => {
 		await assertSucceeds(getDoc(sound()));
 		await assertFails(getDocs(collection(db, "sounds")));
 		await assertFails(
-			getDocs(query(collection(db, "sounds"), where("code", "==", "305118"))),
+			getDocs(query(collection(db, "sounds"), where("code", "==", "305118")))
 		);
 		await assertFails(
 			getDocs(
-				query(collection(db, "sounds"), where("in", "array-contains", STUDIO)),
-			),
+				query(collection(db, "sounds"), where("in", "array-contains", STUDIO))
+			)
 		);
 	});
 
@@ -613,7 +626,7 @@ describe("sounds", () => {
 		await seed(`studios/${STUDIO}/soundList/${SOUND}`, {});
 
 		await assertSucceeds(
-			getDocs(collection(db, "studios", STUDIO, "soundList")),
+			getDocs(collection(db, "studios", STUDIO, "soundList"))
 		);
 		await assertFails(getDocs(collectionGroup(db, "soundList")));
 		await assertFails(getDocs(collectionGroup(db, "tracks")));
@@ -652,18 +665,18 @@ describe("sounds", () => {
 		await assertSucceeds(
 			updateDoc(sound(), {
 				sequence: [...piano, { note: 72, start: 32, end: 40 }],
-			}),
+			})
 		);
 		await assertFails(updateDoc(sound(), { sequence: "C D E" }));
 		await assertSucceeds(
 			updateDoc(sound(), {
 				sequence: Array.from({ length: 5000 }, () => piano[0]),
-			}),
+			})
 		);
 		await assertFails(
 			updateDoc(sound(), {
 				sequence: Array.from({ length: 5001 }, () => piano[0]),
-			}),
+			})
 		);
 		await assertSucceeds(updateDoc(sound(), { steps: 32 }));
 		await assertFails(updateDoc(sound(), { steps: 8 }));
@@ -691,7 +704,7 @@ describe("sounds", () => {
 		// the code goes on the sound with its shareCodes doc, not alone
 		await assertFails(updateDoc(sound(), { code: "618204" }));
 		await assertFails(
-			setDoc(doc(db, "shareCodes", "618204"), { sound: SOUND }),
+			setDoc(doc(db, "shareCodes", "618204"), { sound: SOUND })
 		);
 		// a code that's taken can't be taken again or given to another sound
 		await assertFails(
@@ -702,13 +715,13 @@ describe("sounds", () => {
 				transaction.update(doc(db, "sounds", OTHER_SOUND), {
 					code: "305118",
 				});
-			}),
+			})
 		);
 		await assertFails(
-			updateDoc(doc(db, "sounds", OTHER_SOUND), { code: "305118" }),
+			updateDoc(doc(db, "sounds", OTHER_SOUND), { code: "305118" })
 		);
 		await assertFails(
-			setDoc(doc(db, "shareCodes", "305118"), { sound: OTHER_SOUND }),
+			setDoc(doc(db, "shareCodes", "305118"), { sound: OTHER_SOUND })
 		);
 		await assertFails(deleteDoc(doc(db, "shareCodes", "305118")));
 		// and it has to be a code
@@ -818,7 +831,7 @@ describe("moving old sounds", () => {
 		assert.deepEqual(await ids(STUDIO), []);
 		assert.equal(
 			(await getDoc(doc(db, "shareCodes", "305118"))).exists(),
-			false,
+			false
 		);
 	});
 
@@ -849,7 +862,7 @@ describe("moving old sounds", () => {
 			runTransaction(db, async (transaction) => {
 				transaction.set(doc(db, "shareCodes", "618204"), { sound: B });
 				transaction.update(doc(db, "sounds", B), { code: "618204" });
-			}),
+			})
 		);
 
 		// a second run has nothing left to do
@@ -872,7 +885,7 @@ describe("moving old sounds", () => {
 		await assertSucceeds(deleteDoc(listed(A, OTHER)));
 		// an old tab's addSound, before the rules are published
 		await open((db) =>
-			updateDoc(doc(db, "sounds", A), { in: arrayUnion(THIRD) }),
+			updateDoc(doc(db, "sounds", A), { in: arrayUnion(THIRD) })
 		);
 
 		assert.deepEqual(await run(false), {
@@ -897,7 +910,7 @@ describe("moving old sounds", () => {
 		await run(true);
 
 		await assertSucceeds(
-			updateDoc(doc(db, "sounds", A), { sequence: [...piano, piano[0]] }),
+			updateDoc(doc(db, "sounds", A), { sequence: [...piano, piano[0]] })
 		);
 		await assertSucceeds(setDoc(listed(C, OTHER), {}));
 		await assertSucceeds(deleteDoc(listed(B, STUDIO)));
@@ -925,7 +938,7 @@ describe("moving old sounds", () => {
 		assert.deepEqual(await ids(OTHER), []);
 		assert.equal(
 			(await getDoc(doc(db, "shareCodes", "305118"))).exists(),
-			false,
+			false
 		);
 	});
 });
@@ -940,10 +953,10 @@ describe("everything else", () => {
 		// sounds used to live under the studio in early 2024
 		await assertFails(getDoc(doc(db, `studios/${STUDIO}/sounds/old`)));
 		await assertFails(
-			setDoc(doc(db, `studios/${STUDIO}/sounds/old`), { name: "x" }),
+			setDoc(doc(db, `studios/${STUDIO}/sounds/old`), { name: "x" })
 		);
 		await assertFails(
-			setDoc(doc(db, `studios/${STUDIO}/tracks/t1/more/x`), { a: 1 }),
+			setDoc(doc(db, `studios/${STUDIO}/tracks/t1/more/x`), { a: 1 })
 		);
 	});
 });

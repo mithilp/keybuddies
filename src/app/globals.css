@@ -2,16 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* the design tokens, named for what they're for. tailwind.config.ts maps
+   them to classes. colors are rgb channels so a class can add opacity, like
+   bg-ink/50. */
+:root {
+	--page: 255 144 188; /* #ff90bc */
+	--surface: 255 222 144; /* #ffde90 */
+	--accent: 138 205 215; /* #8acdd7 */
+	--ink: 0 0 0; /* #000000 */
+	--paper: 255 255 255; /* #ffffff */
+	--danger: 127 29 29; /* #7f1d1d */
 
-body {
-  color: rgb(0,0,0);
-  background: rgb(255,
-    144,
-    188);
+	--border-frame: 8px;
+	--border-control: 4px;
+	--border-hair: 2px;
+
+	--radius: 12px;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+@layer base {
+	body {
+		@apply bg-page text-ink;
+	}
+
+	/* one focus ring for everything, only for the keyboard */
+	:focus-visible {
+		outline: 3px solid rgb(var(--ink));
+		outline-offset: 2px;
+	}
 }

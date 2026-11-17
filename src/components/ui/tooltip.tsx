@@ -3,16 +3,12 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/cn";
 
 // One of these sits at the root of the app. A tooltip shows up after a short
 // wait, and it can't be hovered or clicked itself, so it never gets between
 // the mouse and what's under it.
-const TooltipProvider = ({
-	children,
-}: {
-	children: React.ReactNode;
-}) => (
+const TooltipProvider = ({ children }: { children: React.ReactNode }) => (
 	<TooltipPrimitive.Provider
 		delayDuration={300}
 		skipDelayDuration={200}
@@ -36,7 +32,7 @@ const TooltipContent = React.forwardRef<
 			sideOffset={sideOffset}
 			collisionPadding={8}
 			className={cn(
-				"z-50 pointer-events-none select-none bg-white text-black border-4 border-black rounded-xl px-3 py-1 text-sm font-bold",
+				"z-toast pointer-events-none select-none bg-paper text-ink border-control border-ink rounded px-3 py-1 text-sm font-bold",
 				className
 			)}
 			{...props}
@@ -73,7 +69,12 @@ const Tip = ({
 			{children.props.disabled === undefined ? (
 				children
 			) : (
-				<span className="inline-flex [&>:disabled]:pointer-events-none">
+				<span
+					className={cn(
+						"inline-flex [&>:disabled]:pointer-events-none",
+						children.props.disabled && "cursor-not-allowed"
+					)}
+				>
 					{children}
 				</span>
 			)}
@@ -82,4 +83,4 @@ const Tip = ({
 	</Tooltip>
 );
 
-export { Tip, Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+export { Tip, TooltipProvider };

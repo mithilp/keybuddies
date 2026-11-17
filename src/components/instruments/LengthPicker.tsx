@@ -1,5 +1,6 @@
 import { CLIP_BARS } from "@/utils/clips";
 import { ClipBars } from "@/utils/types";
+import { Select } from "../ui/input";
 
 // How long a new recording is, 1, 2 or 4 bars. A recording keeps its length,
 // so this is only shown while making one.
@@ -18,19 +19,19 @@ const LengthPicker = ({
 		<label className="text-lg whitespace-nowrap" htmlFor={id}>
 			Length:
 		</label>
-		<select
+		<Select
 			id={id}
-			className="w-32 bg-yellow border-8 border-black p-2 rounded-xl disabled:opacity-70"
+			className="w-32"
 			value={bars}
 			disabled={disabled}
 			onChange={(event) => setBars(Number(event.target.value) as ClipBars)}
 		>
 			{CLIP_BARS.map((bars) => (
 				<option key={bars} value={bars}>
-					{bars == 1 ? "1 bar" : `${bars} bars`}
+					{bars === 1 ? "1 bar" : `${bars} bars`}
 				</option>
 			))}
-		</select>
+		</Select>
 	</div>
 );
 
