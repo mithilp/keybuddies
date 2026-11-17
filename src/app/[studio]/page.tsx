@@ -4,19 +4,49 @@ import { db } from "@/utils/firebase";
 import {
 	collection,
 	doc,
-	getDoc,
 	onSnapshot,
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { use, useState, useEffect, useCallback } from "react";
-import { Key, Track } from "@/utils/types";
+import { use, useState, useEffect, useRef } from "react";
+import { Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import crunker from "@/utils/crunker";
-import { renderSound } from "@/utils/instruments";
+import { renderSong } from "@/utils/song";
+
+// resolves once an audio element has enough loaded to start without a gap
+const loaded = (audio: HTMLAudioElement) =>
+	new Promise<void>((resolve, reject) => {
+		if (audio.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+			resolve();
+			return;
+		}
+
+		// some browsers won't buffer ahead of a play() call, don't wait forever
+		const timer = setTimeout(resolve, 2000);
+
+		audio.addEventListener(
+			"canplaythrough",
+			() => {
+				clearTimeout(timer);
+				resolve();
+			},
+			{ once: true }
+		);
+		audio.addEventListener(
+			"error",
+			() => {
+				clearTimeout(timer);
+				reject(new Error("The rendered audio couldn't be loaded."));
+			},
+			{ once: true }
+		);
+
+		audio.load();
+	});
 
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
@@ -61,58 +91,39 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 
 	const [muted, setMuted] = useState<boolean[]>([]);
 
+	// play() reads this when the tracks start, which is after it was called
+	const mutedRef = useRef<boolean[]>([]);
+
 	const play = async (onFinish: Function) => {
-		const newAudios: { audio: HTMLAudioElement; track: string }[] = [];
+		// build every track before any of them starts, so they begin together
+		const song = await renderSong(tracks, bpm);
 
-		let j = 0;
-		for await (const track of tracks) {
-			if (crunker) {
-				const loopsToPlay: string[] = [];
+		const newAudios = song.map(({ track, buffer }) => {
+			// crunker hands back a url and an element with a url of its own.
+			// the element is the one that plays.
+			const exported = crunker!.export(buffer, "audio/wav");
+			URL.revokeObjectURL(exported.url);
 
-				let i = 0;
-				for await (const cell of track.notes) {
-					if (cell.type == "loop") {
-						loopsToPlay.push(`/loops/${cell.id}_${bpm}.mp3`);
-					} else if (cell.type == "sound") {
-						const snap = await getDoc(doc(db, "sounds", cell.id));
+			const audio = exported.element;
+			audio.preload = "auto";
 
-						const [silent] = await crunker.fetchAudio(
-							`/loops/silent_${bpm}.mp3`
-						);
+			// muted tracks start silent instead of being turned down after
+			const index = tracks.findIndex((each) => each.id === track);
+			audio.volume = mutedRef.current[index] ? 0 : 1;
 
-						const merged = await renderSound(
-							snap.data()!.type,
-							snap.data()!.sequence,
-							Number(bpm),
-							silent
-						);
+			return { audio: audio, track: track };
+		});
 
-						const exported = crunker?.export(merged!, "audio/mp3");
-						loopsToPlay.push(exported.url);
-					} else {
-						loopsToPlay.push(`/loops/silent_${bpm}.mp3`);
-					}
-					i++;
-				}
+		await Promise.all(newAudios.map(({ audio }) => loaded(audio)));
 
-				const buffers = await crunker.fetchAudio(...loopsToPlay);
-				const concat = crunker.concatAudio(buffers);
-				const exported = crunker.export(concat, "audio/mp3");
-				const audio = new Audio(exported.url);
-				audio.play();
-
-				if (muted[j]) {
-					audio.volume = 0;
-				}
-
-				newAudios.push({ audio: audio, track: track.id });
-
-				setTimeout(() => onFinish(), concat.duration * 1000);
-			}
-			j++;
+		for (const { audio } of newAudios) {
+			audio.play();
 		}
 
 		setAudios(newAudios);
+
+		const longest = Math.max(0, ...song.map(({ buffer }) => buffer.duration));
+		setTimeout(() => onFinish(), longest * 1000);
 	};
 
 	const stop = () => {
@@ -124,17 +135,16 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	};
 
 	const mute = (track: Track, index: number) => {
-		setMuted((prev) => {
-			const newMuted = [...prev];
-			newMuted[index] = !newMuted[index];
-			return newMuted;
-		});
+		const newMuted = [...mutedRef.current];
+		newMuted[index] = !newMuted[index];
+		mutedRef.current = newMuted;
+		setMuted(newMuted);
 
-		audios.forEach((audio, index) => {
-			if (audio.track === track.id) {
-				audio.audio.volume = muted[index] ? 1 : 0;
+		for (const playing of audios) {
+			if (playing.track === track.id) {
+				playing.audio.volume = newMuted[index] ? 0 : 1;
 			}
-		});
+		}
 	};
 
 	return (
