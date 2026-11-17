@@ -205,8 +205,13 @@ describe("studios", () => {
 	test("the library has a size cap", async () => {
 		await seedStudio();
 
-		const tooMany = Array.from({ length: 101 }, (_, i) => `loop_${i}`);
-		await assertFails(updateDoc(studio(), { library: tooMany }));
+		const ids = (length: number) =>
+			Array.from({ length }, (_, i) => `loop_${i}`);
+
+		await assertSucceeds(updateDoc(studio(), { library: ids(100) }));
+		await assertFails(updateDoc(studio(), { library: ids(101) }));
+		await assertSucceeds(updateDoc(studio(), { libraryRemoved: ids(100) }));
+		await assertFails(updateDoc(studio(), { libraryRemoved: ids(101) }));
 		await assertFails(updateDoc(studio(), { libraryRemoved: "bass_1" }));
 	});
 
@@ -329,6 +334,15 @@ describe("tracks", () => {
 		await assertFails(updateDoc(track("t1"), { order: 3 }));
 		await assertFails(updateDoc(track("t1"), { createdAt: Timestamp.now() }));
 		await assertFails(updateDoc(track("t1"), { notes: { 0: empty } }));
+	});
+
+	test("a track's cells have a cap", async () => {
+		await seedStudio();
+		await seedTrack("t1");
+		const cells = (length: number) => Array.from({ length }, () => empty);
+
+		await assertSucceeds(updateDoc(track("t1"), { notes: cells(1000) }));
+		await assertFails(updateDoc(track("t1"), { notes: cells(1001) }));
 	});
 
 	test("a track from 2024 with odd fields still takes cell edits", async () => {
@@ -492,6 +506,16 @@ describe("sounds", () => {
 			}),
 		);
 		await assertFails(updateDoc(sound(), { sequence: "C D E" }));
+		await assertSucceeds(
+			updateDoc(sound(), {
+				sequence: Array.from({ length: 5000 }, () => piano[0]),
+			}),
+		);
+		await assertFails(
+			updateDoc(sound(), {
+				sequence: Array.from({ length: 5001 }, () => piano[0]),
+			}),
+		);
 		await assertSucceeds(updateDoc(sound(), { steps: 32 }));
 		await assertFails(updateDoc(sound(), { steps: 8 }));
 	});
