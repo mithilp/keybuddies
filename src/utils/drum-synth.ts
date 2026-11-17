@@ -117,17 +117,22 @@ const tone = (
 	return out;
 };
 
-// the 48 Hz body is still most of it. the overtones on top die away faster
-// and the beater click is over in a few ms, so the tail stays a clean thump.
+// The 48 Hz body is about half of it. The rest is overtones, and close to a
+// third of the hit is above 300 Hz, where a phone speaker starts to play.
+// The higher an overtone is the faster it dies away, and the beater click is
+// over in a few ms, so the tail stays a clean thump.
 const kick = (sampleRate: number) => {
 	const length = Math.round(0.5 * sampleRate);
 	const body = tone(length, sampleRate, 165, 48, 0.035, [[1, 1, 0.13]]);
 	const overtones = tone(length, sampleRate, 165, 48, 0.035, [
 		[2, 0.5, 0.13],
 		[3, 0.5, 0.12],
-		[4, 0.85, 0.12],
-		[5, 0.65, 0.11],
-		[6, 0.45, 0.1],
+		[4, 0.95, 0.12],
+		[5, 0.8, 0.11],
+		[6, 0.65, 0.1],
+		[8, 0.55, 0.08],
+		[10, 0.4, 0.06],
+		[13, 0.3, 0.045],
 	]);
 	const click = filter(noise(length, 1), "bandpass", 1800, 0.7, sampleRate);
 	const out = new Float32Array(length);
@@ -136,26 +141,28 @@ const kick = (sampleRate: number) => {
 		out[i] =
 			Math.tanh(1.6 * body[i]) +
 			overtones[i] +
-			1.2 * click[i] * Math.exp(-t / 0.005);
+			1.6 * click[i] * Math.exp(-t / 0.006);
 	}
 	return out;
 };
 
-// overtones a fifth, an octave and more above the 88 Hz head, and the slap
-// of the stick
+// overtones from a fifth to more than two octaves above the 88 Hz head, and
+// the slap of the stick
 const tom = (sampleRate: number) => {
 	const length = Math.round(0.55 * sampleRate);
 	const head = tone(length, sampleRate, 190, 88, 0.07, [
 		[1, 1, 0.15],
-		[1.5, 0.4, 0.12],
-		[2, 0.65, 0.14],
-		[3, 0.4, 0.12],
+		[1.5, 0.45, 0.13],
+		[2, 0.8, 0.14],
+		[3, 0.6, 0.13],
+		[4, 0.45, 0.11],
+		[5.4, 0.3, 0.08],
 	]);
 	const slap = filter(noise(length, 2), "bandpass", 1200, 0.8, sampleRate);
 	const out = new Float32Array(length);
 	for (let i = 0; i < length; i++) {
 		const t = i / sampleRate;
-		out[i] = head[i] + 0.9 * slap[i] * Math.exp(-t / 0.012);
+		out[i] = head[i] + 1.1 * slap[i] * Math.exp(-t / 0.014);
 	}
 	return out;
 };

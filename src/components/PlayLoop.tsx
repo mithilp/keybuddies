@@ -5,6 +5,7 @@ import {
 	stopLoopPreview,
 	useLoopPreview,
 } from "@/utils/preview";
+import { Tip } from "./ui/tooltip";
 
 const PlayLoop = ({
 	id,
@@ -25,31 +26,32 @@ const PlayLoop = ({
 	useEffect(() => () => stopLoopPreview(id), [id, bpm]);
 
 	return (
-		<button
-			className="w-6 h-6"
-			aria-label={state == "idle" ? `Listen to ${name}` : `Stop ${name}`}
-			title={state == "idle" ? "Listen" : "Stop"}
-			onClick={(event) => {
-				// the row behind this button is what puts a loop in a cell.
-				// this one only listens.
-				event.stopPropagation();
+		<Tip label={state == "idle" ? "Listen" : "Stop"}>
+			<button
+				className="w-6 h-6"
+				aria-label={state == "idle" ? `Listen to ${name}` : `Stop ${name}`}
+				onClick={(event) => {
+					// the row behind this button is what puts a loop in a cell.
+					// this one only listens.
+					event.stopPropagation();
 
-				if (state == "idle") {
-					previewLoop(id, bpm);
-				} else {
-					stopLoopPreview(id);
-				}
-			}}
-		>
-			{state != "idle" ? (
-				<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-			) : (
-				<FaVolumeUp
-					className="w-full h-full"
-					color={selected ? "#ff90bc" : "black"}
-				/>
-			)}
-		</button>
+					if (state == "idle") {
+						previewLoop(id, bpm);
+					} else {
+						stopLoopPreview(id);
+					}
+				}}
+			>
+				{state != "idle" ? (
+					<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
+				) : (
+					<FaVolumeUp
+						className="w-full h-full"
+						color={selected ? "#ff90bc" : "black"}
+					/>
+				)}
+			</button>
+		</Tip>
 	);
 };
 

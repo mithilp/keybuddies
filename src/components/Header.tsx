@@ -3,6 +3,10 @@ import { doc, updateDoc } from "firebase/firestore";
 import { Playback } from "@/utils/types";
 import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { FaRepeat } from "react-icons/fa6";
+import { Tip } from "./ui/tooltip";
+
+// the tempos a studio can be in. every loop has a file for each of them.
+const TEMPOS = ["80", "120", "160"];
 
 const Header = ({
 	studio,
@@ -37,68 +41,102 @@ const Header = ({
 
 			<div className="flex space-x-2 items-center">
 				<h1 className="text-3xl font-black">BPM:</h1>
-				<select
-					value={bpm}
-					onChange={(e) => {
-						updateDoc(doc(db, "studios", studio), {
-							bpm: e.target.value,
-						});
-					}}
-					className="bg-yellow border-8 px-2 rounded-xl border-black h-16 text-3xl font-black"
-				>
-					<option value="80">80</option>
-					<option value="120">120</option>
-					<option value="160">160</option>
-				</select>
-				<button
-					onClick={download}
-					disabled={exporting !== null}
-					aria-busy={exporting !== null}
-					aria-label={
-						exporting === null
-							? "Download the song"
-							: `Making the download, ${percent}%`
+				{/* three radio buttons drawn as one block. Tab gets to it and the
+				    arrow keys go through the tempos. */}
+				<Tip label="Tempo, in beats per minute" side="bottom">
+					<div
+						role="radiogroup"
+						aria-label="Tempo, in beats per minute"
+						className="flex h-16 bg-yellow border-8 border-black rounded-xl overflow-hidden text-2xl font-black"
+					>
+						{TEMPOS.map((tempo, index) => (
+							<label
+								key={tempo}
+								className={`relative grid place-items-center px-3 cursor-pointer border-black has-[:focus-visible]:outline has-[:focus-visible]:outline-4 has-[:focus-visible]:-outline-offset-4 has-[:focus-visible]:outline-black ${
+									index > 0 ? "border-l-4" : ""
+								} ${bpm == tempo ? "bg-blue" : ""}`}
+							>
+								<input
+									type="radio"
+									name="bpm"
+									value={tempo}
+									checked={bpm == tempo}
+									onChange={() => {
+										updateDoc(doc(db, "studios", studio), { bpm: tempo });
+									}}
+									className="sr-only"
+								/>
+								{tempo}
+							</label>
+						))}
+					</div>
+				</Tip>
+				<Tip
+					label={
+						exporting === null ? "Download the song" : "Making the download"
 					}
-					title="Download the song"
-					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					side="bottom"
 				>
-					{exporting === null ? (
-						<FaDownload color="#000000" />
-					) : (
-						<span className="text-sm">{percent}%</span>
-					)}
-				</button>
-				<button
-					onClick={toggleLoop}
-					aria-pressed={looping}
-					aria-label="Loop the song"
-					title="Loop the song"
-					className={`${
-						looping ? "bg-blue" : "bg-yellow"
-					} border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black`}
-				>
-					<FaRepeat color="#000000" />
-				</button>
-				<button
-					onClick={playback == "stopped" ? play : stop}
-					aria-label={
+					<button
+						onClick={download}
+						disabled={exporting !== null}
+						aria-busy={exporting !== null}
+						aria-label={
+							exporting === null
+								? "Download the song"
+								: `Making the download, ${percent}%`
+						}
+						className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					>
+						{exporting === null ? (
+							<FaDownload color="#000000" />
+						) : (
+							<span className="text-sm">{percent}%</span>
+						)}
+					</button>
+				</Tip>
+				<Tip label={looping ? "Stop looping" : "Loop the song"} side="bottom">
+					<button
+						onClick={toggleLoop}
+						aria-pressed={looping}
+						aria-label="Loop the song"
+						className={`${
+							looping ? "bg-blue" : "bg-yellow"
+						} border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black`}
+					>
+						<FaRepeat color="#000000" />
+					</button>
+				</Tip>
+				<Tip
+					label={
 						playback == "stopped"
-							? "Play the song"
+							? "Play"
 							: playback == "playing"
-							? "Pause the song"
-							: "Loading the song, press to cancel"
+							? "Pause"
+							: "Loading, press to cancel"
 					}
-					title={playback == "stopped" ? "Play" : "Pause"}
-					className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					side="bottom"
 				>
-					{playback == "loading" ? (
-						<div className="animate-spin w-8 h-8 border-4 border-black border-b-transparent rounded-full"></div>
-					) : playback == "playing" ? (
-						<FaPause color="#000000" />
-					) : (
-						<FaPlay color="#000000" />
-					)}
-				</button>
+					<button
+						onClick={playback == "stopped" ? play : stop}
+						aria-label={
+							playback == "stopped"
+								? "Play the song"
+								: playback == "playing"
+								? "Pause the song"
+								: "Loading the song, press to cancel"
+						}
+						className="bg-yellow border-8 border-black grid place-items-center h-16 w-16 rounded-xl text-3xl font-black"
+					>
+						{playback == "loading" ? (
+							<div className="animate-spin w-8 h-8 border-4 border-black border-b-transparent rounded-full"></div>
+						) : playback == "playing" ? (
+							<FaPause color="#000000" />
+						) : (
+							<FaPlay color="#000000" />
+						)}
+					</button>
+				</Tip>
 			</div>
 		</div>
 	);

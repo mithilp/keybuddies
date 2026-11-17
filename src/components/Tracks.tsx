@@ -1,5 +1,6 @@
 import { db } from "@/utils/firebase";
-import { SelectedCell, Track as TrackType } from "@/utils/types";
+import { Track as TrackType } from "@/utils/types";
+import { Placing } from "@/utils/placing";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
 import { FaPlus } from "react-icons/fa";
 import { CELL_BEATS } from "@/utils/tempo";
@@ -8,8 +9,7 @@ import Track from "./Track";
 
 const Tracks = ({
 	tracks,
-	selectedCell,
-	setSelectedCell,
+	placing,
 	studio,
 	loading,
 	mute,
@@ -18,9 +18,9 @@ const Tracks = ({
 	playing,
 	liveBeat,
 	seek,
+	failed,
 }: {
-	setSelectedCell: (cell: SelectedCell) => void;
-	selectedCell: SelectedCell;
+	placing: Placing;
 	tracks: TrackType[];
 	studio: string;
 	loading: boolean;
@@ -31,6 +31,8 @@ const Tracks = ({
 	playing: boolean;
 	liveBeat: () => number;
 	seek: (beat: number) => void;
+	// gets a message when a change to a track couldn't be saved
+	failed: (message: string) => void;
 }) => {
 	// the song is as long as its longest track
 	const cells = Math.max(0, ...tracks.map((track) => track.notes.length));
@@ -52,7 +54,6 @@ const Tracks = ({
 						<div className="space-y-4">
 							<div
 								className="flex border-b-8 border-black w-max cursor-pointer"
-								title="Click to move the playhead"
 								onClick={(event) => {
 									const x =
 										event.clientX -
@@ -69,7 +70,8 @@ const Tracks = ({
 							>
 								{Array.from({ length: cells }, (_, i) => (
 									<div className="relative" key={i}>
-										<div className="w-56 font-bold pl-1">
+										{/* h-6, the playhead starts right under it */}
+										<div className="w-56 h-6 leading-6 font-bold pl-1">
 											{i * CELL_BEATS + 1}
 										</div>
 										<div className="absolute flex">
@@ -88,13 +90,13 @@ const Tracks = ({
 								<Track
 									key={track.id}
 									track={track}
-									selectedCell={selectedCell}
-									setSelectedCell={setSelectedCell}
+									placing={placing}
 									studio={studio}
 									onMute={() => {
 										mute(track);
 									}}
 									muted={muted.has(track.id)}
+									failed={failed}
 								/>
 							))}
 						</div>
@@ -105,6 +107,7 @@ const Tracks = ({
 								playing={playing}
 								liveBeat={liveBeat}
 								beats={beats}
+								seek={seek}
 							/>
 						)}
 					</div>

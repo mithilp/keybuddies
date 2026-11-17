@@ -7,6 +7,7 @@ import { Key } from "@/utils/types";
 import { useState } from "react";
 import { FaArrowLeft, FaArrowRight, FaTrash } from "react-icons/fa";
 import { FaXmark } from "react-icons/fa6";
+import { Tip } from "@/components/ui/tooltip";
 
 const STEPS = Array.from({ length: PIANO_STEPS }, (_, step) => step);
 
@@ -123,20 +124,21 @@ const PianoRoll = ({
 										last ? "border-black" : "border-yellow"
 									}`}
 								>
-									<button
-										aria-label={`${row.label} at step ${
-											key.start + 1
-										}. Click to remove, Alt click to edit`}
-										title="Click to remove, Alt click to edit"
-										className="block w-full h-full"
-										onClick={(e) => {
-											if (e.altKey) {
-												setPicked({ key: key, step: step });
-											} else {
-												remove(key);
-											}
-										}}
-									></button>
+									<Tip label="Click to remove, Alt click to edit">
+										<button
+											aria-label={`${row.label} at step ${
+												key.start + 1
+											}. Click to remove, Alt click to edit`}
+											className="block w-full h-full"
+											onClick={(e) => {
+												if (e.altKey) {
+													setPicked({ key: key, step: step });
+												} else {
+													remove(key);
+												}
+											}}
+										></button>
+									</Tip>
 
 									{picked?.key === key && picked.step === step && (
 										// the first rows open downwards, there's no room above them
@@ -146,87 +148,93 @@ const PianoRoll = ({
 											}`}
 										>
 											{key.start > 0 && (
-												<button
-													aria-label="Move note left"
-													title="Move left"
-													onClick={() =>
-														replace(
-															key,
-															{
-																...key,
-																start: key.start - 1,
-																end: key.end - 1,
-															},
-															Math.max(0, step - 1)
-														)
-													}
-												>
-													<FaArrowLeft size={20} />
-												</button>
+												<Tip label="Move left">
+													<button
+														aria-label="Move note left"
+														onClick={() =>
+															replace(
+																key,
+																{
+																	...key,
+																	start: key.start - 1,
+																	end: key.end - 1,
+																},
+																Math.max(0, step - 1)
+															)
+														}
+													>
+														<FaArrowLeft size={20} />
+													</button>
+												</Tip>
 											)}
 											{key.start < PIANO_STEPS - 1 && (
-												<button
-													aria-label="Move note right"
-													title="Move right"
-													onClick={() =>
-														replace(
-															key,
-															{
-																...key,
-																start: key.start + 1,
-																end: Math.min(PIANO_STEPS, key.end + 1),
-															},
-															Math.min(PIANO_STEPS - 1, step + 1)
-														)
-													}
-												>
-													<FaArrowRight size={20} />
-												</button>
+												<Tip label="Move right">
+													<button
+														aria-label="Move note right"
+														onClick={() =>
+															replace(
+																key,
+																{
+																	...key,
+																	start: key.start + 1,
+																	end: Math.min(PIANO_STEPS, key.end + 1),
+																},
+																Math.min(PIANO_STEPS - 1, step + 1)
+															)
+														}
+													>
+														<FaArrowRight size={20} />
+													</button>
+												</Tip>
 											)}
 											{key.end < PIANO_STEPS && (
-												<button
-													aria-label="Make note longer"
-													title="Longer"
-													onClick={() =>
-														replace(key, { ...key, end: key.end + 1 }, step)
-													}
-												>
-													<div>
-														+<sup>1</sup>&frasl;<sub>8</sub>
-													</div>
-												</button>
+												<Tip label="Longer">
+													<button
+														aria-label="Make note longer"
+														onClick={() =>
+															replace(key, { ...key, end: key.end + 1 }, step)
+														}
+													>
+														<div>
+															+<sup>1</sup>&frasl;<sub>8</sub>
+														</div>
+													</button>
+												</Tip>
 											)}
 											{key.end - key.start > 1 && (
-												<button
-													aria-label="Make note shorter"
-													title="Shorter"
-													onClick={() =>
-														replace(
-															key,
-															{ ...key, end: key.end - 1 },
-															Math.min(step, key.end - 2)
-														)
-													}
-												>
-													<div>
-														-<sup>1</sup>&frasl;<sub>8</sub>
-													</div>
-												</button>
+												<Tip label="Shorter">
+													<button
+														aria-label="Make note shorter"
+														onClick={() =>
+															replace(
+																key,
+																{ ...key, end: key.end - 1 },
+																Math.min(step, key.end - 2)
+															)
+														}
+													>
+														<div>
+															-<sup>1</sup>&frasl;<sub>8</sub>
+														</div>
+													</button>
+												</Tip>
 											)}
-											<button
-												aria-label="Delete note"
-												title="Delete"
-												onClick={() => remove(key)}
-											>
-												<FaTrash size={20} />
-											</button>
-											<button
-												aria-label="Close"
-												title="Close"
-												onClick={() => setPicked(null)}
-											>
-												<FaXmark size={12} />
-											</button>
+											<Tip label="Delete">
+												<button
+													aria-label="Delete note"
+													onClick={() => remove(key)}
+												>
+													<FaTrash size={20} />
+												</button>
+											</Tip>
+											<Tip label="Close">
+												<button
+													aria-label="Close"
+													onClick={() => setPicked(null)}
+												>
+													<FaXmark size={12} />
+												</button>
+											</Tip>
 										</div>
 									)}
 								</div>

@@ -12,12 +12,7 @@ import {
 import React, { useState } from "react";
 import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
 
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tip } from "@/components/ui/tooltip";
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
 import Notice from "../Notice";
@@ -100,102 +95,75 @@ const SoundThumbnail = ({
 	return (
 		<>
 			{/* buttons */}
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<button
-							disabled={playing != index && playing != -1}
-							className="h-5 w-5"
-							aria-label={`Play ${sound.name}`}
-							onClick={() => {
-								if (playing == -1) {
-									setPlaying(index);
-									playSound(sound);
-									setTimeout(() => {
-										setPlaying(-1);
-									}, 480000 / Number(bpm));
-								}
-							}}
-						>
-							{playing == index ? (
-								<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-							) : (
-								<FaVolumeUp className="w-full h-full" />
-							)}
-						</button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>Play Audio</p>
-					</TooltipContent>
-				</Tooltip>
+			<Tip label="Play">
+				<button
+					disabled={playing != index && playing != -1}
+					className="h-5 w-5"
+					aria-label={`Play ${sound.name}`}
+					onClick={() => {
+						if (playing == -1) {
+							setPlaying(index);
+							playSound(sound);
+							setTimeout(() => {
+								setPlaying(-1);
+							}, 480000 / Number(bpm));
+						}
+					}}
+				>
+					{playing == index ? (
+						<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
+					) : (
+						<FaVolumeUp className="w-full h-full" />
+					)}
+				</button>
+			</Tip>
 
-				{/* only piano has an editor so far */}
-				{sound.type == "piano" && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<button
-								className="h-5 w-5"
-								disabled={playing != index && playing != -1}
-								aria-label={`Edit ${sound.name}`}
-								onClick={edit}
-							>
-								<FaEdit className="w-full h-full" />
-							</button>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>Edit Audio</p>
-						</TooltipContent>
-					</Tooltip>
-				)}
+			{/* only piano has an editor so far */}
+			{sound.type == "piano" && (
+				<Tip label="Edit">
+					<button
+						className="h-5 w-5"
+						disabled={playing != index && playing != -1}
+						aria-label={`Edit ${sound.name}`}
+						onClick={edit}
+					>
+						<FaEdit className="w-full h-full" />
+					</button>
+				</Tip>
+			)}
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<button
-							className="h-5 w-5"
-							disabled={playing != index && playing != -1}
-							aria-label={`Duplicate ${sound.name}`}
-							onClick={() => setAsking("copy")}
-						>
-							<FaCopy className="w-full h-full" />
-						</button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>Duplicate Audio</p>
-					</TooltipContent>
-				</Tooltip>
+			<Tip label="Duplicate">
+				<button
+					className="h-5 w-5"
+					disabled={playing != index && playing != -1}
+					aria-label={`Duplicate ${sound.name}`}
+					onClick={() => setAsking("copy")}
+				>
+					<FaCopy className="w-full h-full" />
+				</button>
+			</Tip>
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<button
-							className="h-5 w-5"
-							disabled={playing != index && playing != -1}
-							aria-label={`Share ${sound.name}`}
-							onClick={share}
-						>
-							<FaShare className="w-full h-full" />
-						</button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>Share Audio</p>
-					</TooltipContent>
-				</Tooltip>
+			<Tip label="Share">
+				<button
+					className="h-5 w-5"
+					disabled={playing != index && playing != -1}
+					aria-label={`Share ${sound.name}`}
+					onClick={share}
+				>
+					<FaShare className="w-full h-full" />
+				</button>
+			</Tip>
 
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<button
-							className="h-5 w-5"
-							disabled={playing != index && playing != -1}
-							aria-label={`Delete ${sound.name}`}
-							onClick={() => setAsking("delete")}
-						>
-							<FaTrash className="w-full h-full" />
-						</button>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>Delete Audio</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+			<Tip label="Delete">
+				<button
+					className="h-5 w-5"
+					disabled={playing != index && playing != -1}
+					aria-label={`Delete ${sound.name}`}
+					onClick={() => setAsking("delete")}
+				>
+					<FaTrash className="w-full h-full" />
+				</button>
+			</Tip>
 
 			{asking === "share" && (
 				<ShareDialog

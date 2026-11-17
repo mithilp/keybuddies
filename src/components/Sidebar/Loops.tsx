@@ -1,67 +1,33 @@
 import loops from "@/utils/loops";
-import { previewLoop } from "@/utils/preview";
-import { SelectedCell, Track } from "@/utils/types";
-import { setCell } from "@/utils/cells";
-import { useState } from "react";
-import Notice from "../Notice";
+import { Placing } from "@/utils/placing";
 import PlayLoop from "../PlayLoop";
 
-const Loops = ({
-	setSelectedCell,
-	selectedCell,
-	tracks,
-	bpm,
-	studio,
-}: {
-	setSelectedCell: (cell: SelectedCell) => void;
-	selectedCell: SelectedCell;
-	tracks: Track[];
-	bpm: string;
-	studio: string;
-}) => {
-	const [notice, setNotice] = useState("");
-
+const Loops = ({ placing, bpm }: { placing: Placing; bpm: string }) => {
 	return (
 		<div className="p-4 space-y-2">
-			{loops.map((loop, index) => (
-				<div
-					key={index}
-					onClick={() => {
-						if (selectedCell) {
-							const track = tracks.find(
-								(track) => track.id === selectedCell.track
-							);
-							if (track) {
-								previewLoop(loop.id, bpm);
-								setCell(
-									studio,
-									track.id,
-									selectedCell.index,
-									selectedCell.cell,
-									{ type: "loop", name: loop.name, id: loop.id }
-								).catch((error) => {
-									console.error(error);
-									setNotice("Couldn't put the loop in. Try again.");
-								});
-							}
-							setSelectedCell(null);
-						}
-					}}
-					className={`bg-yellow cursor-pointer flex justify-between items-center p-4 rounded-xl border-8 ${
-						selectedCell ? "border-pink" : "border-black"
-					}`}
-				>
-					<div>{loop.name}</div>
-					<PlayLoop
-						bpm={bpm}
-						selected={selectedCell !== null}
-						id={loop.id}
-						name={loop.name}
-					/>
-				</div>
-			))}
+			{loops.map((loop, index) => {
+				const picked =
+					placing.item?.type == "loop" && placing.item.id == loop.id;
 
-			{notice && <Notice message={notice} close={() => setNotice("")} />}
+				// Pink is what a click does something to. While a cell is
+				// picked that's every loop, otherwise it's the picked one.
+				const lit = placing.cell !== null || picked;
+
+				return (
+					<div
+						key={index}
+						onClick={() => {
+							placing.pickItem({ type: "loop", name: loop.name, id: loop.id });
+						}}
+						className={`bg-yellow cursor-pointer flex justify-between items-center p-4 rounded-xl border-8 ${
+							lit ? "border-pink" : "border-black"
+						}`}
+					>
+						<div>{loop.name}</div>
+						<PlayLoop bpm={bpm} selected={lit} id={loop.id} name={loop.name} />
+					</div>
+				);
+			})}
 		</div>
 	);
 };
