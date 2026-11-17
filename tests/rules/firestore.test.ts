@@ -463,7 +463,9 @@ describe("sounds", () => {
 		await seedSound();
 		await seed(`studios/${STUDIO}/soundList/${SOUND}`, {});
 
-		await assertSucceeds(getDocs(collection(db, "studios", STUDIO, "soundList")));
+		await assertSucceeds(
+			getDocs(collection(db, "studios", STUDIO, "soundList")),
+		);
 		await assertFails(getDocs(collectionGroup(db, "soundList")));
 		await assertFails(getDocs(collectionGroup(db, "tracks")));
 		await assertFails(getDocs(collection(db, "studios", "abc", "soundList")));
@@ -491,9 +493,7 @@ describe("sounds", () => {
 		await assertFails(setDoc(listed(SOUND, OTHER), {}));
 		await assertFails(setDoc(listed(SOUND, "abc"), {}));
 		await assertFails(setDoc(listed(SOUND, STUDIO), { name: "x" }));
-		await assertFails(
-			saveSound(newSound({ name: "Piano sound" }), "999999"),
-		);
+		await assertFails(saveSound(newSound({ name: "Piano sound" }), "999999"));
 	});
 
 	test("a sound's notes are edited", async () => {
@@ -585,7 +585,9 @@ describe("sounds", () => {
 		await assertFails(updateDoc(sound(), { in: arrayUnion(STUDIO) }));
 	});
 
+	// old sounds keep their `in` after scripts/move-sounds.ts
 	test("a sound from 2024 with odd fields still gets a code and a studio", async () => {
+		await seedStudio();
 		await seedStudio(OTHER);
 		await seed(`sounds/${SOUND}`, {
 			name: "old one",
@@ -599,6 +601,11 @@ describe("sounds", () => {
 		await assertSucceeds(share("618204"));
 		await assertSucceeds(setDoc(listed(SOUND, OTHER), {}));
 		await assertSucceeds(updateDoc(sound(), { sequence: drums }));
+		await assertSucceeds(updateDoc(sound(), { steps: 32 }));
+		await assertSucceeds(deleteDoc(listed(SOUND, OTHER)));
+		// but `in` itself is closed
+		await assertFails(updateDoc(sound(), { in: arrayUnion(OTHER) }));
+		await assertFails(updateDoc(sound(), { in: arrayRemove(STUDIO) }));
 	});
 
 	test("sounds can't be deleted", async () => {
@@ -612,6 +619,7 @@ describe("moving old sounds", () => {
 	const A = "aaaaaaaaaaaaaaaaaaa1";
 	const B = "bbbbbbbbbbbbbbbbbbb2";
 	const C = "ccccccccccccccccccc3";
+	const THIRD = "390117";
 
 	const seedOld = async () => {
 		await seedStudio();
@@ -628,14 +636,17 @@ describe("moving old sounds", () => {
 		await seed(`sounds/${C}`, old);
 	};
 
-	const run = (write: boolean) => {
-		let counts: Awaited<ReturnType<typeof moveSounds>> | undefined;
+	// the script runs while the database is still open
+	const open = <T>(work: (db: Firestore) => Promise<T>) => {
+		let result: T | undefined;
 		return env
 			.withSecurityRulesDisabled(async (context) => {
-				counts = await moveSounds(asFirestore(context.firestore()), write);
+				result = await work(asFirestore(context.firestore()));
 			})
-			.then(() => counts!);
+			.then(() => result!);
 	};
+
+	const run = (write: boolean) => open((db) => moveSounds(db, write));
 
 	const ids = async (code: string) =>
 		(await getDocs(collection(db, "studios", code, "soundList"))).docs
@@ -674,9 +685,11 @@ describe("moving old sounds", () => {
 			sound: A,
 		});
 
+		// nothing is taken off the old sounds
 		const a = (await getDoc(doc(db, "sounds", A))).data();
-		assert.equal(a?.in, undefined);
+		assert.deepEqual(a?.in, [STUDIO, OTHER, "999999", "abc"]);
 		assert.equal(a?.code, "305118");
+		assert.deepEqual((await getDoc(doc(db, "sounds", B))).data()?.in, [STUDIO]);
 
 		// B gets a code of its own when it's shared
 		await assertSucceeds(
@@ -693,6 +706,51 @@ describe("moving old sounds", () => {
 			codes: 0,
 			taken: 0,
 		});
+		assert.deepEqual(await ids(STUDIO), [A, B]);
+		assert.deepEqual(await ids(OTHER), [A]);
+	});
+
+	test("a second run leaves out sounds taken out of a studio", async () => {
+		await seedOld();
+		await seedStudio(THIRD);
+		await run(true);
+
+		// removeSound in the new app
+		await assertSucceeds(deleteDoc(listed(A, OTHER)));
+		// an old tab's addSound, before the rules are published
+		await open((db) =>
+			updateDoc(doc(db, "sounds", A), { in: arrayUnion(THIRD) }),
+		);
+
+		assert.deepEqual(await run(false), {
+			sounds: 3,
+			listed: 1,
+			codes: 0,
+			taken: 1,
+		});
+		assert.deepEqual(await run(true), {
+			sounds: 3,
+			listed: 1,
+			codes: 0,
+			taken: 1,
+		});
+		assert.deepEqual(await ids(STUDIO), [A, B]);
+		assert.deepEqual(await ids(OTHER), []);
+		assert.deepEqual(await ids(THIRD), [A]);
+	});
+
+	test("moved sounds take the app's updates", async () => {
+		await seedOld();
+		await run(true);
+
+		await assertSucceeds(
+			updateDoc(doc(db, "sounds", A), { sequence: [...piano, piano[0]] }),
+		);
+		await assertSucceeds(setDoc(listed(C, OTHER), {}));
+		await assertSucceeds(deleteDoc(listed(B, STUDIO)));
+		// the script's notes are closed to the app
+		await assertFails(getDoc(doc(db, "movedSounds", A)));
+		await assertFails(setDoc(doc(db, "movedSounds", A), { in: [] }));
 	});
 });
 

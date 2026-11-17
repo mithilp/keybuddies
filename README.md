@@ -63,7 +63,7 @@ A cell is `{ type, name, id }`. `type` is `"empty"`, `"loop"` (`id` is a loop fr
 
 `shareCodes/{code}`: `{ sound }`, the id of the sound a share code is for. Adding a sound by its code looks it up here.
 
-Sounds made before `soundList` and `shareCodes` have an `in` field with the codes of their studios. `scripts/move-sounds.ts` moves them over, see Firestore rules below.
+Sounds made before `soundList` and `shareCodes` have an `in` field with the codes of their studios. `scripts/move-sounds.ts` puts them in their studios' `soundList` and leaves `in` where it is, see Firestore rules below. The app doesn't read or write `in` any more.
 
 For a piano sound `note` is a MIDI number and `start` and `end` are in eighths of a beat, 0 to 64. For a drum sound `note` is the drum's place in `drumVoices` and `start` is a half-beat step, 0 to 15.
 
@@ -113,5 +113,7 @@ Changing `firestore.rules` doesn't change the live database. Before publishing t
 node --env-file=.env.local scripts/move-sounds.ts          # says what it would do
 node --env-file=.env.local scripts/move-sounds.ts --write  # does it
 ```
+
+It only adds docs. Old sounds keep their `in`, so tabs still on the old app keep working until the rules are published. Running it again is safe: `movedSounds/{id}` keeps which studios each sound was already put in, so a second run only picks up studios an old tab added since, and a sound someone took out of a studio stays out.
 
 Then publish the rules by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.

@@ -5,20 +5,25 @@
 //   node --env-file=.env.local scripts/move-sounds.ts --write  # does it
 //
 // For every sound it puts the sound in the soundList of each studio in its
-// `in`, takes `in` off the sound, and makes the shareCodes doc for its code.
+// `in` and makes the shareCodes doc for its code. It only adds docs: `in` stays
+// on old sounds, so tabs still on the old app keep working and nothing is
+// lost.
 // When two old sounds have the same code the first one keeps it, and the
-// other gets a new code the next time it's shared. Running it again is safe.
+// other gets a new code the next time it's shared.
+//
+// Running it again is safe. movedSounds/{id} keeps the codes in `in` it
+// already moved, so a second run only moves studios an old tab added since,
+// and a sound someone took out of a studio in the new app stays out. The
+// rules don't match movedSounds, so the app can't read it.
 
 import { initializeApp } from "firebase/app";
 import {
 	collection,
-	deleteField,
 	doc,
 	getDoc,
 	getDocs,
 	getFirestore,
 	setDoc,
-	updateDoc,
 	type Firestore,
 } from "firebase/firestore";
 import { fileURLToPath } from "node:url";
@@ -44,13 +49,24 @@ export const moveSounds = async (db: Firestore, write: boolean) => {
 		const data = sound.data();
 
 		if (Array.isArray(data.in)) {
-			for (const code of data.in) {
+			const moved = doc(db, "movedSounds", sound.id);
+			const done: string[] = (await getDoc(moved)).get("in") ?? [];
+			const fresh = data.in.filter(
+				(code: unknown) => typeof code === "string" && !done.includes(code),
+			);
+
+			for (const code of fresh) {
 				if (!isCode(code) || !(await studioExists(code))) continue;
 
 				counts.listed++;
 				if (write) {
 					await setDoc(doc(db, "studios", code, "soundList", sound.id), {});
 				}
+			}
+
+			// last, so a run that stops halfway moves this sound again
+			if (fresh.length > 0 && write) {
+				await setDoc(moved, { in: [...done, ...fresh] });
 			}
 		}
 
@@ -71,11 +87,6 @@ export const moveSounds = async (db: Firestore, write: boolean) => {
 
 			if (claimed.get(data.code) !== sound.id) counts.taken++;
 		}
-
-		// last, so a run that stops halfway can be run again
-		if ("in" in data && write) {
-			await updateDoc(sound.ref, { in: deleteField() });
-		}
 	}
 
 	return counts;
@@ -90,7 +101,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 			apiKey: process.env.NEXT_PUBLIC_FIREBASE_API,
 			projectId: project,
 			appId: process.env.NEXT_PUBLIC_APP_ID,
-		})
+		}),
 	);
 
 	const counts = await moveSounds(db, write);
@@ -99,7 +110,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 		`${write ? "Moved" : "Would move"} ${counts.sounds} sounds in ${project}: ` +
 			`${counts.listed} put in a studio's soundList, ` +
 			`${counts.codes} share codes made, ` +
-			`${counts.taken} sounds whose code another sound has.`
+			`${counts.taken} sounds whose code another sound has.`,
 	);
 	if (!write) console.log("Nothing was written. Run with --write to do it.");
 
