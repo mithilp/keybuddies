@@ -4,7 +4,8 @@ import PlayLoop from "../PlayLoop";
 
 const Loops = ({ placing, bpm }: { placing: Placing; bpm: string }) => {
 	return (
-		<div className="p-4 space-y-2">
+		<div className="px-4 pb-4 space-y-2">
+			<h3 className="text-lg font-medium">Loops</h3>
 			{loops.map((loop, index) => {
 				const picked =
 					placing.item?.type == "loop" && placing.item.id == loop.id;
