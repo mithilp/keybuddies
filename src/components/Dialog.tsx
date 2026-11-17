@@ -331,4 +331,4 @@ export const ShareDialog = ({
 	);
 };
 
-export { Dialog, quiet as quietButton, loud as loudButton };
+export { Dialog, quiet as quietButton };
