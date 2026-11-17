@@ -20,10 +20,13 @@ const pianoNotes = async (music: Array<Key>, bpm: number) => {
 		const buffers = await crunker?.fetchAudio(`/sounds/piano/${note}.ogg`);
 
 		if (buffers) {
+			// a note held longer than its sample ends where the sample does.
+			// slicing past the end fills the rest with NaN, which silences
+			// everything it gets merged with.
 			const trimmed = crunker?.sliceAudio(
 				buffers[0],
 				0,
-				((end - start) * time) / 1000
+				Math.min(((end - start) * time) / 1000, buffers[0].duration)
 			);
 			const padded = crunker?.padAudio(trimmed!, 0, (start * time) / 1000);
 
