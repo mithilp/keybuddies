@@ -3,6 +3,7 @@
 import { Key, Sound } from "./types";
 import crunker, { wake } from "./crunker";
 import { mixDrums } from "./drum-synth";
+import { pianoNotes } from "./piano-notes";
 import { preview, stopPreview } from "./preview";
 import { hasPianoNote, loadPianoNote } from "./samples";
 import { cellFrames, PIANO_STEPS } from "./tempo";
@@ -17,8 +18,8 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 	const context = crunker!.context;
 	const step = cellFrames(bpm, context.sampleRate) / PIANO_STEPS;
 
-	// keys past either end of the piano have no sample and stay silent
-	const playable = music.filter((key) => hasPianoNote(key.note));
+	// only the notes that can sound, each at least one step long
+	const playable = pianoNotes(music);
 
 	// each different note is loaded once, and all of them at the same time
 	const notes = [...new Set(playable.map((key) => key.note))];
@@ -30,11 +31,11 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 
 	for (const key of playable) {
 		const sample = samples.get(key.note)!;
-		const at = Math.round(Math.max(0, key.start) * step);
+		const at = Math.round(key.start * step);
 
 		// a note lasts until its end, the end of its sample or the end of the
-		// cell, whichever is first. one that was never let go of is one step.
-		const held = Math.round(Math.max(1, key.end - key.start) * step);
+		// cell, whichever is first
+		const held = Math.round((key.end - key.start) * step);
 		const length = Math.min(held, sample.length, frames - at);
 		if (length <= 0) continue;
 

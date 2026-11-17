@@ -1,10 +1,11 @@
 "use client";
 
 import { playPiano, pressKey, releaseKey } from "@/utils/instruments";
+import { pianoNotes } from "@/utils/piano-notes";
 import { stopPreview } from "@/utils/preview";
 import { PIANO_STEPS } from "@/utils/tempo";
 import { Key } from "@/utils/types";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FaCheck, FaVolumeUp } from "react-icons/fa";
 import {
 	Piano as ReactPiano,
@@ -39,9 +40,14 @@ const PianoEditor = ({
 	const [firstNote, setFirstNote] = useState(FIRST_NOTE);
 	const [lastNote, setLastNote] = useState(LAST_NOTE);
 
-	const [sequence, setSequence] = useState<Array<Key>>(initial ?? []);
+	const [sequence, setSequence] = useState<Array<Key>>(() =>
+		pianoNotes(initial ?? [])
+	);
 	const [recording, setRecording] = useState(false);
-	const [startTime, setStartTime] = useState<number>(Date.now());
+
+	// when the recording started, and the note of every key that's down
+	const startedAt = useRef(0);
+	const held = useRef(new Map<number, Key>());
 
 	const [listening, setListening] = useState(false);
 	const listenTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,14 +62,77 @@ const PianoEditor = ({
 		[firstNote, lastNote]
 	);
 
-	const updateArray = (noteNumber: number, endTime: number) => {
-		for (let i = sequence.length - 1; i >= 0; i--) {
-			if (sequence[i].note === noteNumber) {
-				sequence[i].end = endTime;
-				return sequence;
-			}
+	// Ends the recording. A key that's still down has its note closed here, at
+	// the step the recording stopped on, so no note is left without an end.
+	const stopRecording = useCallback(() => {
+		const step = Math.min(
+			PIANO_STEPS,
+			Math.round((Date.now() - startedAt.current) / multiplier)
+		);
+
+		const open = [...held.current.values()];
+		held.current.clear();
+
+		if (open.length > 0) {
+			setSequence((sequence) =>
+				sequence.map((key) =>
+					open.includes(key)
+						? { ...key, end: Math.max(key.start + 1, step) }
+						: key
+				)
+			);
 		}
-		return sequence;
+
+		setRecording(false);
+	}, [multiplier]);
+
+	// a recording is one cell long and stops by itself at the end of it
+	useEffect(() => {
+		if (!recording) return;
+
+		const left = PIANO_STEPS * multiplier - (Date.now() - startedAt.current);
+		const timer = setTimeout(stopRecording, Math.max(0, left));
+
+		return () => clearTimeout(timer);
+	}, [recording, multiplier, stopRecording]);
+
+	const startRecording = () => {
+		held.current.clear();
+		startedAt.current = Date.now();
+		setSequence([]);
+		setRecording(true);
+	};
+
+	const press = (note: number) => {
+		pressKey(note);
+
+		if (!recording) return;
+
+		const step = Math.round((Date.now() - startedAt.current) / multiplier);
+		if (step >= PIANO_STEPS) {
+			stopRecording();
+			return;
+		}
+
+		// one step long until the key comes up
+		const key = { note: note, start: step, end: step + 1 };
+		held.current.set(note, key);
+		setSequence((sequence) => [...sequence, key]);
+	};
+
+	const release = (note: number) => {
+		releaseKey(note);
+
+		const key = held.current.get(note);
+		if (!key) return;
+		held.current.delete(note);
+
+		const step = Math.round((Date.now() - startedAt.current) / multiplier);
+		const end = Math.min(PIANO_STEPS, Math.max(key.start + 1, step));
+
+		setSequence((sequence) =>
+			sequence.map((other) => (other === key ? { ...key, end: end } : other))
+		);
 	};
 
 	useEffect(
@@ -96,54 +165,20 @@ const PianoEditor = ({
 				multiplier={multiplier}
 				recording={recording}
 				empty={sequence.length === 0}
-				onRecord={() => {
-					setSequence([]);
-					setStartTime(Date.now());
-					setRecording(true);
-				}}
-				onStop={() => setRecording(false)}
+				onRecord={startRecording}
+				onStop={stopRecording}
 				onReset={() => {
+					held.current.clear();
+					startedAt.current = Date.now();
 					setSequence([]);
-					setStartTime(Date.now());
 				}}
 			/>
 
 			<div className="w-full h-12">
 				<ReactPiano
 					noteRange={{ first: firstNote, last: lastNote }}
-					playNote={(midiNumber: number) => {
-						pressKey(midiNumber);
-
-						if (recording) {
-							const step = Math.round((Date.now() - startTime) / multiplier);
-
-							if (step >= PIANO_STEPS) {
-								setRecording(false);
-							} else {
-								setSequence([
-									...sequence,
-									{ note: midiNumber, start: step, end: 0 },
-								]);
-							}
-						}
-					}}
-					stopNote={(midiNumber: number) => {
-						releaseKey(midiNumber);
-
-						if (recording) {
-							const step = Math.round((Date.now() - startTime) / multiplier);
-
-							setSequence(
-								updateArray(
-									midiNumber,
-									step >= PIANO_STEPS ? PIANO_STEPS - 1 : step
-								)
-							);
-							if (step >= PIANO_STEPS) {
-								setRecording(false);
-							}
-						}
-					}}
+					playNote={press}
+					stopNote={release}
 					keyboardShortcuts={keyboardShortcuts}
 				/>
 			</div>
