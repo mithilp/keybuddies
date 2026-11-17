@@ -441,6 +441,7 @@ function Studio({ studio }: { studio: string }) {
 					playing={playback == "playing"}
 					liveBeat={liveBeat}
 					seek={seek}
+					failed={setNotice}
 				/>
 			</main>
 

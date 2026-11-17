@@ -18,6 +18,7 @@ const Tracks = ({
 	playing,
 	liveBeat,
 	seek,
+	failed,
 }: {
 	placing: Placing;
 	tracks: TrackType[];
@@ -30,6 +31,8 @@ const Tracks = ({
 	playing: boolean;
 	liveBeat: () => number;
 	seek: (beat: number) => void;
+	// gets a message when a change to a track couldn't be saved
+	failed: (message: string) => void;
 }) => {
 	// the song is as long as its longest track
 	const cells = Math.max(0, ...tracks.map((track) => track.notes.length));
@@ -93,6 +96,7 @@ const Tracks = ({
 										mute(track);
 									}}
 									muted={muted.has(track.id)}
+									failed={failed}
 								/>
 							))}
 						</div>
