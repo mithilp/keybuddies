@@ -152,6 +152,7 @@ service cloud.firestore {
       function newSound(data) {
         return data.keys().hasOnly(['name', 'type', 'sequence', 'steps'])
           && data.keys().hasAll(['name', 'type', 'sequence'])
+          // NAME_LENGTH in src/utils/sounds.ts
           && text(data.name, 1, 200)
           && data.type in ['piano', 'drum']
           && notes(data.sequence)

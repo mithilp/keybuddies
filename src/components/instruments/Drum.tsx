@@ -1,7 +1,7 @@
 "use client";
 
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
-import { saveSound } from "@/utils/sounds";
+import { NAME_LENGTH, saveSound } from "@/utils/sounds";
 import { FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
@@ -184,6 +184,7 @@ const Drum = ({
 					title="Name your beat"
 					label="Beat name"
 					placeholder="Drum beat"
+					maxLength={NAME_LENGTH}
 					submit="Save"
 					onSubmit={save}
 					onCancel={() => setNaming(false)}

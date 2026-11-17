@@ -1,6 +1,6 @@
 "use client";
 
-import { saveSound } from "@/utils/sounds";
+import { NAME_LENGTH, saveSound } from "@/utils/sounds";
 import { useState } from "react";
 import PianoEditor from "./PianoEditor";
 import { Key } from "@/utils/types";
@@ -54,6 +54,7 @@ const Piano = ({
 					title="Name your recording"
 					label="Recording name"
 					placeholder="Piano sound"
+					maxLength={NAME_LENGTH}
 					submit="Save"
 					onSubmit={save}
 					onCancel={() => setNaming(null)}

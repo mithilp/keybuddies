@@ -1,6 +1,11 @@
 import { shareCode } from "@/utils/codes";
 import { playDrum, playPiano } from "@/utils/instruments";
-import { removeSound, saveSound } from "@/utils/sounds";
+import {
+	NAME_LENGTH,
+	copyName,
+	removeSound,
+	saveSound,
+} from "@/utils/sounds";
 import { Sound } from "@/utils/types";
 import React, { useState } from "react";
 import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
@@ -60,7 +65,7 @@ const SoundThumbnail = ({
 
 	const duplicate = async (name: string) => {
 		await saveSound(studio, {
-			name: name || sound.name + " copy",
+			name: name || copyName(sound.name),
 			type: sound.type,
 			sequence: sound.sequence,
 			// a copy of a beat is on the same grid as the beat. an old one has
@@ -170,7 +175,8 @@ const SoundThumbnail = ({
 				<PromptDialog
 					title="Duplicate this sound"
 					label="Name of the copy"
-					initial={`${sound.name} copy`}
+					initial={copyName(sound.name)}
+					maxLength={NAME_LENGTH}
 					submit="Duplicate"
 					onSubmit={duplicate}
 					onCancel={() => setAsking(null)}

@@ -12,6 +12,13 @@ import { Sound } from "./types";
 export const soundList = (studio: string) =>
 	collection(db, "studios", studio, "soundList");
 
+// The longest name the rules take. The naming dialogs stop there.
+export const NAME_LENGTH = 200;
+
+// "Piano sound copy", cut to fit
+export const copyName = (name: string) =>
+	`${name} copy`.slice(0, NAME_LENGTH);
+
 // Saves a new sound and puts it in the studio, both or neither. It gets a
 // share code the first time it's shared.
 export const saveSound = async (
