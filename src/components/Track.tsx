@@ -4,6 +4,7 @@ import { addCell, removeCell } from "@/utils/cells";
 import { deleteDoc, doc } from "firebase/firestore";
 import { useState } from "react";
 import Notice from "./Notice";
+import { ConfirmDialog } from "./Dialog";
 import { Tip } from "./ui/tooltip";
 import {
 	FaPlusCircle,
@@ -34,6 +35,14 @@ const Track = ({
 		setNotice("Couldn't save that change. Try again.");
 	};
 
+	// whether the "delete this track?" dialog is open
+	const [deleting, setDeleting] = useState(false);
+
+	const remove = () => {
+		setDeleting(false);
+		deleteDoc(doc(db, "studios", studio, "tracks", track.id)).catch(failed);
+	};
+
 	return (
 		<div>
 			<div className="flex items-center space-x-4">
@@ -51,9 +60,7 @@ const Track = ({
 
 				<Tip label="Delete track">
 					<button
-						onClick={() => {
-							deleteDoc(doc(db, "studios", studio, "tracks", track.id));
-						}}
+						onClick={() => setDeleting(true)}
 						aria-label={`Delete ${track.name}`}
 					>
 						<FaTrash />
@@ -112,6 +119,16 @@ const Track = ({
 					</button>
 				</Tip>
 			</div>
+
+			{deleting && (
+				<ConfirmDialog
+					title="Delete this track?"
+					message={`${track.name} and everything in it will be gone for everyone in the studio.`}
+					confirm="Delete"
+					onConfirm={remove}
+					onCancel={() => setDeleting(false)}
+				/>
+			)}
 
 			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>
