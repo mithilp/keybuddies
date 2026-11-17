@@ -3,6 +3,7 @@
 import { Key, Sound } from "./types";
 import crunker, { wake } from "./crunker";
 import { mixDrums } from "./drum-synth";
+import { preview, stopPreview } from "./preview";
 import { hasPianoNote, loadPianoNote } from "./samples";
 import { cellFrames } from "./tempo";
 
@@ -100,34 +101,15 @@ const start = (buffer: AudioBuffer) => {
 	return source;
 };
 
-export const playPiano = async (music: Array<Key>, bpm: number) => {
-	if (!crunker) return;
+// Listening to a sound on its own goes through the preview slot, so it
+// stops whatever loop or sound was being listened to before.
+export const playPiano = (music: Array<Key>, bpm: number) =>
+	preview("piano", () => renderSound("piano", music, bpm));
 
-	// woken here, while this is still the click
-	wake();
+export const playDrum = (music: Array<Key>, bpm: number) =>
+	preview("drum", () => renderDrum(music, bpm));
 
-	try {
-		start(await renderSound("piano", music, bpm));
-	} catch (error) {
-		console.error(error);
-	}
-};
-
-let beat: AudioBufferSourceNode | null = null;
-
-export const playDrum = (music: Array<Key>, bpm: number) => {
-	if (!crunker) return;
-
-	stopDrum();
-	beat = start(renderDrum(music, bpm));
-};
-
-export const stopDrum = () => {
-	if (beat) {
-		beat.stop();
-		beat = null;
-	}
-};
+export const stopDrum = () => stopPreview("drum");
 
 const hits = new Map<number, AudioBuffer>();
 

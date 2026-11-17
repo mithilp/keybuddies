@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { FaVolumeUp } from "react-icons/fa";
-import { loopUrl } from "@/utils/loops";
+import {
+	previewLoop,
+	stopLoopPreview,
+	useLoopPreview,
+} from "@/utils/preview";
 
 const PlayLoop = ({
 	id,
@@ -11,25 +15,29 @@ const PlayLoop = ({
 	selected: boolean;
 	bpm: string;
 }) => {
-	const [audio] = useState(
-		typeof window !== "undefined" ? new Audio(loopUrl(id, bpm)) : null
-	);
+	// nothing is fetched until the button is pressed
+	const state = useLoopPreview(id);
 
-	const [playing, setPlaying] = useState(false);
-
-	const play = () => {
-		if (!playing) {
-			setPlaying(true);
-			audio!.play();
-			setTimeout(() => {
-				setPlaying(false);
-			}, audio!.duration * 1000);
-		}
-	};
+	// a preview is of one tempo. it stops when the tempo changes, and when
+	// the loop list goes away.
+	useEffect(() => () => stopLoopPreview(id), [id, bpm]);
 
 	return (
-		<button className="w-6 h-6" onClick={play}>
-			{playing ? (
+		<button
+			className="w-6 h-6"
+			onClick={(event) => {
+				// the row behind this button is what puts a loop in a cell.
+				// this one only listens.
+				event.stopPropagation();
+
+				if (state == "idle") {
+					previewLoop(id, bpm);
+				} else {
+					stopLoopPreview(id);
+				}
+			}}
+		>
+			{state != "idle" ? (
 				<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
 			) : (
 				<FaVolumeUp
