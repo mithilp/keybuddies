@@ -22,7 +22,7 @@ const Sidebar = ({
 	loops: Item[];
 }) => {
 	return (
-		<div className="col-span-1 bg-blue text-black overflow-y-scroll h-screen border-r-8 border-black">
+		<div className="col-span-1 bg-accent overflow-y-scroll h-screen border-r-frame border-ink">
 			<div className="pt-[10px] px-4">
 				<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
 			</div>

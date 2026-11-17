@@ -177,7 +177,7 @@ const Playhead = ({
 		>
 			<div
 				{...handle}
-				className="pointer-events-auto absolute inset-y-0 bg-blue border-x-2 border-black cursor-ew-resize touch-none select-none"
+				className="pointer-events-auto absolute inset-y-0 bg-accent border-x-hair border-ink cursor-ew-resize touch-none select-none"
 				style={{ left: PLAYHEAD_LEFT, width: PLAYHEAD_WIDTH }}
 			></div>
 
@@ -189,7 +189,7 @@ const Playhead = ({
 				>
 					<svg
 						viewBox="0 0 28 24"
-						className="block w-full h-full fill-blue stroke-black"
+						className="block w-full h-full fill-accent stroke-ink"
 					>
 						<path
 							d="M2 2H26V9L14 21L2 9Z"

@@ -1,7 +1,8 @@
 import { soundWithCode } from "@/utils/codes";
 import { addSound } from "@/utils/sounds";
 import { useState } from "react";
-import { FaPlus } from "react-icons/fa";
+import { Button } from "../ui/button";
+import { AddIcon, ICON } from "../ui/icons";
 import { PromptDialog } from "../Dialog";
 
 const AddSound = ({ studio }: { studio: string }) => {
@@ -23,15 +24,10 @@ const AddSound = ({ studio }: { studio: string }) => {
 
 	return (
 		<>
-			<button
-				onClick={() => setAsking(true)}
-				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
-			>
-				<div className="flex items-center space-x-2">
-					<FaPlus size={32} />
-					<div className="text-xl">Add Sound</div>
-				</div>
-			</button>
+			<Button onClick={() => setAsking(true)} className="w-full justify-start">
+				<AddIcon size={ICON} aria-hidden />
+				Add Sound
+			</Button>
 
 			{asking && (
 				<PromptDialog

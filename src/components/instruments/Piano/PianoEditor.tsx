@@ -7,11 +7,13 @@ import { PIANO_BAR_STEPS } from "@/utils/tempo";
 import { DEFAULT_BARS } from "@/utils/clips";
 import { ClipBars, Key } from "@/utils/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaCheck, FaVolumeUp } from "react-icons/fa";
 import { Piano as ReactPiano, KeyboardShortcuts } from "react-piano";
 import "react-piano/dist/styles.css";
 import PianoOptions from "./PianoOptions";
 import PianoRoll from "./PianoRoll";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { CheckIcon, ICON, SoundIcon } from "@/components/ui/icons";
 
 // the keys shown to start with, C3 to F5
 const FIRST_NOTE = 48;
@@ -215,28 +217,24 @@ const PianoEditor = ({
 			{/* always here too, greyed out until there's something to hear */}
 			<div className="space-y-2">
 				<div className="text-lg">Done Recording?</div>
-				<div className="space-x-4 flex">
-					<button
-						onClick={listen}
-						disabled={idle || listening}
-						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
-					>
-						<div>Listen to Recording</div>
-
+				<div className="flex gap-4">
+					<Button size="lg" onClick={listen} disabled={idle || listening}>
 						{listening ? (
-							<div className="animate-spin w-6 h-6 border-4 border-black border-b-transparent rounded-full"></div>
+							<Spinner size="sm" label="Playing" />
 						) : (
-							<FaVolumeUp size={32} />
+							<SoundIcon size={ICON} aria-hidden />
 						)}
-					</button>
-					<button
+						Listen to Recording
+					</Button>
+					<Button
+						size="lg"
+						variant="primary"
 						onClick={() => onSave(inside, length)}
 						disabled={idle}
-						className="disabled:opacity-50 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 					>
-						<div>{saveLabel}</div>
-						<FaCheck size={32} />
-					</button>
+						<CheckIcon size={ICON} aria-hidden />
+						{saveLabel}
+					</Button>
 				</div>
 			</div>
 		</div>

@@ -4,15 +4,29 @@ import MIDI from "@/utils/MIDI";
 import { pressKey } from "@/utils/instruments";
 import { Key } from "@/utils/types";
 import { useState } from "react";
-import { FaArrowLeft, FaArrowRight, FaTrash } from "react-icons/fa";
-import { FaXmark } from "react-icons/fa6";
 import { Tip } from "@/components/ui/tooltip";
+import { IconButton, buttonStyles } from "@/components/ui/button";
+import { Popover } from "@/components/ui/popover";
+import {
+	BackIcon,
+	CloseIcon,
+	DeleteIcon,
+	ForwardIcon,
+} from "@/components/ui/icons";
+import { selected } from "@/components/ui/state";
+import { cn } from "@/utils/cn";
 import { useEscape } from "@/utils/escape";
 
 // a note takes up every step from its start up to, not including, its end.
 // one that was saved without a length still takes up the step it starts on.
 const covers = (key: Key, step: number) =>
 	key.start === step || (key.start < step && key.end > step);
+
+// the longer and shorter buttons say it in eighths instead of an icon
+const stepButton = buttonStyles({
+	variant: "ghost",
+	className: "min-w-10 min-h-10 px-1 py-0 gap-0",
+});
 
 // where a step is in the sound, in beats: 0, 1/8, 2/8 ... 7 7/8
 const StepLabel = ({ step }: { step: number }) =>
@@ -66,15 +80,18 @@ const PianoRoll = ({
 	);
 
 	return (
-		<div className="overflow-scroll relative h-80 bg-pink text-sm">
-			<div className="flex w-max sticky top-0 z-30 border-b-2 border-black">
-				<div className="bg-white sticky left-0 z-20 w-10 h-12 grid place-items-center border-r-2 border-black">
+		<div className="overflow-scroll relative h-80 bg-paper text-sm border-control border-ink rounded">
+			{/* The step numbers stay on top while the rows scroll under them.
+			    They're on the popover layer, so a note's popup in a later row
+			    still goes over them. */}
+			<div className="flex w-max sticky top-0 z-popover border-b-hair border-ink">
+				<div className="bg-surface sticky left-0 z-sticky w-10 h-12 grid place-items-center border-r-hair border-ink">
 					Note
 				</div>
 				{columns.map((step) => (
 					<div
 						key={step}
-						className="bg-white w-10 h-12 grid place-items-center border-r-2 border-black"
+						className="bg-surface w-10 h-12 grid place-items-center border-r-hair border-ink"
 					>
 						<StepLabel step={step} />
 					</div>
@@ -87,9 +104,9 @@ const PianoRoll = ({
 				return (
 					<div
 						key={row.value}
-						className="relative flex w-max border-b-2 border-black"
+						className="relative flex w-max border-b-hair border-ink"
 					>
-						<div className="bg-white sticky grid place-items-center left-0 z-20 w-10 h-8 border-r-2 border-black">
+						<div className="bg-surface sticky grid place-items-center left-0 z-sticky w-10 h-8 border-r-hair border-ink">
 							{row.label}
 						</div>
 
@@ -105,15 +122,16 @@ const PianoRoll = ({
 										key={step}
 										aria-label={`Add ${row.label} at step ${step + 1}`}
 										onClick={() => {
-											// the note rings for 4 beats
-											setTimeout(pressKey(row.value), (7500 * 32) / bpm);
+											// the note rings for 4 beats, then lets go
+											const release = pressKey(row.value);
+											setTimeout(release, (7500 * 32) / bpm);
 
 											onChange([
 												...sequence,
 												{ note: row.value, start: step, end: step + 1 },
 											]);
 										}}
-										className="bg-pink border-r-2 border-black w-10 h-8"
+										className="bg-paper hover:bg-surface border-r-hair border-ink w-10 h-8"
 									></button>
 								);
 							}
@@ -123,9 +141,13 @@ const PianoRoll = ({
 							return (
 								<div
 									key={step}
-									className={`bg-yellow relative border-r-2 w-10 h-8 ${
-										last ? "border-black" : "border-yellow"
-									}`}
+									// a note is one ink bar, with a light line where it ends so
+									// two notes next to each other stay two
+									className={cn(
+										"relative border-r-hair w-10 h-8",
+										selected,
+										last ? "border-paper" : "border-ink"
+									)}
 								>
 									<Tip label="Click to remove, Alt click to edit">
 										<button
@@ -145,62 +167,56 @@ const PianoRoll = ({
 
 									{picked?.key === key && picked.step === step && (
 										// the first rows open downwards, there's no room above them
-										<div
-											className={`absolute flex items-center space-x-4 z-50 bg-yellow border-8 border-black rounded-xl p-2 left-0 ${
+										<Popover
+											className={cn(
+												"left-0",
 												rowIndex < 2 ? "top-10" : "bottom-10"
-											}`}
+											)}
 										>
 											{key.start > 0 && (
-												<Tip label="Move left">
-													<button
-														aria-label="Move note left"
-														onClick={() =>
-															replace(
-																key,
-																{
-																	...key,
-																	start: key.start - 1,
-																	end: key.end - 1,
-																},
-																Math.max(0, step - 1)
-															)
-														}
-													>
-														<FaArrowLeft size={20} />
-													</button>
-												</Tip>
+												<IconButton
+													label="Move note left"
+													icon={BackIcon}
+													onClick={() =>
+														replace(
+															key,
+															{
+																...key,
+																start: key.start - 1,
+																end: key.end - 1,
+															},
+															Math.max(0, step - 1)
+														)
+													}
+												/>
 											)}
 											{key.start < steps - 1 && (
-												<Tip label="Move right">
-													<button
-														aria-label="Move note right"
-														onClick={() =>
-															replace(
-																key,
-																{
-																	...key,
-																	start: key.start + 1,
-																	end: Math.min(steps, key.end + 1),
-																},
-																Math.min(steps - 1, step + 1)
-															)
-														}
-													>
-														<FaArrowRight size={20} />
-													</button>
-												</Tip>
+												<IconButton
+													label="Move note right"
+													icon={ForwardIcon}
+													onClick={() =>
+														replace(
+															key,
+															{
+																...key,
+																start: key.start + 1,
+																end: Math.min(steps, key.end + 1),
+															},
+															Math.min(steps - 1, step + 1)
+														)
+													}
+												/>
 											)}
 											{key.end < steps && (
 												<Tip label="Longer">
 													<button
 														aria-label="Make note longer"
+														className={stepButton}
 														onClick={() =>
 															replace(key, { ...key, end: key.end + 1 }, step)
 														}
 													>
-														<div>
-															+<sup>1</sup>&frasl;<sub>8</sub>
-														</div>
+														+<sup>1</sup>&frasl;<sub>8</sub>
 													</button>
 												</Tip>
 											)}
@@ -209,6 +225,7 @@ const PianoRoll = ({
 												<Tip label="Shorter">
 													<button
 														aria-label="Make note shorter"
+														className={stepButton}
 														onClick={() =>
 															replace(
 																key,
@@ -217,29 +234,21 @@ const PianoRoll = ({
 															)
 														}
 													>
-														<div>
-															-<sup>1</sup>&frasl;<sub>8</sub>
-														</div>
+														-<sup>1</sup>&frasl;<sub>8</sub>
 													</button>
 												</Tip>
 											)}
-											<Tip label="Delete">
-												<button
-													aria-label="Delete note"
-													onClick={() => remove(key)}
-												>
-													<FaTrash size={20} />
-												</button>
-											</Tip>
-											<Tip label="Close">
-												<button
-													aria-label="Close"
-													onClick={() => setPicked(null)}
-												>
-													<FaXmark size={12} />
-												</button>
-											</Tip>
-										</div>
+											<IconButton
+												label="Delete note"
+												icon={DeleteIcon}
+												onClick={() => remove(key)}
+											/>
+											<IconButton
+												label="Close"
+												icon={CloseIcon}
+												onClick={() => setPicked(null)}
+											/>
+										</Popover>
 									)}
 								</div>
 							);

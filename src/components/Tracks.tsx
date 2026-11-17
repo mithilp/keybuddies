@@ -2,7 +2,6 @@ import { db } from "@/utils/firebase";
 import { Track as TrackType } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
-import { FaPlus } from "react-icons/fa";
 import { BAR_BEATS } from "@/utils/tempo";
 import Playhead from "./Playhead";
 import {
@@ -14,6 +13,9 @@ import {
 	beatAt,
 } from "@/utils/grid";
 import Track from "./Track";
+import { Button } from "./ui/button";
+import { Spinner } from "./ui/spinner";
+import { AddIcon, ICON } from "./ui/icons";
 
 const Tracks = ({
 	tracks,
@@ -52,7 +54,7 @@ const Tracks = ({
 		<div className="flex-1 min-h-0 overflow-auto p-10 space-y-4">
 			{loading ? (
 				<div className="w-full grid place-items-center">
-					<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
+					<Spinner size="lg" label="Loading the tracks" />
 				</div>
 			) : (
 				<>
@@ -61,7 +63,7 @@ const Tracks = ({
 					<div className="relative w-max min-w-full">
 						<div className="space-y-4">
 							<div
-								className="flex border-b-8 border-black w-max cursor-pointer"
+								className="flex border-b-control border-ink w-max cursor-pointer"
 								onClick={(event) => {
 									const x =
 										event.clientX -
@@ -88,7 +90,7 @@ const Tracks = ({
 											{Array.from({ length: BAR_BEATS }, (_, i) => (
 												<div
 													key={i}
-													className="border-black"
+													className="border-ink"
 													style={{
 														width: BEAT_WIDTH,
 														height: TICK_HEIGHT,
@@ -127,8 +129,8 @@ const Tracks = ({
 						)}
 					</div>
 
-					<div className="border-t-8 border-black pt-4 sticky left-0">
-						<button
+					<div className="border-t-hair border-ink pt-4 sticky left-0">
+						<Button
 							onClick={async () => {
 								await addDoc(collection(db, `studios/${studio}/tracks`), {
 									createdAt: Timestamp.now(),
@@ -140,11 +142,11 @@ const Tracks = ({
 									bars: 8,
 								});
 							}}
-							className="bg-yellow border-8 p-2 border-black flex items-center space-x-2 rounded-xl text-xl"
+							size="lg"
 						>
-							<FaPlus />
-							<div>New Track</div>
-						</button>
+							<AddIcon size={ICON} aria-hidden />
+							<span>New Track</span>
+						</Button>
 					</div>
 				</>
 			)}

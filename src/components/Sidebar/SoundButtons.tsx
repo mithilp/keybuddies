@@ -4,9 +4,14 @@ import { soundBars } from "@/utils/clips";
 import { NAME_LENGTH, copyName, removeSound, saveSound } from "@/utils/sounds";
 import { Sound } from "@/utils/types";
 import React, { useState } from "react";
-import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
-
-import { Tip } from "@/components/ui/tooltip";
+import { IconButton } from "../ui/button";
+import {
+	CopyIcon,
+	DeleteIcon,
+	EditIcon,
+	ShareIcon,
+	SoundIcon,
+} from "../ui/icons";
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
 import Notice from "../Notice";
@@ -88,79 +93,55 @@ const SoundThumbnail = ({
 
 	return (
 		<>
-			{/* buttons */}
-			<Tip label="Play">
-				<button
-					disabled={playing != index && playing != -1}
-					className="h-5 w-5"
-					aria-label={`Play ${sound.name}`}
-					onClick={() => {
-						if (playing == -1) {
-							setPlaying(index);
-							playSound(sound);
-							setTimeout(
-								() => {
-									setPlaying(-1);
-								},
-								(soundBars(sound.bars) * 240000) / Number(bpm)
-							);
-						}
-					}}
-				>
-					{playing == index ? (
-						<div className="animate-spin w-full h-full border-4 border-black border-b-transparent rounded-full"></div>
-					) : (
-						<FaVolumeUp className="w-full h-full" />
-					)}
-				</button>
-			</Tip>
+			<IconButton
+				label={`Play ${sound.name}`}
+				icon={SoundIcon}
+				busy={playing == index}
+				disabled={playing != index && playing != -1}
+				onClick={() => {
+					if (playing == -1) {
+						setPlaying(index);
+						playSound(sound);
+						setTimeout(
+							() => {
+								setPlaying(-1);
+							},
+							(soundBars(sound.bars) * 240000) / Number(bpm)
+						);
+					}
+				}}
+			/>
 
 			{/* only piano has an editor so far */}
 			{sound.type == "piano" && (
-				<Tip label="Edit">
-					<button
-						className="h-5 w-5"
-						disabled={playing != index && playing != -1}
-						aria-label={`Edit ${sound.name}`}
-						onClick={edit}
-					>
-						<FaEdit className="w-full h-full" />
-					</button>
-				</Tip>
+				<IconButton
+					label={`Edit ${sound.name}`}
+					icon={EditIcon}
+					disabled={playing != index && playing != -1}
+					onClick={edit}
+				/>
 			)}
 
-			<Tip label="Duplicate">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Duplicate ${sound.name}`}
-					onClick={() => setAsking("copy")}
-				>
-					<FaCopy className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Duplicate ${sound.name}`}
+				icon={CopyIcon}
+				disabled={playing != index && playing != -1}
+				onClick={() => setAsking("copy")}
+			/>
 
-			<Tip label="Share">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Share ${sound.name}`}
-					onClick={share}
-				>
-					<FaShare className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Share ${sound.name}`}
+				icon={ShareIcon}
+				disabled={playing != index && playing != -1}
+				onClick={share}
+			/>
 
-			<Tip label="Delete">
-				<button
-					className="h-5 w-5"
-					disabled={playing != index && playing != -1}
-					aria-label={`Delete ${sound.name}`}
-					onClick={() => setAsking("delete")}
-				>
-					<FaTrash className="w-full h-full" />
-				</button>
-			</Tip>
+			<IconButton
+				label={`Delete ${sound.name}`}
+				icon={DeleteIcon}
+				disabled={playing != index && playing != -1}
+				onClick={() => setAsking("delete")}
+			/>
 
 			{asking === "share" && (
 				<ShareDialog
@@ -188,6 +169,7 @@ const SoundThumbnail = ({
 					title="Delete this sound?"
 					message={`${sound.name} will be taken out of this studio.`}
 					confirm="Delete"
+					danger
 					onConfirm={remove}
 					onCancel={() => setAsking(null)}
 				/>

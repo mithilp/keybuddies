@@ -2,6 +2,8 @@ import { useState } from "react";
 import instruments from "../instruments/list";
 import { stopPreview } from "@/utils/preview";
 import { Tip } from "../ui/tooltip";
+import { buttonStyles } from "../ui/button";
+import { BIG_ICON } from "../ui/icons";
 
 // A square for every instrument. As many go on a row as fit, about four,
 // and the rest wrap to the next row.
@@ -12,7 +14,7 @@ const Instruments = ({ bpm, studio }: { bpm: string; studio: string }) => {
 	return (
 		<div className="px-4 pt-4 space-y-2">
 			<div>
-				<h3 className="text-lg font-medium">Instruments</h3>
+				<h3 className="text-lg font-bold">Instruments</h3>
 				<p className="text-sm">Record a new sound</p>
 			</div>
 
@@ -27,10 +29,12 @@ const Instruments = ({ bpm, studio }: { bpm: string; studio: string }) => {
 								setOpen(id);
 							}}
 							aria-label={hint}
-							className="aspect-square min-w-0 bg-yellow border-8 border-black rounded-xl flex flex-col items-center justify-center gap-1"
+							className={buttonStyles({
+								className: "aspect-square min-w-0 p-0 flex-col gap-1",
+							})}
 						>
-							<Icon size={28} aria-hidden />
-							<span className="text-sm font-medium leading-none">{name}</span>
+							<Icon size={BIG_ICON} aria-hidden />
+							<span className="text-sm font-bold leading-none">{name}</span>
 						</button>
 					</Tip>
 				))}

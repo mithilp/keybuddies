@@ -77,22 +77,6 @@ const config: Config = {
 			// notices and tooltips, over everything
 			toast: "50",
 		},
-		// the old names, until every call site has moved to the ones above
-		extend: {
-			colors: {
-				pink: "#ff90bc",
-				yellow: "#ffde90",
-				blue: "#8acdd7",
-				black: "#000000",
-				white: "#ffffff",
-				red: { 500: "#ef4444" },
-			},
-			borderWidth: { DEFAULT: "1px", 2: "2px", 4: "4px", 8: "8px" },
-			borderRadius: { sm: "0.125rem", xl: "0.75rem" },
-			fontWeight: { medium: "500", black: "900" },
-			fontSize: { "5xl": ["3rem", { lineHeight: "1" }] },
-			zIndex: { 10: "10", 20: "20", 30: "30", 40: "40", 50: "50" },
-		},
 	},
 	plugins: [],
 };

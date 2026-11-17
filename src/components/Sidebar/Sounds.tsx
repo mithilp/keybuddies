@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import SoundButtons from "./SoundButtons";
 import { IconType } from "react-icons";
-import { MdLibraryMusic, MdPiano } from "react-icons/md";
-import { FaDrum, FaTrash } from "react-icons/fa";
 import { Item, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -13,13 +11,23 @@ import AddSound from "./AddSound";
 import Notice from "../Notice";
 import PlayLoop from "../PlayLoop";
 import { Tip } from "../ui/tooltip";
+import { IconButton } from "../ui/button";
+import {
+	DeleteIcon,
+	DrumIcon,
+	ICON,
+	LibraryIcon,
+	PianoIcon,
+} from "../ui/icons";
+import { disabled, dropTarget, selected } from "../ui/state";
+import { cn } from "@/utils/cn";
 
 // What a row is, as an icon: a piano sound, a drum sound or a loop. The
 // label is its tooltip, and what a screen reader says for it.
 const Kind = ({ label, icon: Icon }: { label: string; icon: IconType }) => (
 	<Tip label={label}>
 		<span role="img" aria-label={label} className="shrink-0">
-			<Icon size={32} aria-hidden />
+			<Icon size={ICON} aria-hidden />
 		</span>
 	</Tip>
 );
@@ -138,11 +146,14 @@ const Sounds = ({
 	// a picked sound or loop that's taken out of the studio isn't picked any
 	// more
 	useEffect(() => {
-		if (item?.type == "sound" && !sounds.some((sound) => sound.id == item.id)) {
+		if (
+			item?.type === "sound" &&
+			!sounds.some((sound) => sound.id === item.id)
+		) {
 			dropItem();
 		}
 
-		if (item?.type == "loop" && !loops.some((loop) => loop.id == item.id)) {
+		if (item?.type === "loop" && !loops.some((loop) => loop.id === item.id)) {
 			dropItem();
 		}
 	}, [item, sounds, loops, dropItem]);
@@ -156,14 +167,25 @@ const Sounds = ({
 	};
 
 	// a recorded sound is being listened to. the other rows wait for it.
-	const busy = playing != -1;
+	const busy = playing !== -1;
+
+	// A row looks picked when it's what will go on the track. While a clip or
+	// an empty bar is picked instead, every row is something a click puts
+	// there, and they all say so.
+	const row = (picked: boolean, waiting: boolean) =>
+		cn(
+			"flex items-center justify-between gap-2 p-2 pl-4 rounded border-control border-ink",
+			picked ? selected : "bg-surface",
+			!picked && placing.slot && dropTarget,
+			waiting ? disabled : "cursor-pointer"
+		);
 
 	return (
 		<div className="px-4 pt-4 space-y-2">
-			<h3 className="text-lg font-medium">Sounds in this studio</h3>
+			<h3 className="text-lg font-bold">Sounds in this studio</h3>
 			{sounds.map((sound, index) => (
 				<div
-					key={index}
+					key={sound.id}
 					onClick={() => {
 						placing.pickItem({
 							type: "sound",
@@ -172,42 +194,34 @@ const Sounds = ({
 							bars: sound.bars,
 						});
 					}}
-					// Pink is what a click does something to. While a clip or an
-					// empty bar is picked that's every sound, otherwise it's the
-					// picked one.
-					className={`bg-yellow flex justify-between p-4 rounded-xl border-8 ${
-						placing.slot || (item?.type == "sound" && item.id == sound.id)
-							? "border-pink"
-							: "border-black"
-					} ${
-						playing != index && playing != -1 ? "opacity-50" : "cursor-pointer"
-					}`}
+					className={row(
+						item?.type === "sound" && item.id === sound.id,
+						playing !== index && playing !== -1
+					)}
 				>
-					<div className="w-full flex items-center justify-between space-x-2">
-						<div className="flex items-center space-x-2">
-							{sound.type == "drum" ? (
-								<Kind label="Drum sound" icon={FaDrum} />
-							) : (
-								<Kind label="Piano sound" icon={MdPiano} />
-							)}
+					<div className="flex items-center gap-2 min-w-0">
+						{sound.type === "drum" ? (
+							<Kind label="Drum sound" icon={DrumIcon} />
+						) : (
+							<Kind label="Piano sound" icon={PianoIcon} />
+						)}
 
-							<div className="text-xl">{sound.name}</div>
-						</div>
+						<div className="text-lg truncate">{sound.name}</div>
+					</div>
 
-						{/* a click on a button isn't a click on the sound */}
-						<div
-							className="flex items-center space-x-2"
-							onClick={(event) => event.stopPropagation()}
-						>
-							<SoundButtons
-								index={index}
-								playing={playing}
-								setPlaying={setPlaying}
-								sound={sound}
-								bpm={bpm}
-								studio={studio}
-							/>
-						</div>
+					{/* a click on a button isn't a click on the sound */}
+					<div
+						className="flex items-center"
+						onClick={(event) => event.stopPropagation()}
+					>
+						<SoundButtons
+							index={index}
+							playing={playing}
+							setPlaying={setPlaying}
+							sound={sound}
+							bpm={bpm}
+							studio={studio}
+						/>
 					</div>
 				</div>
 			))}
@@ -216,46 +230,32 @@ const Sounds = ({
 				<div
 					key={loop.id}
 					onClick={() => placing.pickItem(loop)}
-					className={`bg-yellow flex items-center justify-between space-x-2 p-4 rounded-xl border-8 ${
-						placing.slot || (item?.type == "loop" && item.id == loop.id)
-							? "border-pink"
-							: "border-black"
-					} ${busy ? "opacity-50" : "cursor-pointer"}`}
+					className={row(item?.type === "loop" && item.id === loop.id, busy)}
 				>
-					<div className="flex items-center space-x-2">
-						<Kind label="Loop from the library" icon={MdLibraryMusic} />
+					<div className="flex items-center gap-2 min-w-0">
+						<Kind label="Loop from the library" icon={LibraryIcon} />
 
-						<div className="text-xl">{loop.name}</div>
+						<div className="text-lg truncate">{loop.name}</div>
 					</div>
 
 					{/* a click on a button isn't a click on the loop */}
 					<div
-						className="flex items-center space-x-2"
+						className="flex items-center"
 						onClick={(event) => event.stopPropagation()}
 					>
-						<PlayLoop
-							id={loop.id}
-							name={loop.name}
-							bpm={bpm}
-							disabled={busy}
-							className="h-5 w-5"
-						/>
+						<PlayLoop id={loop.id} name={loop.name} bpm={bpm} disabled={busy} />
 
-						<Tip label="Remove">
-							<button
-								className="h-5 w-5"
-								disabled={busy}
-								aria-label={`Remove ${loop.name} from this studio`}
-								onClick={() => remove(loop)}
-							>
-								<FaTrash className="w-full h-full" />
-							</button>
-						</Tip>
+						<IconButton
+							label={`Remove ${loop.name} from this studio`}
+							icon={DeleteIcon}
+							disabled={busy}
+							onClick={() => remove(loop)}
+						/>
 					</div>
 				</div>
 			))}
 
-			{loaded && sounds.length == 0 && loops.length == 0 && (
+			{loaded && sounds.length === 0 && loops.length === 0 && (
 				<p>
 					Nothing here yet. Record a sound with an instrument, or add a loop
 					from the Library.

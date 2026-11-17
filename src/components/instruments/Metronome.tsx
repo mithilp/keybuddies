@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "../ui/button";
 
 const Metronome = ({ mspb }: { mspb: number }) => {
 	const [ticking, setTicking] = useState(false);
@@ -17,12 +18,9 @@ const Metronome = ({ mspb }: { mspb: number }) => {
 	});
 
 	return (
-		<button
-			onClick={() => setTicking(!ticking)}
-			className="bg-yellow border-8 border-black p-2 rounded-xl"
-		>
-			{ticking ? "Stop" : "Start"} Metronome
-		</button>
+		<Button aria-pressed={ticking} onClick={() => setTicking(!ticking)}>
+			Metronome
+		</Button>
 	);
 };
 

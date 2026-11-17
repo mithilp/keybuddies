@@ -2,6 +2,7 @@ import { ComponentProps, ReactElement } from "react";
 import { IconType } from "react-icons";
 import { cn } from "@/utils/cn";
 import { BIG_ICON, ICON } from "./icons";
+import { Spinner } from "./spinner";
 import { Tip } from "./tooltip";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -68,6 +69,7 @@ export const IconButton = ({
 	label,
 	icon: Icon,
 	big = false,
+	busy = false,
 	side,
 	className,
 	type = "button",
@@ -77,6 +79,8 @@ export const IconButton = ({
 	icon: IconType;
 	// a 28px icon instead of 20
 	big?: boolean;
+	// a spinner where the icon goes, while what it started is loading
+	busy?: boolean;
 	side?: "top" | "right" | "bottom" | "left";
 }): ReactElement => (
 	<Tip label={label} side={side}>
@@ -93,7 +97,11 @@ export const IconButton = ({
 			)}
 			{...props}
 		>
-			<Icon size={big ? BIG_ICON : ICON} aria-hidden />
+			{busy ? (
+				<Spinner size={big ? "md" : "sm"} />
+			) : (
+				<Icon size={big ? BIG_ICON : ICON} aria-hidden />
+			)}
 		</button>
 	</Tip>
 );

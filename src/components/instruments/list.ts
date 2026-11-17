@@ -1,7 +1,6 @@
 import { ComponentType } from "react";
 import { IconType } from "react-icons";
-import { FaDrum } from "react-icons/fa";
-import { MdPiano } from "react-icons/md";
+import { DrumIcon, PianoIcon } from "../ui/icons";
 import Drum from "./Drum";
 import Piano from "./Piano/Piano";
 
@@ -29,14 +28,14 @@ const instruments: Instrument[] = [
 		id: "piano",
 		name: "Piano",
 		hint: "Record a piano sound",
-		icon: MdPiano,
+		icon: PianoIcon,
 		Recorder: Piano,
 	},
 	{
 		id: "drum",
 		name: "Drums",
 		hint: "Record a drum sound",
-		icon: FaDrum,
+		icon: DrumIcon,
 		Recorder: Drum,
 	},
 ];

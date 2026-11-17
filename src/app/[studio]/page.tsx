@@ -1,6 +1,7 @@
 "use client";
 
 import { db } from "@/utils/firebase";
+import { Spinner } from "@/components/ui/spinner";
 import {
 	collection,
 	doc,
@@ -455,7 +456,7 @@ function Studio({ studio }: { studio: string }) {
 	if (load == "loading") {
 		return (
 			<div className="h-screen w-screen grid place-items-center">
-				<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
+				<Spinner size="lg" label="Loading the studio" />
 			</div>
 		);
 	}
