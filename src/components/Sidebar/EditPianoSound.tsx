@@ -230,8 +230,8 @@ const EditPianoSound = ({
 																					note.start < i - 1)
 																					? {
 																							...note,
-																							start: note.start == 0 ? 0 : -1,
-																							end: note.end - 1,
+																							start: Math.max(0, note.start - 1),
+																							end: note.start == 0 ? note.end : note.end - 1,
 																					  }
 																					: note
 																			)
