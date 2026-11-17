@@ -286,6 +286,8 @@ describe("tracks", () => {
 		);
 		await assertFails(addDoc(tracks, { ...newTrack(0), order: "0" }));
 		await assertFails(addDoc(tracks, { ...newTrack(0), order: -1 }));
+		await assertFails(addDoc(tracks, { ...newTrack(0), order: 1001 }));
+		await assertFails(addDoc(tracks, { ...newTrack(0), createdAt: "now" }));
 		await assertFails(addDoc(tracks, { ...newTrack(0), notes: "none" }));
 		await assertFails(
 			addDoc(tracks, {
@@ -564,6 +566,10 @@ describe("sounds", () => {
 		await assertFails(deleteDoc(doc(db, "shareCodes", "305118")));
 		// and it has to be a code
 		await assertFails(share("61820", OTHER_SOUND));
+		// for a sound id of at most 100 characters
+		const LONG = "x".repeat(101);
+		await seed(`sounds/${LONG}`, newSound());
+		await assertFails(share("402917", LONG));
 		await assertSucceeds(share("618204", OTHER_SOUND));
 	});
 
