@@ -36,6 +36,11 @@ export class Transport {
 		return this.song !== null;
 	}
 
+	// how long the song that's playing is, in seconds
+	get duration() {
+		return this.song?.duration ?? 0;
+	}
+
 	// `at` is seconds into the song. `muted` says which tracks start silent.
 	start(song: Song, at: number, muted: (track: string) => boolean) {
 		this.stop();

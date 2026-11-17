@@ -206,6 +206,15 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	// A click on the ruler. While stopped it sets where play starts, while
 	// playing the song jumps there.
 	const seek = (to: number) => {
+		// the song that's playing is the one rendered at play. the ruler can
+		// have grown since, and a beat past the song's end isn't in it.
+		if (
+			transport.playing &&
+			(to * 60) / playingBpm.current >= transport.duration
+		) {
+			return;
+		}
+
 		place(to);
 
 		if (transport.playing) {
