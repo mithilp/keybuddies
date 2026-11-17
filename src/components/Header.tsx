@@ -1,5 +1,4 @@
-import { db } from "@/utils/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import { setBpm } from "@/utils/studio";
 import { TEMPOS } from "@/utils/tempo";
 import { Playback } from "@/utils/types";
 import { Tip } from "./ui/tooltip";
@@ -28,6 +27,7 @@ const Header = ({
 	toggleLoop,
 	exporting,
 	download,
+	failed,
 }: {
 	studio: string;
 	bpm: string;
@@ -38,6 +38,8 @@ const Header = ({
 	toggleLoop: () => void;
 	exporting: number | null;
 	download: () => void;
+	// gets a message when the tempo couldn't be saved
+	failed: (message: string) => void;
 }) => {
 	const percent = Math.round((exporting ?? 0) * 100);
 
@@ -75,7 +77,10 @@ const Header = ({
 									value={tempo}
 									checked={bpm === tempo}
 									onChange={() => {
-										updateDoc(doc(db, "studios", studio), { bpm: tempo });
+										setBpm(studio, tempo).catch((error) => {
+											console.error(error);
+											failed("Couldn't change the tempo. Try again.");
+										});
 									}}
 									className="sr-only"
 								/>

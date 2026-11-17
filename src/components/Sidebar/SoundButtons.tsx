@@ -14,7 +14,6 @@ import {
 } from "../ui/icons";
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
-import Notice from "../Notice";
 
 const SoundThumbnail = ({
 	playing,
@@ -23,6 +22,7 @@ const SoundThumbnail = ({
 	setPlaying,
 	bpm,
 	studio,
+	failed,
 }: {
 	playing: number;
 	index: number;
@@ -30,6 +30,8 @@ const SoundThumbnail = ({
 	setPlaying: (index: number) => void;
 	bpm: string;
 	studio: string;
+	// gets a message when something couldn't be done
+	failed: (message: string) => void;
 }) => {
 	const [open, setOpen] = useState(false);
 
@@ -49,7 +51,6 @@ const SoundThumbnail = ({
 	const [asking, setAsking] = useState<"share" | "copy" | "delete" | null>(
 		null
 	);
-	const [notice, setNotice] = useState("");
 
 	// the code that's being shared, once it's known to be this sound's alone
 	const [code, setCode] = useState("");
@@ -60,7 +61,7 @@ const SoundThumbnail = ({
 			setAsking("share");
 		} catch (error) {
 			console.error(error);
-			setNotice("Couldn't get the code for this sound. Try again.");
+			failed("Couldn't get the code for this sound. Try again.");
 		}
 	};
 
@@ -87,7 +88,7 @@ const SoundThumbnail = ({
 			await removeSound(studio, sound.id);
 		} catch (error) {
 			console.error(error);
-			setNotice("Couldn't delete the sound. Try again.");
+			failed("Couldn't delete the sound. Try again.");
 		}
 	};
 
@@ -174,8 +175,6 @@ const SoundThumbnail = ({
 					onCancel={() => setAsking(null)}
 				/>
 			)}
-
-			{notice && <Notice message={notice} close={() => setNotice("")} />}
 
 			{/* edit sound modal */}
 			{/* if piano */}

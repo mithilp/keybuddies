@@ -1,4 +1,3 @@
-import { db } from "@/utils/firebase";
 import { Clip, ClipBars, Track } from "@/utils/types";
 import { Placing } from "@/utils/placing";
 import { CLIP_BARS, clipAt, fits } from "@/utils/clips";
@@ -8,7 +7,7 @@ import {
 	setClipBars,
 	takeOutClip,
 } from "@/utils/track-edits";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteTrack } from "@/utils/studio";
 import { useState } from "react";
 import { ConfirmDialog } from "./Dialog";
 import { Tip } from "./ui/tooltip";
@@ -67,7 +66,7 @@ const Track = ({
 
 	const remove = () => {
 		setDeleting(false);
-		deleteDoc(doc(db, "studios", studio, "tracks", track.id)).catch(
+		deleteTrack(studio, track.id).catch(
 			couldnt(`Couldn't delete ${track.name}. Try again.`)
 		);
 	};

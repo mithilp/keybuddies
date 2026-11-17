@@ -1,7 +1,6 @@
-import { db } from "@/utils/firebase";
 import { Track as TrackType } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { Timestamp, addDoc, collection } from "firebase/firestore";
+import { addTrack } from "@/utils/studio";
 import { BAR_BEATS } from "@/utils/tempo";
 import Playhead from "./Playhead";
 import {
@@ -131,15 +130,10 @@ const Tracks = ({
 
 					<div className="border-t-hair border-ink pt-4 sticky left-0">
 						<Button
-							onClick={async () => {
-								await addDoc(collection(db, `studios/${studio}/tracks`), {
-									createdAt: Timestamp.now(),
-									name: `Track ${tracks.length + 1}`,
-									order: tracks.length,
-									// `notes` is only there so a tab still on the old app can show it
-									notes: [],
-									clips: [],
-									bars: 8,
+							onClick={() => {
+								addTrack(studio, tracks.length).catch((error) => {
+									console.error(error);
+									failed("Couldn't add a track. Try again.");
 								});
 							}}
 							size="lg"

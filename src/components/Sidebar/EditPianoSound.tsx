@@ -1,7 +1,6 @@
 import { Key, Sound } from "@/utils/types";
 import PianoEditor from "../instruments/Piano/PianoEditor";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/utils/firebase";
+import { updateSequence } from "@/utils/sounds";
 import Panel from "../Panel";
 import { soundBars } from "@/utils/clips";
 
@@ -15,9 +14,7 @@ const EditPianoSound = ({
 	bpm: number;
 }) => {
 	const update = async (sequence: Key[]) => {
-		await updateDoc(doc(db, "sounds", sound.id), {
-			sequence: sequence,
-		});
+		await updateSequence(sound.id, sequence);
 
 		close();
 	};

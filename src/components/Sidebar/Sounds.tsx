@@ -3,12 +3,9 @@ import SoundButtons from "./SoundButtons";
 import { IconType } from "react-icons";
 import { Item, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "@/utils/firebase";
-import { soundList } from "@/utils/sounds";
+import { listenSounds } from "@/utils/sounds";
 import { removeLoop } from "@/utils/library";
 import AddSound from "./AddSound";
-import Notice from "../Notice";
 import PlayLoop from "../PlayLoop";
 import { Tip } from "../ui/tooltip";
 import { IconButton } from "../ui/button";
@@ -41,12 +38,15 @@ const Sounds = ({
 	bpm,
 	studio,
 	loops,
+	failed,
 }: {
 	placing: Placing;
 	bpm: string;
 	studio: string;
 	// the library loops this studio has
 	loops: Item[];
+	// gets a message when something couldn't be loaded or saved
+	failed: (message: string) => void;
 }) => {
 	const [sounds, setSounds] = useState<Array<Sound>>([]);
 
@@ -56,90 +56,23 @@ const Sounds = ({
 
 	const [playing, setPlaying] = useState<number>(-1);
 
-	const [notice, setNotice] = useState("");
-
-	useEffect(() => {
-		const failed = (error: unknown) => {
-			console.error(error);
-			setNotice(
-				"Couldn't load the sounds in this studio. Reload to try again."
-			);
-		};
-
-		// The studio's list says which sounds it has, and each sound is
-		// listened to by its id so an edit to one shows up here. The rows
-		// wait until the list and every sound in it have answered, so they
-		// don't come in one at a time.
-		let ids: string[] | null = null;
-		const listening = new Map<string, () => void>();
-		const answered = new Map<string, Sound | null>();
-
-		const show = () => {
-			if (!ids || ids.some((id) => !answered.has(id))) return;
-
-			setSounds(
-				ids.flatMap((id) => {
-					const sound = answered.get(id);
-					return sound ? [sound] : [];
-				})
-			);
-			setLoaded(true);
-		};
-
-		const listUnsub = onSnapshot(
-			soundList(studio),
-			(list) => {
-				const listed = list.docs.map((entry) => entry.id);
-				ids = listed;
-
-				for (const id of listed) {
-					if (listening.has(id)) continue;
-
-					listening.set(
-						id,
-						onSnapshot(
-							doc(db, "sounds", id),
-							(sound) => {
-								answered.set(
-									id,
-									sound.exists()
-										? {
-												name: sound.data().name,
-												type: sound.data().type,
-												sequence: sound.data().sequence,
-												id: sound.id,
-												code: sound.data().code,
-												steps: sound.data().steps,
-												bars: sound.data().bars,
-											}
-										: null
-								);
-								show();
-							},
-							failed
-						)
+	useEffect(
+		() =>
+			listenSounds(
+				studio,
+				(sounds) => {
+					setSounds(sounds);
+					setLoaded(true);
+				},
+				(error) => {
+					console.error(error);
+					failed(
+						"Couldn't load the sounds in this studio. Reload to try again."
 					);
 				}
-
-				// sounds that were taken out of the studio
-				for (const [id, unsub] of listening) {
-					if (listed.includes(id)) continue;
-
-					unsub();
-					listening.delete(id);
-					answered.delete(id);
-				}
-
-				show();
-			},
-			failed
-		);
-
-		return () => {
-			listUnsub();
-			listening.forEach((unsub) => unsub());
-		};
-	}, [studio]);
+			),
+		[studio, failed]
+	);
 
 	const { item, dropItem } = placing;
 
@@ -162,7 +95,7 @@ const Sounds = ({
 	const remove = (loop: Item) => {
 		removeLoop(studio, loop.id).catch((error) => {
 			console.error(error);
-			setNotice(`Couldn't remove ${loop.name}. Try again.`);
+			failed(`Couldn't remove ${loop.name}. Try again.`);
 		});
 	};
 
@@ -221,6 +154,7 @@ const Sounds = ({
 							sound={sound}
 							bpm={bpm}
 							studio={studio}
+							failed={failed}
 						/>
 					</div>
 				</div>
@@ -263,8 +197,6 @@ const Sounds = ({
 			)}
 
 			<AddSound studio={studio} />
-
-			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>
 	);
 };

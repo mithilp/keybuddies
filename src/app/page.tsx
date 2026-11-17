@@ -1,8 +1,7 @@
 import PendingButton from "@/components/PendingButton";
-import { db } from "@/utils/firebase";
 import { claimStudio } from "@/utils/codes";
 import { isStudioCode } from "@/utils/studio-code";
-import { Timestamp, addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { addTrack, studioExists } from "@/utils/studio";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import logo from "../../public/images/keybuddies-logo.png";
@@ -23,8 +22,7 @@ export default async function Home({
 		// firestore isn't asked about something that can't be a code
 		if (!isStudioCode(pin)) redirect(`/?error=not-found`);
 
-		const snapshot = await getDoc(doc(db, "studios", pin));
-		if (snapshot.exists()) {
+		if (await studioExists(pin)) {
 			redirect(`/${pin}`);
 		} else {
 			redirect(`/?error=not-found`);
@@ -37,15 +35,7 @@ export default async function Home({
 		if (!pin) redirect(`/?error=no-code`);
 
 		for (let i = 0; i < 4; i++) {
-			await addDoc(collection(db, `studios/${pin}/tracks`), {
-				createdAt: Timestamp.now(),
-				name: `Track ${i + 1}`,
-				order: i,
-				// `notes` is only there so a tab still on the old app can show it
-				notes: [],
-				clips: [],
-				bars: 8,
-			});
+			await addTrack(pin, i);
 		}
 
 		redirect(`/${pin}`);
