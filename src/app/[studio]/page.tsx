@@ -64,13 +64,18 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const [tracks, setTracks] = useState<Array<Track>>([]);
 
 	useEffect(() => {
+		// metadata changes are included so a studio that isn't in the cache
+		// still gets a second snapshot once the server has answered
 		const unsub = onSnapshot(
 			doc(db, "studios", studio),
+			{ includeMetadataChanges: true },
 			(snap) => {
 				const data = snap.data();
 
 				if (!data) {
-					setFound(false);
+					// an empty cache only means firestore hasn't been reached yet.
+					// keep the spinner until the server says it isn't there.
+					if (!snap.metadata.fromCache) setFound(false);
 					return;
 				}
 
