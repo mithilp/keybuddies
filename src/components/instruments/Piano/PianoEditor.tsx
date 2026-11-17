@@ -166,10 +166,12 @@ const PianoEditor = ({
 				empty={sequence.length === 0}
 				onRecord={startRecording}
 				onStop={stopRecording}
+				// ends the take too. the timer that stops a recording by itself
+				// was set when it started and wouldn't know about a new start.
 				onReset={() => {
 					held.current.clear();
-					startedAt.current = Date.now();
 					setSequence([]);
+					setRecording(false);
 				}}
 			/>
 
