@@ -1,9 +1,7 @@
 "use client";
 
-import { freeSoundCode } from "@/utils/codes";
-import { db } from "@/utils/firebase";
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
-import { addDoc, collection } from "firebase/firestore";
+import { saveSound } from "@/utils/sounds";
 import { FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
@@ -83,15 +81,13 @@ const Drum = ({
 	};
 
 	const save = async (name: string) => {
-		await addDoc(collection(db, `sounds`), {
+		await saveSound(studio, {
 			name: name || "Drum beat",
 			type: "drum",
 			sequence: sequence,
 			// the grid this beat was made on. beats saved before there was one
 			// are on the old half beat grid, see drumBeat.
 			steps: DRUM_STEPS,
-			in: [studio],
-			code: await freeSoundCode(),
 		});
 
 		setNaming(false);

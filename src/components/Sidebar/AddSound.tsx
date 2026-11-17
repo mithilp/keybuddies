@@ -1,6 +1,5 @@
-import { soundsWithCode } from "@/utils/codes";
-import { db } from "@/utils/firebase";
-import { arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { soundWithCode } from "@/utils/codes";
+import { addSound } from "@/utils/sounds";
 import { useState } from "react";
 import { FaPlus } from "react-icons/fa";
 import { PromptDialog } from "../Dialog";
@@ -13,19 +12,11 @@ const AddSound = ({ studio }: { studio: string }) => {
 	const add = async (code: string) => {
 		if (!code) return "Enter the code of a sound.";
 
-		const sounds = await soundsWithCode(code);
+		const id = await soundWithCode(code);
 
-		if (sounds.length === 0) return "No sound has that code.";
+		if (!id) return "No sound has that code.";
 
-		// two old sounds can still have the same code. sharing one of them
-		// again gives it a code of its own.
-		if (sounds.length > 1) {
-			return "More than one sound has that code. Ask your friend to share it again for a new one.";
-		}
-
-		await updateDoc(doc(db, "sounds", sounds[0].id), {
-			in: arrayUnion(studio),
-		});
+		await addSound(studio, id);
 
 		setAsking(false);
 	};

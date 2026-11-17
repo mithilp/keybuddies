@@ -56,8 +56,14 @@ A cell is `{ type, name, id }`. `type` is `"empty"`, `"loop"` (`id` is a loop fr
 | `name` | sound name |
 | `type` | `"piano"` or `"drum"` |
 | `sequence` | the notes, each `{ note, start, end }` |
-| `in` | codes of the studios that have this sound |
-| `code` | 6-digit code for sharing it |
+| `steps` | drum sounds only: how many steps the cell is cut into. Beats from before it was added don't have it |
+| `code` | 6-digit code for sharing it, set the first time it's shared |
+
+`studios/{code}/soundList/{id}`: an empty doc for each sound the studio has, named by the sound's id. A sound can be in more than one studio, and taking it out of one leaves it in the others.
+
+`shareCodes/{code}`: `{ sound }`, the id of the sound a share code is for. Adding a sound by its code looks it up here.
+
+Sounds made before `soundList` and `shareCodes` have an `in` field with the codes of their studios. `scripts/move-sounds.ts` moves them over, see Firestore rules below.
 
 For a piano sound `note` is a MIDI number and `start` and `end` are in eighths of a beat, 0 to 64. For a drum sound `note` is the drum's place in `drumVoices` and `start` is a half-beat step, 0 to 15.
 
@@ -91,7 +97,7 @@ npx tsc --noEmit
 
 ## Firestore rules
 
-The rules are in `firestore.rules`. With no sign-in they can't say who writes, only what: studio codes are 6 digits, studios and sounds can't be deleted (the app never does), fields like `createdAt`, `name` and `type` don't change, and lists and names have caps far past what the app makes. Updates only check the fields they change, so studios, tracks and sounds from 2024 with fields the app doesn't use any more still work.
+The rules are in `firestore.rules`. With no sign-in they can't say who writes, only what: nothing can be listed except a studio's own tracks and sounds, so studio codes can't be pulled out of the database, studio codes are 6 digits, studios and sounds can't be deleted (the app never does), fields like `createdAt`, `name` and `type` don't change, and lists and names have caps far past what the app makes. Updates only check the fields they change, so studios, tracks and sounds from 2024 with fields the app doesn't use any more still work.
 
 The tests in `tests/rules` run every read and write the app makes against the Firestore emulator, plus the ones that should be turned down:
 
@@ -101,4 +107,11 @@ npm run test:rules
 
 That needs Java 11 or newer. It runs firebase-tools 13 through npx under the `demo-keybuddies` project, so it never touches the real database. The emulator starts for the run and stops after it.
 
-Changing `firestore.rules` doesn't change the live database. Publish them by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.
+Changing `firestore.rules` doesn't change the live database. Before publishing them the first time, move the old sounds over while the database is still open, or their studios' sidebars will come up empty:
+
+```bash
+node --env-file=.env.local scripts/move-sounds.ts          # says what it would do
+node --env-file=.env.local scripts/move-sounds.ts --write  # does it
+```
+
+Then publish the rules by pasting them into Firestore > Rules in the Firebase console, or with `firebase deploy --only firestore:rules`.

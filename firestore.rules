@@ -4,6 +4,10 @@ rules_version = '2';
 // These rules can't say who writes, only what: the paths the app uses and
 // the shapes it writes to them. Everything else is turned down.
 //
+// Nothing can be listed except a studio's own tracks and sounds, which need
+// its code. Studios, sounds and share codes are read one at a time, by their
+// code or id, so nobody can pull out every studio code at once.
+//
 // Updates only check the fields they change, so studios, tracks and sounds
 // from 2024 with fields the app doesn't write any more still take the app's
 // normal updates.
@@ -106,54 +110,82 @@ service cloud.firestore {
         // the delete button on a track
         allow delete: if isCode(code);
       }
+
+      // Which sounds the studio has, an empty doc for each, named by the
+      // sound's id. See src/utils/sounds.ts. (Early 2024 studios kept whole
+      // sounds under studios/{code}/sounds, which stays closed.)
+      match /soundList/{sound} {
+        // the sidebar listens to it
+        allow read: if isCode(code);
+
+        // saveSound puts a new sound in the same batch as this, and
+        // addSound puts in one that was shared. Either way the sound has to
+        // be there.
+        allow create: if studioExists(code)
+          && request.resource.data.keys().size() == 0
+          && existsAfter(/databases/$(database)/documents/sounds/$(sound));
+
+        // adding a sound the studio already has writes the same empty doc
+        allow update: if request.resource.data.keys().size() == 0;
+
+        // removeSound, the delete button on a sound
+        allow delete: if isCode(code);
+      }
     }
 
     match /sounds/{sound} {
-      // read by id when a song is put together, by share code, and by
-      // which studios have them
-      allow read: if true;
+      // Only read by id: when a song is put together, from a studio's
+      // soundList, and from a share code. A list would hand out every
+      // sound.
+      allow get: if true;
 
-      // a recorded piano or drum sound, or a copy of one. It starts out in
-      // the one studio it was made in.
+      // a recorded piano or drum sound, or a copy of one. saveSound puts it
+      // in its studio's soundList in the same batch.
       allow create: if newSound(request.resource.data);
 
-      // edits to the notes, a new share code, and adding it to a studio or
-      // taking it out
+      // edits to the notes, and a share code
       allow update: if soundChange(request.resource.data);
 
-      // the app takes a sound out of a studio with `in`, it never deletes one
+      // the app takes a sound out of a studio's soundList, it never deletes
+      // one
 
       function newSound(data) {
-        return data.keys().hasOnly(['name', 'type', 'sequence', 'in', 'code', 'steps'])
-          && data.keys().hasAll(['name', 'type', 'sequence', 'in', 'code'])
+        return data.keys().hasOnly(['name', 'type', 'sequence', 'steps'])
+          && data.keys().hasAll(['name', 'type', 'sequence'])
           && text(data.name, 1, 200)
           && data.type in ['piano', 'drum']
           && notes(data.sequence)
-          && data.in is list
-          && data.in.size() == 1
-          && studioExists(data.in[0])
-          && isCode(data.code)
           && (!('steps' in data) || (data.type == 'drum' && drumSteps(data.steps)));
       }
 
       function soundChange(data) {
         let keys = changed();
-        return keys.hasOnly(['sequence', 'code', 'in', 'steps'])
+        return keys.hasOnly(['sequence', 'code', 'steps'])
           && (!('sequence' in keys) || notes(data.sequence))
-          && (!('code' in keys) || isCode(data.code))
-          && (!('in' in keys) || studiosChange(data.in))
+          && (!('code' in keys) || ownCode(data.code))
           && (!('steps' in keys) || drumSteps(data.steps));
       }
 
-      // `in` is changed with arrayUnion and arrayRemove, one studio at a
-      // time. A studio that's added has to be there.
-      function studiosChange(studios) {
-        let old = resource.data.get('in', []);
-        let added = studios is list ? studios.removeAll(old is list ? old : []) : [];
-        return listUpTo(studios, 1000)
-          && (added.size() == 0
-            || (added.size() == 1 && studioExists(added[0])));
+      // a sound's code is one shareCode took for it, in the same transaction
+      function ownCode(value) {
+        return isCode(value)
+          && getAfter(/databases/$(database)/documents/shareCodes/$(value)).data.sound == sound;
       }
+    }
+
+    // A share code, holding the id of the sound it's for. See shareCode in
+    // src/utils/codes.ts.
+    match /shareCodes/{code} {
+      // AddSound looks one up. A list would hand out every shared sound.
+      allow get: if isCode(code);
+
+      // written in the same transaction that puts the code on the sound. A
+      // code never moves to another sound, so there's no update or delete.
+      allow create: if isCode(code)
+        && request.resource.data.keys().hasOnly(['sound'])
+        && request.resource.data.keys().hasAll(['sound'])
+        && text(request.resource.data.sound, 1, 100)
+        && getAfter(/databases/$(database)/documents/sounds/$(request.resource.data.sound)).data.get('code', null) == code;
     }
   }
 }

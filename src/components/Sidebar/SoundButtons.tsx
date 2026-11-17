@@ -1,14 +1,7 @@
-import { freeSoundCode, shareCode } from "@/utils/codes";
-import { db } from "@/utils/firebase";
+import { shareCode } from "@/utils/codes";
 import { playDrum, playPiano } from "@/utils/instruments";
+import { removeSound, saveSound } from "@/utils/sounds";
 import { Sound } from "@/utils/types";
-import {
-	addDoc,
-	arrayRemove,
-	collection,
-	doc,
-	updateDoc,
-} from "firebase/firestore";
 import React, { useState } from "react";
 import { FaCopy, FaEdit, FaShare, FaTrash, FaVolumeUp } from "react-icons/fa";
 
@@ -66,15 +59,13 @@ const SoundThumbnail = ({
 	};
 
 	const duplicate = async (name: string) => {
-		await addDoc(collection(db, "sounds"), {
+		await saveSound(studio, {
 			name: name || sound.name + " copy",
 			type: sound.type,
 			sequence: sound.sequence,
 			// a copy of a beat is on the same grid as the beat. an old one has
 			// no steps and its copy has none either.
-			...(sound.steps !== undefined ? { steps: sound.steps } : {}),
-			in: [studio],
-			code: await freeSoundCode(),
+			steps: sound.steps,
 		});
 
 		setAsking(null);
@@ -86,9 +77,7 @@ const SoundThumbnail = ({
 		setAsking(null);
 
 		try {
-			await updateDoc(doc(db, `sounds`, sound.id), {
-				in: arrayRemove(studio),
-			});
+			await removeSound(studio, sound.id);
 		} catch (error) {
 			console.error(error);
 			setNotice("Couldn't delete the sound. Try again.");

@@ -5,8 +5,9 @@ import { MdLibraryMusic, MdPiano } from "react-icons/md";
 import { FaDrum, FaTrash } from "react-icons/fa";
 import { Cell, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/utils/firebase";
+import { soundList } from "@/utils/sounds";
 import { removeLoop } from "@/utils/library";
 import AddSound from "./AddSound";
 import Notice from "../Notice";
@@ -41,8 +42,8 @@ const Sounds = ({
 }) => {
 	const [sounds, setSounds] = useState<Array<Sound>>([]);
 
-	// the recorded sounds come from their own query. until it has answered
-	// there's no telling whether the list is empty.
+	// the recorded sounds come from their own listeners. until they've
+	// answered there's no telling whether the list is empty.
 	const [loaded, setLoaded] = useState(false);
 
 	const [playing, setPlaying] = useState<number>(-1);
@@ -50,32 +51,85 @@ const Sounds = ({
 	const [notice, setNotice] = useState("");
 
 	useEffect(() => {
-		const soundsUnsub = onSnapshot(
-			query(collection(db, `sounds`), where("in", "array-contains", studio)),
-			(querySnapshot) => {
-				const freshSounds: Array<Sound> = [];
-				querySnapshot.forEach((doc) => {
-					freshSounds.push({
-						name: doc.data().name,
-						type: doc.data().type,
-						sequence: doc.data().sequence,
-						id: doc.id,
-						code: doc.data().code,
-						steps: doc.data().steps,
-					});
-				});
-				setSounds(freshSounds);
-				setLoaded(true);
+		const failed = (error: unknown) => {
+			console.error(error);
+			setNotice(
+				"Couldn't load the sounds in this studio. Reload to try again."
+			);
+		};
+
+		// The studio's list says which sounds it has, and each sound is
+		// listened to by its id so an edit to one shows up here. The rows
+		// wait until the list and every sound in it have answered, so they
+		// don't come in one at a time.
+		let ids: string[] | null = null;
+		const listening = new Map<string, () => void>();
+		const answered = new Map<string, Sound | null>();
+
+		const show = () => {
+			if (!ids || ids.some((id) => !answered.has(id))) return;
+
+			setSounds(
+				ids.flatMap((id) => {
+					const sound = answered.get(id);
+					return sound ? [sound] : [];
+				})
+			);
+			setLoaded(true);
+		};
+
+		const listUnsub = onSnapshot(
+			soundList(studio),
+			(list) => {
+				const listed = list.docs.map((entry) => entry.id);
+				ids = listed;
+
+				for (const id of listed) {
+					if (listening.has(id)) continue;
+
+					listening.set(
+						id,
+						onSnapshot(
+							doc(db, "sounds", id),
+							(sound) => {
+								answered.set(
+									id,
+									sound.exists()
+										? {
+												name: sound.data().name,
+												type: sound.data().type,
+												sequence: sound.data().sequence,
+												id: sound.id,
+												code: sound.data().code,
+												steps: sound.data().steps,
+											}
+										: null
+								);
+								show();
+							},
+							failed
+						)
+					);
+				}
+
+				// sounds that were taken out of the studio
+				for (const [id, unsub] of listening) {
+					if (listed.includes(id)) continue;
+
+					unsub();
+					listening.delete(id);
+					answered.delete(id);
+				}
+
+				show();
 			},
-			(error) => {
-				console.error(error);
-				setNotice(
-					"Couldn't load the sounds in this studio. Reload to try again."
-				);
-			}
+			failed
 		);
 
-		return soundsUnsub;
+		return () => {
+			listUnsub();
+			listening.forEach((unsub) => unsub());
+		};
 	}, [studio]);
 
 	const { item, dropItem } = placing;

@@ -1,8 +1,6 @@
 "use client";
 
-import { freeSoundCode } from "@/utils/codes";
-import { db } from "@/utils/firebase";
-import { addDoc, collection } from "firebase/firestore";
+import { saveSound } from "@/utils/sounds";
 import { useState } from "react";
 import PianoEditor from "./PianoEditor";
 import { Key } from "@/utils/types";
@@ -28,12 +26,10 @@ const Piano = ({
 	const save = async (name: string) => {
 		if (!naming) return;
 
-		await addDoc(collection(db, `sounds`), {
+		await saveSound(studio, {
 			name: name || "Piano sound",
 			type: "piano",
 			sequence: naming,
-			in: [studio],
-			code: await freeSoundCode(),
 		});
 
 		setNaming(null);

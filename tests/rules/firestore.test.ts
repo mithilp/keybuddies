@@ -13,6 +13,7 @@ import {
 	arrayRemove,
 	arrayUnion,
 	collection,
+	collectionGroup,
 	deleteDoc,
 	doc,
 	getDoc,
@@ -23,10 +24,13 @@ import {
 	setDoc,
 	updateDoc,
 	where,
+	writeBatch,
 	type Firestore,
 } from "firebase/firestore";
+import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { after, before, beforeEach, describe, test } from "node:test";
+import { moveSounds } from "../../scripts/move-sounds.ts";
 
 const STUDIO = "482913";
 const OTHER = "751204";
@@ -100,7 +104,6 @@ const seedSound = (data: object = {}) =>
 		name: "Piano sound",
 		type: "piano",
 		sequence: piano,
-		in: [STUDIO],
 		code: "305118",
 		...data,
 	});
@@ -108,6 +111,9 @@ const seedSound = (data: object = {}) =>
 const studio = (code = STUDIO) => doc(db, "studios", code);
 const track = (id: string) => doc(db, "studios", STUDIO, "tracks", id);
 const sound = () => doc(db, "sounds", SOUND);
+// a sound's place in a studio's soundList
+const listed = (id: string, code = STUDIO) =>
+	doc(db, "studios", code, "soundList", id);
 
 describe("studios", () => {
 	test("claimStudio makes a studio in a transaction", async () => {
@@ -343,57 +349,69 @@ describe("tracks", () => {
 });
 
 describe("sounds", () => {
-	// Piano and Drum save, and Duplicate in SoundButtons
+	// saveSound in src/utils/sounds.ts, from Piano and Drum save and from
+	// Duplicate in SoundButtons
 	const newSound = (data: object = {}) => ({
 		name: "Piano sound",
 		type: "piano",
 		sequence: piano,
-		in: [STUDIO],
-		code: "305118",
 		...data,
 	});
 
-	test("piano and drum sounds are saved, and copied", async () => {
-		await seedStudio();
-		const sounds = collection(db, "sounds");
+	const saveSound = (data: object, code = STUDIO) => {
+		const ref = doc(collection(db, "sounds"));
+		const batch = writeBatch(db);
+		batch.set(ref, data);
+		batch.set(listed(ref.id, code), {});
+		return batch.commit();
+	};
 
-		await assertSucceeds(addDoc(sounds, newSound()));
+	// shareCode in src/utils/codes.ts
+	const share = (code: string, id = SOUND) =>
+		runTransaction(db, async (transaction) => {
+			const ref = doc(db, "shareCodes", code);
+			if ((await transaction.get(ref)).exists()) return false;
+			transaction.set(ref, { sound: id });
+			transaction.update(doc(db, "sounds", id), { code });
+			return true;
+		});
+
+	test("piano and drum sounds are saved into their studio, and copied", async () => {
+		await seedStudio();
+
+		await assertSucceeds(saveSound(newSound()));
 		await assertSucceeds(
-			addDoc(
-				sounds,
-				newSound({ name: "Drum beat", type: "drum", sequence: drums }),
+			saveSound(
+				newSound({
+					name: "Drum beat",
+					type: "drum",
+					sequence: drums,
+					steps: 32,
+				}),
 			),
 		);
-		await assertSucceeds(
-			addDoc(sounds, newSound({ name: "Piano sound copy" })),
-		);
-		await assertSucceeds(addDoc(sounds, newSound({ sequence: [] })));
+		await assertSucceeds(saveSound(newSound({ name: "Piano sound copy" })));
+		await assertSucceeds(saveSound(newSound({ sequence: [] })));
 	});
 
 	test("drum sounds can say how many steps they have", async () => {
 		await seedStudio();
-		const sounds = collection(db, "sounds");
 		const drum = { name: "Drum beat", type: "drum", sequence: drums };
 
-		await assertSucceeds(addDoc(sounds, newSound({ ...drum, steps: 16 })));
-		await assertSucceeds(addDoc(sounds, newSound({ ...drum, steps: 32 })));
-		await assertFails(addDoc(sounds, newSound({ ...drum, steps: 17 })));
-		await assertFails(addDoc(sounds, newSound({ steps: 16 })));
+		await assertSucceeds(saveSound(newSound({ ...drum, steps: 16 })));
+		await assertSucceeds(saveSound(newSound({ ...drum, steps: 32 })));
+		await assertFails(saveSound(newSound({ ...drum, steps: 17 })));
+		await assertFails(saveSound(newSound({ steps: 16 })));
 	});
 
 	test("a new sound has the app's shape", async () => {
 		await seedStudio();
-		await seedStudio(OTHER);
 		const sounds = collection(db, "sounds");
 
+		await assertSucceeds(addDoc(sounds, newSound()));
 		await assertFails(addDoc(sounds, newSound({ type: "guitar" })));
 		await assertFails(addDoc(sounds, newSound({ name: "" })));
 		await assertFails(addDoc(sounds, newSound({ name: "x".repeat(201) })));
-		await assertFails(addDoc(sounds, newSound({ code: "12345" })));
-		await assertFails(addDoc(sounds, newSound({ code: 305118 })));
-		await assertFails(addDoc(sounds, newSound({ in: [STUDIO, OTHER] })));
-		await assertFails(addDoc(sounds, newSound({ in: [] })));
-		await assertFails(addDoc(sounds, newSound({ in: ["999999"] })));
 		await assertFails(addDoc(sounds, newSound({ sequence: "C D E" })));
 		await assertFails(
 			addDoc(
@@ -404,23 +422,63 @@ describe("sounds", () => {
 			),
 		);
 		await assertFails(addDoc(sounds, newSound({ owner: "someone" })));
-
-		const noCode: Record<string, unknown> = newSound();
-		delete noCode.code;
-		await assertFails(addDoc(sounds, noCode));
+		// the code comes from sharing, and studios keep their own list
+		await assertFails(addDoc(sounds, newSound({ code: "305118" })));
+		await assertFails(addDoc(sounds, newSound({ in: [STUDIO] })));
 	});
 
-	test("sounds are read by id, by code and by studio", async () => {
+	test("sounds are only read by id", async () => {
+		await seedStudio();
 		await seedSound();
+		await seed(`studios/${STUDIO}/soundList/${SOUND}`, {});
 
 		await assertSucceeds(getDoc(sound()));
-		await assertSucceeds(
+		await assertFails(getDocs(collection(db, "sounds")));
+		await assertFails(
 			getDocs(query(collection(db, "sounds"), where("code", "==", "305118"))),
 		);
-		await assertSucceeds(
+		await assertFails(
 			getDocs(
 				query(collection(db, "sounds"), where("in", "array-contains", STUDIO)),
 			),
+		);
+	});
+
+	test("a studio's sounds are listed by its code, and only that way", async () => {
+		await seedStudio();
+		await seedSound();
+		await seed(`studios/${STUDIO}/soundList/${SOUND}`, {});
+
+		await assertSucceeds(getDocs(collection(db, "studios", STUDIO, "soundList")));
+		await assertFails(getDocs(collectionGroup(db, "soundList")));
+		await assertFails(getDocs(collectionGroup(db, "tracks")));
+		await assertFails(getDocs(collection(db, "studios", "abc", "soundList")));
+	});
+
+	test("a sound is added to a studio by code and taken out of one", async () => {
+		await seedStudio();
+		await seedStudio(OTHER);
+		await seedSound();
+		await seed(`studios/${STUDIO}/soundList/${SOUND}`, {});
+
+		// addSound, and adding one the studio already has
+		await assertSucceeds(setDoc(listed(SOUND, OTHER), {}));
+		await assertSucceeds(setDoc(listed(SOUND, OTHER), {}));
+		// removeSound, the delete button in SoundButtons
+		await assertSucceeds(deleteDoc(listed(SOUND, STUDIO)));
+		await assertSucceeds(deleteDoc(listed(SOUND, OTHER)));
+	});
+
+	test("only sounds that are there go in studios that are there", async () => {
+		await seedStudio();
+		await seedSound();
+
+		await assertFails(setDoc(listed("missing", STUDIO), {}));
+		await assertFails(setDoc(listed(SOUND, OTHER), {}));
+		await assertFails(setDoc(listed(SOUND, "abc"), {}));
+		await assertFails(setDoc(listed(SOUND, STUDIO), { name: "x" }));
+		await assertFails(
+			saveSound(newSound({ name: "Piano sound" }), "999999"),
 		);
 	});
 
@@ -438,34 +496,60 @@ describe("sounds", () => {
 		await assertFails(updateDoc(sound(), { steps: 8 }));
 	});
 
-	test("sharing gives a sound a new code", async () => {
-		await seedSound();
+	test("sharing takes a code and puts it on the sound", async () => {
+		// a new sound has no code until it's shared
+		await seed(`sounds/${SOUND}`, newSound());
 
-		await assertSucceeds(updateDoc(sound(), { code: "618204" }));
-		await assertFails(updateDoc(sound(), { code: "61820" }));
+		await assertSucceeds(share("618204"));
+		// AddSound looks it up
+		await assertSucceeds(getDoc(doc(db, "shareCodes", "618204")));
 	});
 
-	test("a sound is added to a studio by code and taken out of one", async () => {
-		await seedStudio();
-		await seedStudio(OTHER);
+	test("a share code only ever means one sound", async () => {
+		const OTHER_SOUND = "zZ9yY8xX7wW6vV5uU4tT";
 		await seedSound();
+		await seed(`sounds/${OTHER_SOUND}`, {
+			name: "Drum beat",
+			type: "drum",
+			sequence: drums,
+		});
+		await seed("shareCodes/305118", { sound: SOUND });
 
-		// AddSound
-		await assertSucceeds(updateDoc(sound(), { in: arrayUnion(OTHER) }));
-		// the delete button in SoundButtons
-		await assertSucceeds(updateDoc(sound(), { in: arrayRemove(STUDIO) }));
-		await assertSucceeds(updateDoc(sound(), { in: arrayRemove(OTHER) }));
+		// the code goes on the sound with its shareCodes doc, not alone
+		await assertFails(updateDoc(sound(), { code: "618204" }));
+		await assertFails(
+			setDoc(doc(db, "shareCodes", "618204"), { sound: SOUND }),
+		);
+		// a code that's taken can't be taken again or given to another sound
+		await assertFails(
+			runTransaction(db, async (transaction) => {
+				transaction.set(doc(db, "shareCodes", "305118"), {
+					sound: OTHER_SOUND,
+				});
+				transaction.update(doc(db, "sounds", OTHER_SOUND), {
+					code: "305118",
+				});
+			}),
+		);
+		await assertFails(
+			updateDoc(doc(db, "sounds", OTHER_SOUND), { code: "305118" }),
+		);
+		await assertFails(
+			setDoc(doc(db, "shareCodes", "305118"), { sound: OTHER_SOUND }),
+		);
+		await assertFails(deleteDoc(doc(db, "shareCodes", "305118")));
+		// and it has to be a code
+		await assertFails(share("61820", OTHER_SOUND));
+		await assertSucceeds(share("618204", OTHER_SOUND));
 	});
 
-	test("a sound only goes into studios that are there, one at a time", async () => {
-		await seedStudio();
-		await seedStudio(OTHER);
-		await seedSound({ in: [] });
+	test("share codes are looked up one at a time", async () => {
+		await seedSound();
+		await seed("shareCodes/305118", { sound: SOUND });
 
-		await assertFails(updateDoc(sound(), { in: arrayUnion("999999") }));
-		await assertFails(updateDoc(sound(), { in: arrayUnion("abc") }));
-		await assertFails(updateDoc(sound(), { in: arrayUnion(STUDIO, OTHER) }));
-		await assertFails(updateDoc(sound(), { in: STUDIO }));
+		await assertSucceeds(getDoc(doc(db, "shareCodes", "305118")));
+		await assertSucceeds(getDoc(doc(db, "shareCodes", "999999")));
+		await assertFails(getDocs(collection(db, "shareCodes")));
 	});
 
 	test("a sound's name and type don't change", async () => {
@@ -474,6 +558,7 @@ describe("sounds", () => {
 		await assertFails(updateDoc(sound(), { name: "Renamed" }));
 		await assertFails(updateDoc(sound(), { type: "drum" }));
 		await assertFails(updateDoc(sound(), { owner: "someone" }));
+		await assertFails(updateDoc(sound(), { in: arrayUnion(STUDIO) }));
 	});
 
 	test("a sound from 2024 with odd fields still gets a code and a studio", async () => {
@@ -483,27 +568,107 @@ describe("sounds", () => {
 			type: "piano",
 			sequence: piano,
 			in: [STUDIO],
+			code: "305118",
 			createdAt: Timestamp.now(),
 		});
 
-		await assertSucceeds(updateDoc(sound(), { code: "618204" }));
-		await assertSucceeds(updateDoc(sound(), { in: arrayUnion(OTHER) }));
-	});
-
-	test("a sound from before `in` can still be added to a studio", async () => {
-		await seedStudio();
-		await seed(`sounds/${SOUND}`, {
-			name: "older one",
-			type: "drum",
-			sequence: drums,
-		});
-
-		await assertSucceeds(updateDoc(sound(), { in: arrayUnion(STUDIO) }));
+		await assertSucceeds(share("618204"));
+		await assertSucceeds(setDoc(listed(SOUND, OTHER), {}));
+		await assertSucceeds(updateDoc(sound(), { sequence: drums }));
 	});
 
 	test("sounds can't be deleted", async () => {
 		await seedSound();
 		await assertFails(deleteDoc(sound()));
+	});
+});
+
+describe("moving old sounds", () => {
+	// sound ids sort in this order, so A is moved first
+	const A = "aaaaaaaaaaaaaaaaaaa1";
+	const B = "bbbbbbbbbbbbbbbbbbb2";
+	const C = "ccccccccccccccccccc3";
+
+	const seedOld = async () => {
+		await seedStudio();
+		await seedStudio(OTHER);
+		const old = { name: "old", type: "piano", sequence: piano };
+		await seed(`sounds/${A}`, {
+			...old,
+			in: [STUDIO, OTHER, "999999", "abc"],
+			code: "305118",
+		});
+		// an old sound that got the same code as A
+		await seed(`sounds/${B}`, { ...old, in: [STUDIO], code: "305118" });
+		// from before `in` and codes
+		await seed(`sounds/${C}`, old);
+	};
+
+	const run = (write: boolean) => {
+		let counts: Awaited<ReturnType<typeof moveSounds>> | undefined;
+		return env
+			.withSecurityRulesDisabled(async (context) => {
+				counts = await moveSounds(asFirestore(context.firestore()), write);
+			})
+			.then(() => counts!);
+	};
+
+	const ids = async (code: string) =>
+		(await getDocs(collection(db, "studios", code, "soundList"))).docs
+			.map((entry) => entry.id)
+			.sort();
+
+	test("without --write nothing changes", async () => {
+		await seedOld();
+
+		assert.deepEqual(await run(false), {
+			sounds: 3,
+			listed: 3,
+			codes: 1,
+			taken: 1,
+		});
+		assert.deepEqual(await ids(STUDIO), []);
+		assert.equal(
+			(await getDoc(doc(db, "shareCodes", "305118"))).exists(),
+			false,
+		);
+	});
+
+	test("sounds go in their studios' lists and take their codes", async () => {
+		await seedOld();
+
+		assert.deepEqual(await run(true), {
+			sounds: 3,
+			listed: 3,
+			codes: 1,
+			taken: 1,
+		});
+
+		assert.deepEqual(await ids(STUDIO), [A, B]);
+		assert.deepEqual(await ids(OTHER), [A]);
+		assert.deepEqual((await getDoc(doc(db, "shareCodes", "305118"))).data(), {
+			sound: A,
+		});
+
+		const a = (await getDoc(doc(db, "sounds", A))).data();
+		assert.equal(a?.in, undefined);
+		assert.equal(a?.code, "305118");
+
+		// B gets a code of its own when it's shared
+		await assertSucceeds(
+			runTransaction(db, async (transaction) => {
+				transaction.set(doc(db, "shareCodes", "618204"), { sound: B });
+				transaction.update(doc(db, "sounds", B), { code: "618204" });
+			}),
+		);
+
+		// a second run has nothing left to do
+		assert.deepEqual(await run(true), {
+			sounds: 3,
+			listed: 0,
+			codes: 0,
+			taken: 0,
+		});
 	});
 });
 
