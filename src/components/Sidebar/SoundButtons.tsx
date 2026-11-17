@@ -38,7 +38,7 @@ const SoundThumbnail = ({
 		if (sound.type == "piano") {
 			playPiano(sound.sequence, Number(bpm));
 		} else if (sound.type == "drum") {
-			playDrum(sound.sequence, Number(bpm));
+			playDrum(sound.sequence, Number(bpm), sound.steps);
 		}
 	}
 
@@ -70,6 +70,9 @@ const SoundThumbnail = ({
 			name: name || sound.name + " copy",
 			type: sound.type,
 			sequence: sound.sequence,
+			// a copy of a beat is on the same grid as the beat. an old one has
+			// no steps and its copy has none either.
+			...(sound.steps !== undefined ? { steps: sound.steps } : {}),
 			in: [studio],
 			code: await freeSoundCode(),
 		});

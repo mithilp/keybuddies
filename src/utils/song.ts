@@ -131,7 +131,14 @@ export const renderSong = async (
 						);
 					}
 
-					return await renderSound(sound.type, sound.sequence, Number(bpm));
+					return await renderSound(
+						{
+							type: sound.type,
+							sequence: sound.sequence,
+							steps: sound.steps,
+						},
+						Number(bpm)
+					);
 				} catch (error) {
 					if (error instanceof SongError) throw error;
 

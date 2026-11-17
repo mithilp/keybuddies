@@ -61,6 +61,7 @@ const Sounds = ({
 						sequence: doc.data().sequence,
 						id: doc.id,
 						code: doc.data().code,
+						steps: doc.data().steps,
 					});
 				});
 				setSounds(freshSounds);

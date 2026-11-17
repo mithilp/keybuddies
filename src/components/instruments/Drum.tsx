@@ -9,9 +9,17 @@ import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
 import { DRUM_STEPS } from "@/utils/drum-synth";
+import { CELL_BEATS } from "@/utils/tempo";
 import { PromptDialog } from "@/components/Dialog";
-import { Tip } from "@/components/ui/tooltip";
 import Panel from "@/components/Panel";
+
+const BEATS = Array.from({ length: CELL_BEATS }, (_, beat) => beat);
+
+// the sixteenth note steps in one beat
+const QUARTERS = Array.from(
+	{ length: DRUM_STEPS / CELL_BEATS },
+	(_, quarter) => quarter
+);
 
 // The drum recorder. It's always on the page and draws nothing until it's
 // opened, so a beat that was closed without saving is still there the next
@@ -47,7 +55,7 @@ const Drum = ({
 			return;
 		}
 
-		playDrum(sequence, bpm);
+		playDrum(sequence, bpm, DRUM_STEPS);
 		setIsPlaying(true);
 		listenTimer.current = setTimeout(stopListening, 480000 / bpm);
 	};
@@ -63,11 +71,25 @@ const Drum = ({
 	const on = (voice: number, step: number) =>
 		sequence.some((note) => note.note == voice && note.start == step);
 
+	const toggle = (voice: number, step: number) => {
+		if (on(voice, step)) {
+			setSequence(
+				sequence.filter((note) => note.note != voice || note.start != step)
+			);
+		} else {
+			playDrumHit(voice);
+			setSequence([...sequence, { note: voice, start: step, end: step + 1 }]);
+		}
+	};
+
 	const save = async (name: string) => {
 		await addDoc(collection(db, `sounds`), {
 			name: name || "Drum beat",
 			type: "drum",
 			sequence: sequence,
+			// the grid this beat was made on. beats saved before there was one
+			// are on the old half beat grid, see drumBeat.
+			steps: DRUM_STEPS,
 			in: [studio],
 			code: await freeSoundCode(),
 		});
@@ -83,39 +105,58 @@ const Drum = ({
 				// Escape closes it the same way the X does, the beat stops too
 				<Panel title="Record a Drum Sound" close={shut}>
 					<div className="space-y-4">
-						<div className="w-full">
-							{sounds.map((sound, index) => (
-								<div key={index} className="flex items-center justify-between">
-									<div className="w-40">{sound.note}</div>
-									{Array.from(Array(DRUM_STEPS)).map((_, i) => (
-										<Tip key={i} label={`${sound.note}, step ${i + 1}`}>
-											<button
-												aria-label={`${sound.note}, step ${i + 1}`}
-												aria-pressed={on(sound.value, i)}
-												onClick={() => {
-													if (on(sound.value, i)) {
-														setSequence(
-															sequence.filter(
-																(note) =>
-																	note.note != sound.value || note.start != i
-															)
-														);
-													} else {
-														playDrumHit(sound.value);
-														setSequence([
-															...sequence,
-															{ note: sound.value, start: i, end: i + 1 },
-														]);
-													}
-												}}
-												className={`w-10 h-8 rounded-sm text-white my-1 ${
-													on(sound.value, i) ? "bg-yellow" : "bg-pink"
-												}`}
-											></button>
-										</Tip>
+						{/* sideways scroll stays inside the panel on a narrow window */}
+						<div className="overflow-x-auto">
+							<div className="w-max">
+								{/* the beat numbers, over the first step of each beat */}
+								<div className="flex" aria-hidden>
+									<div className="w-32 shrink-0"></div>
+									{BEATS.map((beat) => (
+										<div
+											key={beat}
+											className="flex gap-0.5 px-1 border-l-4 border-black font-bold"
+										>
+											{QUARTERS.map((quarter) => (
+												<div key={quarter} className="w-6">
+													{quarter === 0 && beat + 1}
+												</div>
+											))}
+										</div>
 									))}
 								</div>
-							))}
+
+								{sounds.map((sound) => (
+									<div key={sound.value} className="flex items-center">
+										<div className="w-32 shrink-0">{sound.note}</div>
+										{BEATS.map((beat) => (
+											// a beat is 4 steps, with a thick line before it
+											<div
+												key={beat}
+												className="flex gap-0.5 px-1 py-0.5 border-l-4 border-black"
+											>
+												{QUARTERS.map((quarter) => {
+													const step = beat * QUARTERS.length + quarter;
+													const hit = on(sound.value, step);
+
+													return (
+														<button
+															key={quarter}
+															aria-label={`${sound.note}, beat ${beat + 1}${
+																quarter > 0 ? `, sixteenth ${quarter + 1}` : ""
+															}`}
+															aria-pressed={hit}
+															onClick={() => toggle(sound.value, step)}
+															className={`w-6 h-8 rounded-sm ${
+																hit ? "bg-yellow" : "bg-pink"
+															}`}
+														></button>
+													);
+												})}
+											</div>
+										))}
+									</div>
+								))}
+							</div>
 						</div>
 						<div className="space-x-4 flex">
 							<button
