@@ -49,6 +49,8 @@ const Instruments = ({
 				setSounds(freshSounds);
 			}
 		);
+
+		return soundsUnsub;
 	}, [studio]);
 
 	const [playing, setPlaying] = useState<number>(-1);

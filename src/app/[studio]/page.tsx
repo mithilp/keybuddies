@@ -15,6 +15,7 @@ import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";
+import StudioNotFound from "@/components/StudioNotFound";
 import crunker from "@/utils/crunker";
 import { renderSong, SongError } from "@/utils/song";
 
@@ -53,6 +54,9 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
 	const [bpm, setbpm] = useState("120");
 
+	// null until firestore says whether this studio exists
+	const [found, setFound] = useState<boolean | null>(null);
+
 	const [loading, setLoading] = useState(true);
 
 	const [selectedCell, setSelectedCell] = useState<Array<any>>([-1, -1]);
@@ -60,10 +64,25 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const [tracks, setTracks] = useState<Array<Track>>([]);
 
 	useEffect(() => {
-		const unsub = onSnapshot(doc(db, "studios", studio), (doc) => {
-			const source = doc.metadata.hasPendingWrites ? "Local" : "Server";
-			setbpm(doc.data()!.bpm);
-		});
+		const unsub = onSnapshot(
+			doc(db, "studios", studio),
+			(snap) => {
+				const data = snap.data();
+
+				if (!data) {
+					setFound(false);
+					return;
+				}
+
+				setFound(true);
+				setbpm(data.bpm ?? "120");
+			},
+			(error) => {
+				// a code firestore won't even look up isn't a studio either
+				console.error(error);
+				setFound(false);
+			}
+		);
 
 		const tracksUnsub = onSnapshot(
 			query(collection(db, `studios/${studio}/tracks`), orderBy("order")),
@@ -84,6 +103,11 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 				setLoading(false);
 			}
 		);
+
+		return () => {
+			unsub();
+			tracksUnsub();
+		};
 	}, [studio]);
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
@@ -222,6 +246,18 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 			}
 		}
 	};
+
+	if (found === false) {
+		return <StudioNotFound studio={studio} />;
+	}
+
+	if (found === null) {
+		return (
+			<div className="h-screen w-screen grid place-items-center">
+				<div className="animate-spin w-16 h-16 border-8 border-yellow border-b-transparent rounded-full"></div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="grid grid-cols-3">
