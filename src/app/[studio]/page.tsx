@@ -117,10 +117,12 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 	// number than the one it started with was stopped and gives up.
 	const run = useRef(0);
 
-	const [muted, setMuted] = useState<boolean[]>([]);
+	// The ids of the muted tracks. Mute goes by the track, not by where it is
+	// in the list, so it stays on the right one when a track above is deleted.
+	const [muted, setMuted] = useState<ReadonlySet<string>>(new Set());
 
 	// play() reads this when the tracks start, which is after it was called
-	const mutedRef = useRef<boolean[]>([]);
+	const mutedRef = useRef<ReadonlySet<string>>(new Set());
 
 	// when it's on the song starts over at its end until it's paused
 	const [looping, setLooping] = useState(false);
@@ -180,12 +182,8 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 			};
 
 			// muted tracks start silent instead of being turned down after
-			transport.start(
-				song,
-				(beatRef.current * 60) / song.bpm,
-				(track) =>
-					mutedRef.current[tracks.findIndex((each) => each.id === track)] ??
-					false
+			transport.start(song, (beatRef.current * 60) / song.bpm, (track) =>
+				mutedRef.current.has(track)
 			);
 
 			setPlayback("playing");
@@ -270,13 +268,20 @@ export default function Page(props: { params: Promise<{ studio: string }> }) {
 		};
 	}, [transport]);
 
-	const mute = (track: Track, index: number) => {
-		const newMuted = [...mutedRef.current];
-		newMuted[index] = !newMuted[index];
-		mutedRef.current = newMuted;
-		setMuted(newMuted);
+	const mute = (track: Track) => {
+		const next = new Set(mutedRef.current);
+		const on = !next.has(track.id);
 
-		transport.mute(track.id, newMuted[index]);
+		if (on) {
+			next.add(track.id);
+		} else {
+			next.delete(track.id);
+		}
+
+		mutedRef.current = next;
+		setMuted(next);
+
+		transport.mute(track.id, on);
 	};
 
 	if (found === false) {

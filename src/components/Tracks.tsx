@@ -31,8 +31,9 @@ const Tracks = ({
 	bpm: string;
 	studio: string;
 	loading: boolean;
-	mute: (track: TrackType, index: number) => void;
-	muted: boolean[];
+	mute: (track: TrackType) => void;
+	// the ids of the muted tracks
+	muted: ReadonlySet<string>;
 	beat: number;
 	playing: boolean;
 	liveBeat: () => number;
@@ -90,17 +91,17 @@ const Tracks = ({
 								))}
 							</div>
 
-							{tracks.map((track, index) => (
+							{tracks.map((track) => (
 								<Track
-									key={index}
+									key={track.id}
 									track={track}
 									selectedCell={selectedCell}
 									setSelectedCell={setSelectedCell}
 									studio={studio}
 									onMute={() => {
-										mute(track, index);
+										mute(track);
 									}}
-									muted={muted[index]}
+									muted={muted.has(track.id)}
 								/>
 							))}
 						</div>
