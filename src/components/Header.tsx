@@ -1,12 +1,10 @@
 import { db } from "@/utils/firebase";
 import { doc, updateDoc } from "firebase/firestore";
+import { TEMPOS } from "@/utils/tempo";
 import { Playback } from "@/utils/types";
 import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { FaRepeat } from "react-icons/fa6";
 import { Tip } from "./ui/tooltip";
-
-// the tempos a studio can be in. every loop has a file for each of them.
-const TEMPOS = ["80", "120", "160"];
 
 const Header = ({
 	studio,

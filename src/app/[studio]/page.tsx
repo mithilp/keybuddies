@@ -8,7 +8,7 @@ import {
 	orderBy,
 	query,
 } from "firebase/firestore";
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Playback, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
@@ -22,6 +22,8 @@ import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
 import { usePlacing } from "@/utils/placing";
+import { cellOnlyLoops, studioLoops } from "@/utils/loops";
+import { keepLoops } from "@/utils/library";
 import { mixDown, save, toWav } from "@/utils/export";
 
 // how long firestore gets to answer before the studio counts as not loading
@@ -64,6 +66,48 @@ function Studio({ studio }: { studio: string }) {
 	const [loading, setLoading] = useState(true);
 
 	const [tracks, setTracks] = useState<Array<Track>>([]);
+
+	// The studio's `library` and `libraryRemoved` fields, as they came. A
+	// studio from before the library has neither.
+	const [library, setLibrary] = useState<{ added: unknown; removed: unknown }>(
+		{ added: undefined, removed: undefined }
+	);
+
+	// whether those two came from the server, and not from what this browser
+	// remembered of the studio
+	const [synced, setSynced] = useState(false);
+
+	// the library loops this studio has, for the sidebar
+	const loops = useMemo(
+		() => studioLoops(tracks, library.added, library.removed),
+		[tracks, library]
+	);
+
+	// the loops that are only in that list because a cell holds them
+	const cellOnly = useMemo(
+		() => cellOnlyLoops(tracks, library.added, library.removed),
+		[tracks, library]
+	);
+
+	// the ones that were already written down from this page. a write that
+	// was turned down brings them back, and it isn't tried again.
+	const kept = useRef(new Set<string>());
+
+	// A studio from before the library has loops in its cells and no list of
+	// them. They're written into `library` here, so they don't leave the
+	// sidebar when their last cell is overwritten. It waits for the server:
+	// a remembered studio can be missing a loop that was removed since.
+	useEffect(() => {
+		if (!synced || loading) return;
+
+		const ids = cellOnly.filter((id) => !kept.current.has(id));
+		if (ids.length == 0) return;
+
+		ids.forEach((id) => kept.current.add(id));
+
+		// the list still has them while a cell does, so this can fail quietly
+		keepLoops(studio, ids).catch(console.error);
+	}, [synced, loading, cellOnly, studio]);
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
 
@@ -169,6 +213,8 @@ function Studio({ studio }: { studio: string }) {
 
 				setLoad("ready");
 				setbpm(data.bpm ?? "120");
+				setLibrary({ added: data.library, removed: data.libraryRemoved });
+				setSynced(!snap.metadata.fromCache);
 			},
 			failed
 		);
@@ -410,7 +456,7 @@ function Studio({ studio }: { studio: string }) {
 	return (
 		<div className="grid grid-cols-3">
 			{/* Left column */}
-			<Sidebar placing={placing} bpm={bpm} studio={studio} />
+			<Sidebar placing={placing} bpm={bpm} studio={studio} loops={loops} />
 
 			{/* Right column (two-thirds of the screen). The header is not inside
 			    the part that scrolls, so the tracks can't end up over or under

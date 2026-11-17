@@ -1,3 +1,6 @@
+// the tempos a studio can be in. every loop has a file for each of them.
+export const TEMPOS = ["80", "120", "160"];
+
 // a cell on a track is always this many beats
 export const CELL_BEATS = 8;
 

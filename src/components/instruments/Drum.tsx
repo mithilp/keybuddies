@@ -4,7 +4,7 @@ import { freeSoundCode } from "@/utils/codes";
 import { db } from "@/utils/firebase";
 import { playDrum, playDrumHit, stopDrum } from "@/utils/instruments";
 import { addDoc, collection } from "firebase/firestore";
-import { FaDrum, FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
+import { FaCheck, FaVolumeUp, FaPause } from "react-icons/fa";
 import { FaCircleXmark } from "react-icons/fa6";
 import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
@@ -13,9 +13,20 @@ import { DRUM_STEPS } from "@/utils/drum-synth";
 import { PromptDialog } from "@/components/Dialog";
 import { Tip } from "@/components/ui/tooltip";
 
-const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
-	const [open, setOpen] = useState(false);
-
+// The drum recorder. It's always on the page and draws nothing until it's
+// opened, so a beat that was closed without saving is still there the next
+// time.
+const Drum = ({
+	studio,
+	bpm,
+	open,
+	close,
+}: {
+	studio: string;
+	bpm: number;
+	open: boolean;
+	close: () => void;
+}) => {
 	const [sequence, setSequence] = useState<Array<Key>>([]);
 	const [isPlaying, setIsPlaying] = useState(false);
 
@@ -41,9 +52,9 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 		listenTimer.current = setTimeout(stopListening, 480000 / bpm);
 	};
 
-	const close = () => {
+	const shut = () => {
 		stopListening();
-		setOpen(false);
+		close();
 	};
 
 	const [naming, setNaming] = useState(false);
@@ -63,34 +74,18 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 
 		setNaming(false);
 		setSequence([]);
-		close();
+		shut();
 	};
 
 	return (
 		<>
-			<button
-				onClick={() => {
-					if (open) {
-						close();
-					} else {
-						setOpen(true);
-					}
-				}}
-				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
-			>
-				<div className="flex items-center space-x-2">
-					<FaDrum size={32} />
-					<div className="text-xl">Drums</div>
-				</div>
-			</button>
-
 			{open && (
 				<div className="fixed top-0 left-0 z-20 w-screen h-screen p-12">
 					<div className="bg-blue border-8 border-black h-full rounded-xl p-8 space-y-2">
 						<div className="flex justify-between items-center">
 							<h3 className="text-2xl font-bold">Record a Drum Sound</h3>
 							<Tip label="Close" side="left">
-								<button onClick={close} aria-label="Close">
+								<button onClick={shut} aria-label="Close">
 									<FaCircleXmark size={32} />
 								</button>
 							</Tip>
