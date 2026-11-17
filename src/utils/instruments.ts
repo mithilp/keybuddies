@@ -2,7 +2,7 @@
 
 import { Key, Sound } from "./types";
 import crunker, { wake } from "./crunker";
-import { mixDrums } from "./drum-synth";
+import { drumBeat, mixDrums } from "./drum-synth";
 import { pianoNotes } from "./piano-notes";
 import { preview, stopPreview } from "./preview";
 import { hasPianoNote, loadPianoNote } from "./samples";
@@ -61,6 +61,7 @@ const renderPiano = async (music: Array<Key>, bpm: number, frames: number) => {
 
 // A drum beat as a buffer on crunker's context. Stereo, so it sits in a
 // track the same way everything else does. `frames` forces an exact length.
+// The hits are on the sixteenth grid, see drumBeat.
 export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
 	const context = crunker!.context;
 	const samples = mixDrums(music, bpm, context.sampleRate, frames);
@@ -75,17 +76,16 @@ export const renderDrum = (music: Array<Key>, bpm: number, frames?: number) => {
 // One recorded sound as a buffer exactly one cell long, ready to go into a
 // track or to be listened to on its own.
 export const renderSound = async (
-	type: Sound["type"],
-	music: Array<Key>,
+	sound: Pick<Sound, "type" | "sequence" | "steps">,
 	bpm: number
 ) => {
 	const frames = cellFrames(bpm, crunker!.context.sampleRate);
 
-	if (type === "drum") {
-		return renderDrum(music, bpm, frames);
+	if (sound.type === "drum") {
+		return renderDrum(drumBeat(sound.sequence, sound.steps), bpm, frames);
 	}
 
-	return renderPiano(music, bpm, frames);
+	return renderPiano(sound.sequence, bpm, frames);
 };
 
 const start = (buffer: AudioBuffer) => {
@@ -102,10 +102,14 @@ const start = (buffer: AudioBuffer) => {
 // Listening to a sound on its own goes through the preview slot, so it
 // stops whatever loop or sound was being listened to before.
 export const playPiano = (music: Array<Key>, bpm: number) =>
-	preview("piano", () => renderSound("piano", music, bpm));
+	preview("piano", () => renderSound({ type: "piano", sequence: music }, bpm));
 
-export const playDrum = (music: Array<Key>, bpm: number) =>
-	preview("drum", () => renderDrum(music, bpm));
+// `steps` is the grid the beat is on, the sound's `steps` field
+export const playDrum = (
+	music: Array<Key>,
+	bpm: number,
+	steps: number | undefined
+) => preview("drum", () => renderDrum(drumBeat(music, steps), bpm));
 
 export const stopDrum = () => stopPreview("drum");
 
