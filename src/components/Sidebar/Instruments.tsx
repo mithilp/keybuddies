@@ -44,6 +44,7 @@ const Instruments = ({
 						type: doc.data().type,
 						sequence: doc.data().sequence,
 						id: doc.id,
+						code: doc.data().code,
 					});
 				});
 				setSounds(freshSounds);
@@ -105,7 +106,11 @@ const Instruments = ({
 							<div className="text-xl">{sound.name}</div>
 						</div>
 
-						<div className="flex items-center space-x-2">
+						{/* a click on a button isn't a click on the sound */}
+						<div
+							className="flex items-center space-x-2"
+							onClick={(event) => event.stopPropagation()}
+						>
 							<SoundButtons
 								index={index}
 								playing={playing}

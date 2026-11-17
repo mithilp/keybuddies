@@ -6,7 +6,6 @@ import {
 	arrayRemove,
 	collection,
 	doc,
-	getDoc,
 	updateDoc,
 } from "firebase/firestore";
 import React, { useState } from "react";
@@ -19,6 +18,8 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import EditPianoSound from "./EditPianoSound";
+import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
+import Notice from "../Notice";
 
 const SoundThumbnail = ({
 	playing,
@@ -49,24 +50,45 @@ const SoundThumbnail = ({
 		setOpen(true);
 	};
 
-	const share = async () => {
-		const soundData = await getDoc(doc(db, `sounds`, sound.id));
+	// which dialog is open, if one is
+	const [asking, setAsking] = useState<"share" | "copy" | "delete" | null>(
+		null
+	);
+	const [notice, setNotice] = useState("");
 
-		const code = soundData.data()!.code;
-
-		alert(
-			`Share this code with your friends to let them use this sound: ${code}`
-		);
+	const share = () => {
+		if (sound.code) {
+			setAsking("share");
+		} else {
+			setNotice("This sound doesn't have a code to share.");
+		}
 	};
 
-	const duplicate = () => {
-		addDoc(collection(db, "sounds"), {
-			name: prompt("Name this duplicated sound:") || sound.name + " copy",
+	const duplicate = async (name: string) => {
+		await addDoc(collection(db, "sounds"), {
+			name: name || sound.name + " copy",
 			type: sound.type,
 			sequence: sound.sequence,
 			in: [studio],
 			code: Math.floor(100000 + Math.random() * 900000).toString(),
 		});
+
+		setAsking(null);
+	};
+
+	// the sound leaves this studio. it stays in any other studio it was
+	// shared to.
+	const remove = async () => {
+		setAsking(null);
+
+		try {
+			await updateDoc(doc(db, `sounds`, sound.id), {
+				in: arrayRemove(studio),
+			});
+		} catch (error) {
+			console.error(error);
+			setNotice("Couldn't delete the sound. Try again.");
+		}
 	};
 
 	return (
@@ -123,7 +145,7 @@ const SoundThumbnail = ({
 						<button
 							className="h-5 w-5"
 							disabled={playing != index && playing != -1}
-							onClick={duplicate}
+							onClick={() => setAsking("copy")}
 						>
 							<FaCopy className="w-full h-full" />
 						</button>
@@ -153,13 +175,7 @@ const SoundThumbnail = ({
 						<button
 							className="h-5 w-5"
 							disabled={playing != index && playing != -1}
-							onClick={() => {
-								if (confirm("Are you sure you want to delete this sound?")) {
-									updateDoc(doc(db, `sounds`, sound.id), {
-										in: arrayRemove(studio),
-									});
-								}
-							}}
+							onClick={() => setAsking("delete")}
 						>
 							<FaTrash className="w-full h-full" />
 						</button>
@@ -169,6 +185,38 @@ const SoundThumbnail = ({
 					</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
+
+			{asking === "share" && sound.code && (
+				<ShareDialog
+					title="Share this sound"
+					hint="A friend can add it to their studio with this code."
+					code={sound.code}
+					onClose={() => setAsking(null)}
+				/>
+			)}
+
+			{asking === "copy" && (
+				<PromptDialog
+					title="Duplicate this sound"
+					label="Name of the copy"
+					initial={`${sound.name} copy`}
+					submit="Duplicate"
+					onSubmit={duplicate}
+					onCancel={() => setAsking(null)}
+				/>
+			)}
+
+			{asking === "delete" && (
+				<ConfirmDialog
+					title="Delete this sound?"
+					message={`${sound.name} will be taken out of this studio.`}
+					confirm="Delete"
+					onConfirm={remove}
+					onCancel={() => setAsking(null)}
+				/>
+			)}
+
+			{notice && <Notice message={notice} close={() => setNotice("")} />}
 
 			{/* edit sound modal */}
 			{/* if piano */}

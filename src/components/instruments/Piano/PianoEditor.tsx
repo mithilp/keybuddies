@@ -28,11 +28,14 @@ const PianoEditor = ({
 	initial,
 	saveLabel,
 	onSave,
+	paused = false,
 }: {
 	bpm: number;
 	initial?: Key[];
 	saveLabel: string;
 	onSave: (sequence: Key[]) => void;
+	// the keyboard stops listening, for when something is being typed
+	paused?: boolean;
 }) => {
 	// how many milliseconds one step is
 	const multiplier = 7500 / bpm;
@@ -180,6 +183,7 @@ const PianoEditor = ({
 					playNote={press}
 					stopNote={release}
 					keyboardShortcuts={keyboardShortcuts}
+					disabled={paused}
 				/>
 			</div>
 

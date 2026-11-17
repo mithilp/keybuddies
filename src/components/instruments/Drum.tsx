@@ -9,6 +9,7 @@ import { useRef, useState } from "react";
 import { Key } from "@/utils/types";
 import sounds from "@/utils/drum-sounds";
 import { DRUM_STEPS } from "@/utils/drum-synth";
+import { PromptDialog } from "@/components/Dialog";
 
 const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 	const [open, setOpen] = useState(false);
@@ -43,20 +44,18 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 		setOpen(false);
 	};
 
-	const save = async () => {
-		const name = prompt("Name your beat");
+	const [naming, setNaming] = useState(false);
 
-		// cancelled, keep the beat on screen
-		if (name === null) return;
-
+	const save = async (name: string) => {
 		await addDoc(collection(db, `sounds`), {
-			name: name.trim() || "Drum beat",
+			name: name || "Drum beat",
 			type: "drum",
 			sequence: sequence,
 			in: [studio],
 			code: Math.floor(100000 + Math.random() * 900000).toString(),
 		});
 
+		setNaming(false);
 		setSequence([]);
 		close();
 	};
@@ -146,7 +145,7 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 									{isPlaying ? <FaPause size={32} /> : <FaVolumeUp size={32} />}
 								</button>
 								<button
-									onClick={save}
+									onClick={() => setNaming(true)}
 									disabled={sequence.length == 0}
 									className="disabled:opacity-70 bg-yellow p-2 flex items-center justify-center space-x-2 border-8 border-black rounded-xl"
 								>
@@ -157,6 +156,18 @@ const Drum = ({ studio, bpm }: { studio: string; bpm: number }) => {
 						</div>
 					</div>
 				</div>
+			)}
+
+			{/* cancelling keeps the beat on screen and saves nothing */}
+			{naming && (
+				<PromptDialog
+					title="Name your beat"
+					label="Beat name"
+					placeholder="Drum beat"
+					submit="Save"
+					onSubmit={save}
+					onCancel={() => setNaming(false)}
+				/>
 			)}
 		</>
 	);

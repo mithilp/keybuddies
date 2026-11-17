@@ -22,6 +22,8 @@ export type Sound = {
 	id: string;
 	sequence: Key[];
 	type: "piano" | "guitar" | "drum";
+	// what a friend types in to add this sound to their studio
+	code?: string;
 };
 
 // One note in a recorded sound. What the numbers mean depends on the sound.
