@@ -51,7 +51,6 @@ const Tracks = ({
 						<div className="space-y-4">
 							<div
 								className="flex border-b-8 border-black w-max cursor-pointer"
-								title="Click to move the playhead"
 								onClick={(event) => {
 									const x =
 										event.clientX -
@@ -68,7 +67,8 @@ const Tracks = ({
 							>
 								{Array.from({ length: cells }, (_, i) => (
 									<div className="relative" key={i}>
-										<div className="w-56 font-bold pl-1">
+										{/* h-6, the playhead starts right under it */}
+										<div className="w-56 h-6 leading-6 font-bold pl-1">
 											{i * CELL_BEATS + 1}
 										</div>
 										<div className="absolute flex">
@@ -103,6 +103,7 @@ const Tracks = ({
 								playing={playing}
 								liveBeat={liveBeat}
 								beats={beats}
+								seek={seek}
 							/>
 						)}
 					</div>
