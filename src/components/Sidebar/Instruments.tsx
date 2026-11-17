@@ -17,6 +17,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import AddSound from "./AddSound";
+import { setCell } from "@/utils/cells";
+import Notice from "../Notice";
 
 const Instruments = ({
 	setSelectedCell,
@@ -56,17 +58,18 @@ const Instruments = ({
 
 	const [playing, setPlaying] = useState<number>(-1);
 
-	const addToTrack = async (sound: Sound) => {
+	const [notice, setNotice] = useState("");
+
+	const addToTrack = (sound: Sound) => {
 		const track = tracks.find((track) => track.id === selectedCell[0]);
 		if (track) {
-			track.notes[selectedCell[1]] = {
+			setCell(studio, track.id, selectedCell[1], {
 				name: sound.name,
 				id: sound.id,
 				type: "sound",
-			};
-
-			await updateDoc(doc(db, "studios", studio, "tracks", selectedCell[0]), {
-				notes: track.notes,
+			}).catch((error) => {
+				console.error(error);
+				setNotice("Couldn't put the sound in. Try again.");
 			});
 		}
 		setSelectedCell([-1, -1]);
@@ -125,6 +128,8 @@ const Instruments = ({
 			))}
 
 			<AddSound studio={studio} />
+
+			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>
 	);
 };

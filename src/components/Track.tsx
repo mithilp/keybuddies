@@ -1,7 +1,9 @@
 import { db } from "@/utils/firebase";
 import { Track } from "@/utils/types";
-import { deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { addCell, removeCell } from "@/utils/cells";
+import { deleteDoc, doc } from "firebase/firestore";
 import { useState } from "react";
+import Notice from "./Notice";
 import {
 	FaPlusCircle,
 	FaTrash,
@@ -24,6 +26,13 @@ const Track = ({
 	onMute: Function;
 	muted: boolean;
 }) => {
+	const [notice, setNotice] = useState("");
+
+	const failed = (error: unknown) => {
+		console.error(error);
+		setNotice("Couldn't save that change. Try again.");
+	};
+
 	return (
 		<div>
 			<div className="flex items-center space-x-4">
@@ -65,14 +74,8 @@ const Track = ({
 						</div>
 						<button
 							className="text-2xl"
-							onClick={async () => {
-								track.notes.splice(index, 1);
-								await updateDoc(
-									doc(db, "studios", studio, "tracks", track.id),
-									{
-										notes: track.notes,
-									}
-								);
+							onClick={() => {
+								removeCell(studio, track.id, index, note).catch(failed);
 							}}
 						>
 							<FaTrash />
@@ -82,15 +85,15 @@ const Track = ({
 
 				<button
 					className="pr-4"
-					onClick={async () => {
-						await updateDoc(doc(db, "studios", studio, "tracks", track.id), {
-							notes: [...track.notes, { type: "empty", name: "", id: "" }],
-						});
+					onClick={() => {
+						addCell(studio, track.id).catch(failed);
 					}}
 				>
 					<FaPlusCircle color="black" size={32} />
 				</button>
 			</div>
+
+			{notice && <Notice message={notice} close={() => setNotice("")} />}
 		</div>
 	);
 };
