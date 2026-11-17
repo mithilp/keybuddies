@@ -1,5 +1,5 @@
 import { Key, Sound } from "@/utils/types";
-import PianoEditor from "../instruments/Piano/PianoEditor";
+import PianoEditor from "../instruments/piano/PianoEditor";
 import { updateSequence } from "@/utils/sounds";
 import Panel from "../Panel";
 import { soundBars } from "@/utils/clips";

@@ -2,7 +2,7 @@
 
 import crunker from "./crunker";
 import { loopUrl } from "./loops";
-import MIDI, { HIGHEST_NOTE, LOWEST_NOTE } from "./MIDI";
+import MIDI, { HIGHEST_NOTE, LOWEST_NOTE } from "./midi";
 
 // Every audio file the app plays is fetched and decoded once per session and
 // kept here by url. Loop previews, the piano keys and song rendering all ask

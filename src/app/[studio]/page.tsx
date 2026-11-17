@@ -2,7 +2,7 @@
 
 import { use, useState } from "react";
 import { Item, Track } from "@/utils/types";
-import Sidebar from "@/components/Sidebar/Sidebar";
+import Sidebar from "@/components/sidebar/Sidebar";
 import Header from "@/components/Header";
 import Tracks from "@/components/Tracks";
 import Notice from "@/components/Notice";

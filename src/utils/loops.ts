@@ -87,13 +87,13 @@ export const loopUrl = (id: string, bpm: number | string) =>
 // How many bars a loop's file is. A loop the library doesn't have any more
 // still has its files, and those are all 2 bars.
 export const loopBars = (id: string): ClipBars =>
-	loops.find((loop) => loop.id == id)?.bars ?? 2;
+	loops.find((loop) => loop.id === id)?.bars ?? 2;
 
 // the ids in a field of the studio document, whatever is really in it
 const ids = (field: unknown) =>
 	new Set(
 		Array.isArray(field)
-			? field.filter((id): id is string => typeof id == "string")
+			? field.filter((id): id is string => typeof id === "string")
 			: []
 	);
 
@@ -103,7 +103,7 @@ const onTracks = (tracks: { clips: Item[] }[]) => {
 
 	for (const track of tracks) {
 		for (const clip of track.clips) {
-			if (clip.type == "loop" && !used.has(clip.id)) used.set(clip.id, clip);
+			if (clip.type === "loop" && !used.has(clip.id)) used.set(clip.id, clip);
 		}
 	}
 
@@ -137,7 +137,7 @@ export const studioLoops = (
 	);
 
 	const gone = [...used.values()].filter(
-		(clip) => !out.has(clip.id) && !loops.some((loop) => loop.id == clip.id)
+		(clip) => !out.has(clip.id) && !loops.some((loop) => loop.id === clip.id)
 	);
 
 	return [...known, ...gone].map(

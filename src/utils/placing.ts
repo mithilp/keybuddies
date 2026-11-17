@@ -21,10 +21,10 @@ export type Placing = {
 const sameItem = (a: Item, b: Item) => a.type === b.type && a.id === b.id;
 
 const sameSlot = (a: PickedSlot, b: PickedSlot) =>
-	a.track == b.track &&
+	a.track === b.track &&
 	(a.clip && b.clip
 		? sameClip(a.clip, b.clip)
-		: !a.clip && !b.clip && a.bar == b.bar);
+		: !a.clip && !b.clip && a.bar === b.bar);
 
 // Putting loops and sounds on tracks. It works in both orders: pick a clip
 // or an empty bar and then what goes there, or pick what goes and then the
@@ -69,7 +69,7 @@ export const usePlacing = (
 		putItem(studio, into.track, into, what).catch((error) => {
 			console.error(error);
 			failed(
-				`Couldn't put the ${what.type == "loop" ? "loop" : "sound"} in. Try again.`
+				`Couldn't put the ${what.type === "loop" ? "loop" : "sound"} in. Try again.`
 			);
 		});
 	};

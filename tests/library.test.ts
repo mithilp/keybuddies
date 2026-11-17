@@ -78,7 +78,7 @@ test("the loops that cells already hold keep their ids and names", () => {
 	];
 
 	for (const [id, name] of kept) {
-		assert.equal(loops.find((loop) => loop.id == id)?.name, name);
+		assert.equal(loops.find((loop) => loop.id === id)?.name, name);
 	}
 });
 

@@ -5,6 +5,7 @@ const config = [
 	{ ignores: [".next/**", "next-env.d.ts"] },
 	...next,
 	...typescript,
+	{ rules: { eqeqeq: ["error", "always"] } },
 ];
 
 export default config;

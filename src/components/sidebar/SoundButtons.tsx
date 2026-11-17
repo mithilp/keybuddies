@@ -3,7 +3,7 @@ import { playDrum, playPiano } from "@/utils/instruments";
 import { soundBars } from "@/utils/clips";
 import { NAME_LENGTH, copyName, removeSound, saveSound } from "@/utils/sounds";
 import { Sound } from "@/utils/types";
-import React, { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IconButton } from "../ui/button";
 import {
 	CopyIcon,
@@ -15,19 +15,19 @@ import {
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
 
-const SoundThumbnail = ({
+// The buttons on a recorded sound's row in the sidebar. `playing` is the id
+// of the sound being listened to, if one is. The other rows wait for it.
+const SoundButtons = ({
 	playing,
-	index,
 	sound,
 	setPlaying,
 	bpm,
 	studio,
 	failed,
 }: {
-	playing: number;
-	index: number;
+	playing: string | null;
 	sound: Sound;
-	setPlaying: (index: number) => void;
+	setPlaying: (id: string | null) => void;
 	bpm: string;
 	studio: string;
 	// gets a message when something couldn't be done
@@ -35,13 +35,40 @@ const SoundThumbnail = ({
 }) => {
 	const [open, setOpen] = useState(false);
 
-	function playSound(sound: Sound) {
-		if (sound.type == "piano") {
+	// another sound is being listened to
+	const waiting = playing !== null && playing !== sound.id;
+
+	// ends the listen once the sound is over
+	const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// a row that goes away doesn't end a listen later. the list stops
+	// waiting on a sound that isn't in it.
+	useEffect(
+		() => () => {
+			if (timer.current) clearTimeout(timer.current);
+		},
+		[]
+	);
+
+	const listen = () => {
+		if (playing !== null) return;
+
+		setPlaying(sound.id);
+
+		if (sound.type === "piano") {
 			playPiano(sound.sequence, Number(bpm), sound.bars);
-		} else if (sound.type == "drum") {
+		} else if (sound.type === "drum") {
 			playDrum(sound.sequence, Number(bpm), sound.steps, sound.bars);
 		}
-	}
+
+		timer.current = setTimeout(
+			() => {
+				timer.current = null;
+				setPlaying(null);
+			},
+			(soundBars(sound.bars) * 240000) / Number(bpm)
+		);
+	};
 
 	const edit = () => {
 		setOpen(true);
@@ -97,28 +124,17 @@ const SoundThumbnail = ({
 			<IconButton
 				label={`Play ${sound.name}`}
 				icon={SoundIcon}
-				busy={playing == index}
-				disabled={playing != index && playing != -1}
-				onClick={() => {
-					if (playing == -1) {
-						setPlaying(index);
-						playSound(sound);
-						setTimeout(
-							() => {
-								setPlaying(-1);
-							},
-							(soundBars(sound.bars) * 240000) / Number(bpm)
-						);
-					}
-				}}
+				busy={playing === sound.id}
+				disabled={waiting}
+				onClick={listen}
 			/>
 
 			{/* only piano has an editor so far */}
-			{sound.type == "piano" && (
+			{sound.type === "piano" && (
 				<IconButton
 					label={`Edit ${sound.name}`}
 					icon={EditIcon}
-					disabled={playing != index && playing != -1}
+					disabled={waiting}
 					onClick={edit}
 				/>
 			)}
@@ -126,21 +142,21 @@ const SoundThumbnail = ({
 			<IconButton
 				label={`Duplicate ${sound.name}`}
 				icon={CopyIcon}
-				disabled={playing != index && playing != -1}
+				disabled={waiting}
 				onClick={() => setAsking("copy")}
 			/>
 
 			<IconButton
 				label={`Share ${sound.name}`}
 				icon={ShareIcon}
-				disabled={playing != index && playing != -1}
+				disabled={waiting}
 				onClick={share}
 			/>
 
 			<IconButton
 				label={`Delete ${sound.name}`}
 				icon={DeleteIcon}
-				disabled={playing != index && playing != -1}
+				disabled={waiting}
 				onClick={() => setAsking("delete")}
 			/>
 
@@ -176,9 +192,7 @@ const SoundThumbnail = ({
 				/>
 			)}
 
-			{/* edit sound modal */}
-			{/* if piano */}
-			{open && sound.type == "piano" && (
+			{open && sound.type === "piano" && (
 				<EditPianoSound
 					bpm={Number(bpm)}
 					sound={sound}
@@ -189,4 +203,4 @@ const SoundThumbnail = ({
 	);
 };
 
-export default SoundThumbnail;
+export default SoundButtons;

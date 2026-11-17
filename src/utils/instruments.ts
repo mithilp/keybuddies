@@ -67,7 +67,7 @@ const renderPiano = async (music: Array<Key>, bpm: number, bars: number) => {
 // track the same way everything else does. `frames` forces an exact length.
 // The hits are on the sixteenth grid, see drumBeat, and the beat is `steps`
 // of them long.
-export const renderDrum = (
+const renderDrum = (
 	music: Array<Key>,
 	bpm: number,
 	frames?: number,

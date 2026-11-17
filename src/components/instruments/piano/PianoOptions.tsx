@@ -1,4 +1,4 @@
-import MIDI from "@/utils/MIDI";
+import MIDI from "@/utils/midi";
 import Metronome from "../Metronome";
 import { useEffect, useRef, useState } from "react";
 import { ClipBars } from "@/utils/types";
@@ -121,7 +121,7 @@ const PianoOptions = ({
 			</div>
 
 			<div className="flex gap-4 whitespace-nowrap">
-				<Metronome mspb={multiplier} />
+				<Metronome step={multiplier} />
 				{/* the one thing to do until there's a take, then Save is */}
 				<Button
 					variant={empty ? "primary" : "secondary"}

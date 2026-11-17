@@ -105,7 +105,7 @@ export class Transport {
 		const seconds = played % old.duration;
 
 		// the same beat is at another second when the tempo changed
-		let at = song.bpm == old.bpm ? seconds : (seconds * old.bpm) / song.bpm;
+		let at = song.bpm === old.bpm ? seconds : (seconds * old.bpm) / song.bpm;
 
 		if (at >= song.duration) {
 			if (!this.looping) return false;

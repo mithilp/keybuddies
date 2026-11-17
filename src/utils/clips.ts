@@ -22,9 +22,9 @@ export const DEFAULT_BARS: ClipBars = 2;
 
 // how long a track can get in the app. old tracks can be up to 2000 bars
 // (1000 cells), those are left as long as they are.
-export const MAX_BARS = 1000;
+const MAX_BARS = 1000;
 
-export const isClipBars = (value: unknown): value is ClipBars =>
+const isClipBars = (value: unknown): value is ClipBars =>
 	value === 1 || value === 2 || value === 4;
 
 // how long a sound or a loop is on its own
@@ -36,7 +36,7 @@ export type TrackClips = { clips: Clip[]; bars: number };
 const count = (value: unknown): value is number =>
 	typeof value === "number" && Number.isInteger(value) && value >= 0;
 
-export const clipEnd = (clip: Clip) => clip.start + clip.bars;
+const clipEnd = (clip: Clip) => clip.start + clip.bars;
 
 // what a track doc has that readTrack looks at
 export type TrackDoc = { clips?: unknown; notes?: unknown; bars?: unknown };

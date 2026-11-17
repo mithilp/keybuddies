@@ -54,7 +54,8 @@ const Sounds = ({
 	// answered there's no telling whether the list is empty.
 	const [loaded, setLoaded] = useState(false);
 
-	const [playing, setPlaying] = useState<number>(-1);
+	// the id of the recorded sound being listened to
+	const [playing, setPlaying] = useState<string | null>(null);
 
 	useEffect(
 		() =>
@@ -99,8 +100,12 @@ const Sounds = ({
 		});
 	};
 
-	// a recorded sound is being listened to. the other rows wait for it.
-	const busy = playing !== -1;
+	// A recorded sound is being listened to. The other rows wait for it,
+	// unless it was taken out of the studio while it played.
+	const listening = sounds.some((sound) => sound.id === playing)
+		? playing
+		: null;
+	const busy = listening !== null;
 
 	// A row looks picked when it's what will go on the track. While a clip or
 	// an empty bar is picked instead, every row is something a click puts
@@ -116,7 +121,7 @@ const Sounds = ({
 	return (
 		<div className="px-4 pt-4 space-y-2">
 			<h3 className="text-lg font-bold">Sounds in this studio</h3>
-			{sounds.map((sound, index) => (
+			{sounds.map((sound) => (
 				<div
 					key={sound.id}
 					onClick={() => {
@@ -129,7 +134,7 @@ const Sounds = ({
 					}}
 					className={row(
 						item?.type === "sound" && item.id === sound.id,
-						playing !== index && playing !== -1
+						busy && listening !== sound.id
 					)}
 				>
 					<div className="flex items-center gap-2 min-w-0">
@@ -148,8 +153,7 @@ const Sounds = ({
 						onClick={(event) => event.stopPropagation()}
 					>
 						<SoundButtons
-							index={index}
-							playing={playing}
+							playing={listening}
 							setPlaying={setPlaying}
 							sound={sound}
 							bpm={bpm}

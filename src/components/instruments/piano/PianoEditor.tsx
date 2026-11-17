@@ -14,6 +14,7 @@ import PianoRoll from "./PianoRoll";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { CheckIcon, ICON, SoundIcon } from "@/components/ui/icons";
+import { ErrorMessage } from "@/components/ui/feedback";
 
 // the keys shown to start with, C3 to F5
 const FIRST_NOTE = 48;
@@ -39,7 +40,8 @@ const PianoEditor = ({
 	initial?: Key[];
 	bars?: ClipBars;
 	saveLabel: string;
-	onSave: (sequence: Key[], bars: ClipBars) => void;
+	// can be a write. the button waits for it and says when it didn't work.
+	onSave: (sequence: Key[], bars: ClipBars) => void | Promise<void>;
 	// the keyboard stops listening, for when something is being typed
 	paused?: boolean;
 }) => {
@@ -171,6 +173,23 @@ const PianoEditor = ({
 
 	const idle = inside.length === 0 || recording;
 
+	const [saving, setSaving] = useState(false);
+	const [problem, setProblem] = useState("");
+
+	const save = async () => {
+		setSaving(true);
+		setProblem("");
+
+		try {
+			await onSave(inside, length);
+		} catch (error) {
+			console.error(error);
+			setProblem("Couldn't save the recording. Try again.");
+		} finally {
+			setSaving(false);
+		}
+	};
+
 	return (
 		<div className="space-y-4">
 			<PianoOptions
@@ -229,13 +248,18 @@ const PianoEditor = ({
 					<Button
 						size="lg"
 						variant="primary"
-						onClick={() => onSave(inside, length)}
-						disabled={idle}
+						onClick={save}
+						disabled={idle || saving}
 					>
-						<CheckIcon size={ICON} aria-hidden />
+						{saving ? (
+							<Spinner size="sm" label="Saving" />
+						) : (
+							<CheckIcon size={ICON} aria-hidden />
+						)}
 						{saveLabel}
 					</Button>
 				</div>
+				{problem && <ErrorMessage>{problem}</ErrorMessage>}
 			</div>
 		</div>
 	);

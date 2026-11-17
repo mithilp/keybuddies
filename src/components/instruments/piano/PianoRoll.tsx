@@ -1,6 +1,6 @@
 "use client";
 
-import MIDI from "@/utils/MIDI";
+import MIDI from "@/utils/midi";
 import { pressKey } from "@/utils/instruments";
 import { Key } from "@/utils/types";
 import { useState } from "react";

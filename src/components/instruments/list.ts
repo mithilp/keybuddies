@@ -2,7 +2,7 @@ import { ComponentType } from "react";
 import { IconType } from "react-icons";
 import { DrumIcon, PianoIcon } from "../ui/icons";
 import Drum from "./Drum";
-import Piano from "./Piano/Piano";
+import Piano from "./piano/Piano";
 
 export type Instrument = {
 	id: string;

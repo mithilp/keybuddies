@@ -1,4 +1,4 @@
-import { HIGHEST_NOTE, LOWEST_NOTE } from "./MIDI";
+import { HIGHEST_NOTE, LOWEST_NOTE } from "./midi";
 import { Key } from "./types";
 
 // A saved piano recording as notes that can be drawn and played. The piano
