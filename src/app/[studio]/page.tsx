@@ -19,12 +19,16 @@ import StudioNotFound from "@/components/StudioNotFound";
 import StudioFailed from "@/components/StudioFailed";
 import { isStudioCode } from "@/utils/studio-code";
 import crunker, { awake, wake } from "@/utils/crunker";
-import { renderSong, SongError } from "@/utils/song";
+import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
 import { mixDown, save, toWav } from "@/utils/export";
 
 // how long firestore gets to answer before the studio counts as not loading
 const PATIENCE = 10000;
+
+// How long the song waits after an edit before it's rendered again, in ms.
+// Edits come in bursts and every render is a whole song.
+const SETTLE = 150;
 
 export default function Page(props: { params: Promise<{ studio: string }> }) {
 	const { studio } = use(props.params);
@@ -78,16 +82,16 @@ function Studio({ studio }: { studio: string }) {
 
 	const [transport] = useState(() => new Transport());
 
-	// the tempo the playing song was rendered at. the studio's can change
-	// under it.
-	const playingBpm = useRef(120);
-
-	// where the song is right now, in beats. the playhead reads this on every
-	// frame while the song plays.
+	// Where the song is right now, in beats. The playhead reads this on every
+	// frame while the song plays. The tempo is the one the playing song was
+	// rendered at, the studio's can already be another.
 	const liveBeat = useCallback(
-		() => (transport.position() * playingBpm.current) / 60,
+		() => (transport.position() * transport.bpm) / 60,
 		[transport]
 	);
+
+	// the songKey of the song that's playing
+	const playingKey = useRef("");
 
 	// Goes up on every play and every stop. A play that finds a different
 	// number than the one it started with was stopped and gives up.
@@ -226,7 +230,8 @@ function Studio({ studio }: { studio: string }) {
 
 			if (stopped()) return;
 
-			playingBpm.current = song.bpm;
+			// what this song was made from. the studio can have moved on since.
+			playingKey.current = songKey(tracks, bpm);
 
 			// the song is over when its longest track is, and only then
 			transport.onEnded = () => {
@@ -258,19 +263,66 @@ function Studio({ studio }: { studio: string }) {
 	const seek = (to: number) => {
 		// the song that's playing is the one rendered at play. the ruler can
 		// have grown since, and a beat past the song's end isn't in it.
-		if (
-			transport.playing &&
-			(to * 60) / playingBpm.current >= transport.duration
-		) {
+		if (transport.playing && (to * 60) / transport.bpm >= transport.duration) {
 			return;
 		}
 
 		place(to);
 
 		if (transport.playing) {
-			transport.seek((to * 60) / playingBpm.current);
+			transport.seek((to * 60) / transport.bpm);
 		}
 	};
+
+	// An edit while the song plays: a loop swapped, a cell added or taken
+	// out, another tempo. The song is rendered again and the new one takes
+	// over from the one that's playing, on the same beat. Until it's ready
+	// the old one keeps playing.
+	useEffect(() => {
+		if (playback != "playing") return;
+
+		const key = songKey(tracks, bpm);
+		if (key == playingKey.current) return;
+
+		const id = run.current;
+		let dropped = false;
+		const stale = () => dropped || run.current !== id;
+
+		const timer = setTimeout(async () => {
+			try {
+				const song = await renderSong(tracks, bpm);
+
+				// paused, or edited again while this was rendering
+				if (stale()) return;
+
+				const swapped =
+					song.tracks.length > 0 &&
+					transport.swap(song, (track) => mutedRef.current.has(track));
+
+				if (swapped) {
+					playingKey.current = key;
+				} else {
+					// the song got shorter than where it was, so it's over
+					halt(0);
+				}
+			} catch (error) {
+				if (stale()) return;
+
+				console.error(error);
+
+				setNotice(
+					error instanceof SongError
+						? error.message
+						: "Couldn't update the song while it plays. Pause and play again."
+				);
+			}
+		}, SETTLE);
+
+		return () => {
+			dropped = true;
+			clearTimeout(timer);
+		};
+	}, [tracks, bpm, playback, transport, halt]);
 
 	// null when no download is being made, otherwise how far along it is
 	// from 0 to 1
