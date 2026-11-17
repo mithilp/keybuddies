@@ -9,7 +9,7 @@ import {
 	query,
 } from "firebase/firestore";
 import { use, useState, useEffect, useRef, useCallback } from "react";
-import { Playback, SelectedCell, Track } from "@/utils/types";
+import { Playback, Track } from "@/utils/types";
 
 import Sidebar from "@/components/Sidebar/Sidebar";
 import Header from "@/components/Header";
@@ -21,7 +21,7 @@ import { isStudioCode } from "@/utils/studio-code";
 import crunker, { awake, wake } from "@/utils/crunker";
 import { renderSong, songKey, SongError } from "@/utils/song";
 import { Transport } from "@/utils/transport";
-import { sameCell } from "@/utils/cells";
+import { usePlacing } from "@/utils/placing";
 import { mixDown, save, toWav } from "@/utils/export";
 
 // how long firestore gets to answer before the studio counts as not loading
@@ -63,23 +63,14 @@ function Studio({ studio }: { studio: string }) {
 
 	const [loading, setLoading] = useState(true);
 
-	const [selectedCell, setSelectedCell] = useState<SelectedCell>(null);
-
 	const [tracks, setTracks] = useState<Array<Track>>([]);
-
-	// A pick is for the cell it was made on. When that cell isn't at its place
-	// any more (someone else took out a cell before it, or put something in
-	// it), the pick is let go, so a loop can't land in the cell that moved in.
-	if (selectedCell) {
-		const track = tracks.find((track) => track.id === selectedCell.track);
-		const cell = track?.notes[selectedCell.index];
-
-		if (!cell || !sameCell(cell, selectedCell.cell)) setSelectedCell(null);
-	}
 
 	const [playback, setPlayback] = useState<Playback>("stopped");
 
 	const [notice, setNotice] = useState("");
+
+	// which cell or which loop or sound is picked, and putting one in the other
+	const placing = usePlacing(studio, tracks, setNotice);
 
 	// Where the playhead rests while nothing is playing, in beats from the
 	// start of the song. Play starts from here.
@@ -419,13 +410,7 @@ function Studio({ studio }: { studio: string }) {
 	return (
 		<div className="grid grid-cols-3">
 			{/* Left column */}
-			<Sidebar
-				setSelectedCell={setSelectedCell}
-				selectedCell={selectedCell}
-				tracks={tracks}
-				bpm={bpm}
-				studio={studio}
-			/>
+			<Sidebar placing={placing} bpm={bpm} studio={studio} />
 
 			{/* Right column (two-thirds of the screen). The header is not inside
 			    the part that scrolls, so the tracks can't end up over or under
@@ -446,8 +431,7 @@ function Studio({ studio }: { studio: string }) {
 
 				{/* rows content */}
 				<Tracks
-					setSelectedCell={setSelectedCell}
-					selectedCell={selectedCell}
+					placing={placing}
 					tracks={tracks}
 					loading={loading}
 					studio={studio}

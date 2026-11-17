@@ -3,24 +3,27 @@
 import Image from "next/image";
 import logo from "../../../public/images/keybuddies-logo.png";
 import { useState } from "react";
-import { SelectedCell, Track } from "@/utils/types";
+import { Placing } from "@/utils/placing";
 import Instruments from "./Instruments";
 import Loops from "./Loops";
 
 const Sidebar = ({
-	setSelectedCell,
-	selectedCell,
-	tracks,
+	placing,
 	bpm,
 	studio,
 }: {
-	setSelectedCell: (cell: SelectedCell) => void;
-	selectedCell: SelectedCell;
-	tracks: Track[];
+	placing: Placing;
 	bpm: string;
 	studio: string;
 }) => {
 	const [tab, setTab] = useState("loops");
+
+	// a loop or a sound that's picked stays on its own tab, and one that
+	// can't be seen shouldn't still be waiting for a cell
+	const show = (tab: string) => {
+		setTab(tab);
+		placing.dropItem();
+	};
 
 	return (
 		<div className="col-span-1 bg-blue text-black overflow-y-scroll h-screen border-r-8 border-black">
@@ -33,7 +36,7 @@ const Sidebar = ({
 						className={`w-[50%] px-4  py-2 rounded-xl font-medium focus:outline-none ${
 							tab === "loops" && "bg-yellow border-black border-[8px]"
 						}`}
-						onClick={() => setTab("loops")}
+						onClick={() => show("loops")}
 					>
 						Loops
 					</button>
@@ -41,7 +44,7 @@ const Sidebar = ({
 						className={`w-[50%] px-4 py-2 rounded-xl font-medium focus:outline-none ${
 							tab === "instruments" && "bg-yellow border-black border-[8px]"
 						}`}
-						onClick={() => setTab("instruments")}
+						onClick={() => show("instruments")}
 					>
 						Instruments
 					</button>
@@ -50,24 +53,12 @@ const Sidebar = ({
 
 			{/* Content for the selected option will go here */}
 			{tab === "loops" && (
-				<Loops
-					setSelectedCell={setSelectedCell}
-					selectedCell={selectedCell}
-					tracks={tracks}
-					bpm={bpm}
-					studio={studio}
-				/>
+				<Loops placing={placing} bpm={bpm} />
 			)}
 
 			{/* Content for instruments tab */}
 			{tab === "instruments" && (
-				<Instruments
-					setSelectedCell={setSelectedCell}
-					selectedCell={selectedCell}
-					tracks={tracks}
-					bpm={bpm}
-					studio={studio}
-				/>
+				<Instruments placing={placing} bpm={bpm} studio={studio} />
 			)}
 		</div>
 	);

@@ -4,23 +4,19 @@ import SoundButtons from "./SoundButtons";
 import Drum from "../instruments/Drum";
 import { MdPiano } from "react-icons/md";
 import { FaDrum } from "react-icons/fa";
-import { SelectedCell, Sound, Track } from "@/utils/types";
+import { Sound } from "@/utils/types";
+import { Placing } from "@/utils/placing";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import AddSound from "./AddSound";
-import { setCell } from "@/utils/cells";
 import Notice from "../Notice";
 
 const Instruments = ({
-	setSelectedCell,
-	selectedCell,
-	tracks,
+	placing,
 	bpm,
 	studio,
 }: {
-	setSelectedCell: (cell: SelectedCell) => void;
-	selectedCell: SelectedCell;
-	tracks: Track[];
+	placing: Placing;
 	bpm: string;
 	studio: string;
 }) => {
@@ -55,22 +51,14 @@ const Instruments = ({
 		return soundsUnsub;
 	}, [studio]);
 
-	const addToTrack = (sound: Sound) => {
-		if (!selectedCell) return;
+	const { item, dropItem } = placing;
 
-		const track = tracks.find((track) => track.id === selectedCell.track);
-		if (track) {
-			setCell(studio, track.id, selectedCell.index, selectedCell.cell, {
-				name: sound.name,
-				id: sound.id,
-				type: "sound",
-			}).catch((error) => {
-				console.error(error);
-				setNotice("Couldn't put the sound in. Try again.");
-			});
+	// a picked sound that's taken out of the studio isn't picked any more
+	useEffect(() => {
+		if (item?.type == "sound" && !sounds.some((sound) => sound.id == item.id)) {
+			dropItem();
 		}
-		setSelectedCell(null);
-	};
+	}, [item, sounds, dropItem]);
 
 	return (
 		<div className="p-4 space-y-2">
@@ -81,9 +69,15 @@ const Instruments = ({
 			{sounds.map((sound, index) => (
 				<div
 					key={index}
-					onClick={() => addToTrack(sound)}
+					onClick={() => {
+						placing.pickItem({ type: "sound", name: sound.name, id: sound.id });
+					}}
+					// Pink is what a click does something to. While a cell is
+					// picked that's every sound, otherwise it's the picked one.
 					className={`bg-yellow flex justify-between p-4 rounded-xl border-8 ${
-						selectedCell ? "border-pink" : "border-black"
+						placing.cell || (item?.type == "sound" && item.id == sound.id)
+							? "border-pink"
+							: "border-black"
 					} ${
 						playing != index && playing != -1 ? "opacity-50" : "cursor-pointer"
 					}`}

@@ -1,5 +1,6 @@
 import { db } from "@/utils/firebase";
-import { SelectedCell, Track as TrackType } from "@/utils/types";
+import { Track as TrackType } from "@/utils/types";
+import { Placing } from "@/utils/placing";
 import { Timestamp, addDoc, collection } from "firebase/firestore";
 import { FaPlus } from "react-icons/fa";
 import { CELL_BEATS } from "@/utils/tempo";
@@ -8,8 +9,7 @@ import Track from "./Track";
 
 const Tracks = ({
 	tracks,
-	selectedCell,
-	setSelectedCell,
+	placing,
 	studio,
 	loading,
 	mute,
@@ -19,8 +19,7 @@ const Tracks = ({
 	liveBeat,
 	seek,
 }: {
-	setSelectedCell: (cell: SelectedCell) => void;
-	selectedCell: SelectedCell;
+	placing: Placing;
 	tracks: TrackType[];
 	studio: string;
 	loading: boolean;
@@ -88,8 +87,7 @@ const Tracks = ({
 								<Track
 									key={track.id}
 									track={track}
-									selectedCell={selectedCell}
-									setSelectedCell={setSelectedCell}
+									placing={placing}
 									studio={studio}
 									onMute={() => {
 										mute(track);
