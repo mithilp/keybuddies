@@ -5,6 +5,9 @@ import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { FaRepeat } from "react-icons/fa6";
 import { Tip } from "./ui/tooltip";
 
+// the tempos a studio can be in. every loop has a file for each of them.
+const TEMPOS = ["80", "120", "160"];
+
 const Header = ({
 	studio,
 	bpm,
@@ -38,19 +41,36 @@ const Header = ({
 
 			<div className="flex space-x-2 items-center">
 				<h1 className="text-3xl font-black">BPM:</h1>
-				<select
-					value={bpm}
-					onChange={(e) => {
-						updateDoc(doc(db, "studios", studio), {
-							bpm: e.target.value,
-						});
-					}}
-					className="bg-yellow border-8 px-2 rounded-xl border-black h-16 text-3xl font-black"
-				>
-					<option value="80">80</option>
-					<option value="120">120</option>
-					<option value="160">160</option>
-				</select>
+				{/* three radio buttons drawn as one block. Tab gets to it and the
+				    arrow keys go through the tempos. */}
+				<Tip label="Tempo, in beats per minute" side="bottom">
+					<div
+						role="radiogroup"
+						aria-label="Tempo, in beats per minute"
+						className="flex h-16 bg-yellow border-8 border-black rounded-xl overflow-hidden text-2xl font-black"
+					>
+						{TEMPOS.map((tempo, index) => (
+							<label
+								key={tempo}
+								className={`relative grid place-items-center px-3 cursor-pointer border-black has-[:focus-visible]:outline has-[:focus-visible]:outline-4 has-[:focus-visible]:-outline-offset-4 has-[:focus-visible]:outline-black ${
+									index > 0 ? "border-l-4" : ""
+								} ${bpm == tempo ? "bg-blue" : ""}`}
+							>
+								<input
+									type="radio"
+									name="bpm"
+									value={tempo}
+									checked={bpm == tempo}
+									onChange={() => {
+										updateDoc(doc(db, "studios", studio), { bpm: tempo });
+									}}
+									className="sr-only"
+								/>
+								{tempo}
+							</label>
+						))}
+					</div>
+				</Tip>
 				<Tip
 					label={
 						exporting === null ? "Download the song" : "Making the download"
