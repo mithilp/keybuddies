@@ -9,39 +9,15 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { FaCheck, FaCopy } from "react-icons/fa";
 import { useEscape } from "@/utils/escape";
-
-// Tab and Shift Tab go round the buttons and boxes in `box` and never leave
-// it. Focus that's on `box` itself goes to the first or the last one.
-export const keepTabInside = (
-	event: ReactKeyboardEvent,
-	box: HTMLElement | null
-) => {
-	if (event.key !== "Tab" || !box) return;
-
-	const stops = box.querySelectorAll<HTMLElement>(
-		"button:not(:disabled), input:not(:disabled), select:not(:disabled)"
-	);
-	if (stops.length === 0) return;
-
-	const first = stops[0];
-	const last = stops[stops.length - 1];
-	const at = document.activeElement;
-
-	if (event.shiftKey && (at === first || at === box)) {
-		event.preventDefault();
-		last.focus();
-	} else if (!event.shiftKey && at === last) {
-		event.preventDefault();
-		first.focus();
-	}
-};
-
-const quiet =
-	"bg-yellow border-8 border-black rounded-xl px-4 py-2 disabled:opacity-50";
-const loud =
-	"bg-pink border-8 border-black rounded-xl px-4 py-2 font-bold disabled:opacity-50";
+import { useFocusTrap } from "@/utils/focus";
+import { cn } from "@/utils/cn";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import { Input } from "./ui/input";
+import { Spinner } from "./ui/spinner";
+import { ErrorMessage } from "./ui/feedback";
+import { CheckIcon, CopyIcon, ICON } from "./ui/icons";
 
 // The box every dialog sits in. It goes on top of everything, Escape or a
 // click outside it closes it, Tab stays inside it, and the focus goes back
@@ -63,15 +39,8 @@ const Dialog = ({
 	children: ReactNode;
 }) => {
 	const heading = useId();
-	const card = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const before = document.activeElement;
-
-		return () => {
-			if (before instanceof HTMLElement) before.focus();
-		};
-	}, []);
+	const box = useRef<HTMLDivElement>(null);
+	const trap = useFocusTrap(box);
 
 	useEscape(close);
 
@@ -80,12 +49,12 @@ const Dialog = ({
 		// listens to the whole keyboard.
 		event.stopPropagation();
 
-		keepTabInside(event, card.current);
+		trap(event);
 	};
 
 	return createPortal(
 		<div
-			className="fixed inset-0 z-40 grid place-items-center bg-black/50 p-4"
+			className="fixed inset-0 z-dialog grid place-items-center bg-ink/50 p-4"
 			onClick={(event) => {
 				// a dialog is drawn on the page but belongs to whatever opened it,
 				// which might be clickable itself
@@ -95,20 +64,21 @@ const Dialog = ({
 			}}
 			onKeyDown={onKeyDown}
 		>
-			<div
-				ref={card}
+			<Card
+				ref={box}
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={heading}
-				className={`w-full ${
+				className={cn(
+					"w-full max-h-[calc(100dvh-2rem)] flex flex-col space-y-4 text-left text-base font-normal cursor-auto",
 					wide ? "max-w-xl" : "max-w-md"
-				} max-h-[calc(100dvh-2rem)] flex flex-col bg-blue border-8 border-black rounded-xl p-6 space-y-4 text-left text-base font-normal cursor-auto`}
+				)}
 			>
-				<h3 id={heading} className="text-2xl font-bold">
+				<h3 id={heading} className="text-xl font-bold">
 					{title}
 				</h3>
 				{children}
-			</div>
+			</Card>
 		</div>,
 		document.body
 	);
@@ -187,7 +157,7 @@ export const PromptDialog = ({
 			>
 				{hint && <p>{hint}</p>}
 
-				<input
+				<Input
 					ref={input}
 					type="text"
 					aria-label={label}
@@ -196,27 +166,19 @@ export const PromptDialog = ({
 					placeholder={placeholder}
 					maxLength={maxLength}
 					autoComplete="off"
-					className="w-full bg-yellow border-8 border-black p-2 rounded-xl text-black"
+					className="w-full"
 				/>
 
-				{problem && (
-					<p role="alert" className="font-bold">
-						{problem}
-					</p>
-				)}
+				{problem && <ErrorMessage>{problem}</ErrorMessage>}
 
 				<div className="flex justify-end space-x-4">
-					<button
-						type="button"
-						onClick={cancel}
-						disabled={busy}
-						className={quiet}
-					>
+					<Button onClick={cancel} disabled={busy}>
 						Cancel
-					</button>
-					<button type="submit" disabled={busy} className={loud}>
+					</Button>
+					<Button type="submit" variant="primary" disabled={busy}>
+						{busy && <Spinner size="sm" label="Saving" />}
 						{submit}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</Dialog>
@@ -229,12 +191,15 @@ export const ConfirmDialog = ({
 	title,
 	message,
 	confirm,
+	danger = false,
 	onConfirm,
 	onCancel,
 }: {
 	title: string;
 	message?: string;
 	confirm: string;
+	// for a yes that throws something away
+	danger?: boolean;
 	onConfirm: () => void;
 	onCancel: () => void;
 }) => {
@@ -249,12 +214,14 @@ export const ConfirmDialog = ({
 			{message && <p>{message}</p>}
 
 			<div className="flex justify-end space-x-4">
-				<button type="button" onClick={onCancel} className={quiet}>
-					Cancel
-				</button>
-				<button ref={yes} type="button" onClick={onConfirm} className={loud}>
+				<Button onClick={onCancel}>Cancel</Button>
+				<Button
+					ref={yes}
+					variant={danger ? "danger" : "primary"}
+					onClick={onConfirm}
+				>
 					{confirm}
-				</button>
+				</Button>
 			</div>
 		</Dialog>
 	);
@@ -299,23 +266,22 @@ export const ShareDialog = ({
 			<p>{hint}</p>
 
 			<div className="flex space-x-4">
-				<input
+				<Input
 					ref={box}
 					readOnly
 					aria-label="Code"
 					value={code}
 					onFocus={(event) => event.target.select()}
-					className="w-full min-w-0 bg-yellow border-8 border-black p-2 rounded-xl text-black text-center text-2xl font-bold tracking-widest"
+					className="w-full min-w-0 text-center text-xl font-bold tracking-widest"
 				/>
-				<button
-					ref={copyButton}
-					type="button"
-					onClick={copy}
-					className={`${loud} flex items-center space-x-2 whitespace-nowrap`}
-				>
-					{copied === "yes" ? <FaCheck size={20} /> : <FaCopy size={20} />}
-					<div>{copied === "yes" ? "Copied" : "Copy"}</div>
-				</button>
+				<Button ref={copyButton} variant="primary" onClick={copy}>
+					{copied === "yes" ? (
+						<CheckIcon size={ICON} aria-hidden />
+					) : (
+						<CopyIcon size={ICON} aria-hidden />
+					)}
+					<span>{copied === "yes" ? "Copied" : "Copy"}</span>
+				</Button>
 			</div>
 
 			<p role="status" className="min-h-6">
@@ -324,12 +290,10 @@ export const ShareDialog = ({
 			</p>
 
 			<div className="flex justify-end">
-				<button type="button" onClick={onClose} className={quiet}>
-					Done
-				</button>
+				<Button onClick={onClose}>Done</Button>
 			</div>
 		</Dialog>
 	);
 };
 
-export { Dialog, quiet as quietButton };
+export { Dialog };

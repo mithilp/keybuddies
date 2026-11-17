@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { FaCheck } from "react-icons/fa";
-import { MdLibraryMusic } from "react-icons/md";
 import { addLoop } from "@/utils/library";
 import { library, LibraryLoop } from "@/utils/loops";
 import { Item } from "@/utils/types";
-import { Dialog, quietButton } from "../Dialog";
+import { Dialog } from "../Dialog";
 import PlayLoop from "../PlayLoop";
+import { Button } from "../ui/button";
+import { ErrorMessage } from "../ui/feedback";
+import { BIG_ICON, CheckIcon, ICON, LibraryIcon } from "../ui/icons";
 
 // The loops that come with the app, a set at a time. A loop can be listened
 // to here, and Add puts it in the studio's sounds for everyone. Closing the
@@ -51,31 +52,30 @@ const LibraryDialog = ({
 				{library.map((set) => (
 					<section key={set.name} aria-label={set.name} className="space-y-2">
 						<div>
-							<h4 className="text-xl font-bold">{set.name}</h4>
+							<h4 className="text-lg font-bold">{set.name}</h4>
 							<p className="text-sm">{set.description}</p>
 						</div>
 
 						<ul className="space-y-2">
 							{set.loops.map((loop) => {
-								const added = loops.some((has) => has.id == loop.id);
+								const added = loops.some((has) => has.id === loop.id);
 
 								return (
 									<li
 										key={loop.id}
-										className="bg-yellow border-8 border-black rounded-xl p-3 flex items-center gap-3"
+										className="bg-surface border-control border-ink rounded p-3 flex items-center gap-3"
 									>
 										<PlayLoop id={loop.id} name={loop.name} bpm={bpm} />
 
 										<div className="flex-1 min-w-0">
-											<div className="text-xl">{loop.name}</div>
+											<div className="text-lg">{loop.name}</div>
 											<div className="text-sm">{loop.description}</div>
 										</div>
 
 										{/* Added is aria-disabled and not disabled. A button that's
 										    disabled under the focus drops it, and Tab would walk
 										    out of the dialog from there. */}
-										<button
-											type="button"
+										<Button
 											aria-disabled={added}
 											onClick={() => {
 												if (!added) add(loop);
@@ -85,11 +85,11 @@ const LibraryDialog = ({
 													? `${loop.name} is in this studio`
 													: `Add ${loop.name} to this studio`
 											}
-											className="shrink-0 w-28 flex items-center justify-center gap-2 bg-pink border-4 border-black rounded-xl px-3 py-1 font-bold aria-disabled:bg-transparent aria-disabled:opacity-60 aria-disabled:cursor-default"
+											className="shrink-0 w-28 px-3 py-1"
 										>
-											{added && <FaCheck aria-hidden />}
+											{added && <CheckIcon size={ICON} aria-hidden />}
 											{added ? "Added" : "Add"}
-										</button>
+										</Button>
 									</li>
 								);
 							})}
@@ -98,21 +98,12 @@ const LibraryDialog = ({
 				))}
 			</div>
 
-			{problem && (
-				<p role="alert" className="font-bold">
-					{problem}
-				</p>
-			)}
+			{problem && <ErrorMessage>{problem}</ErrorMessage>}
 
 			<div className="flex justify-end">
-				<button
-					ref={done}
-					type="button"
-					onClick={close}
-					className={quietButton}
-				>
+				<Button ref={done} onClick={close}>
 					Done
-				</button>
+				</Button>
 			</div>
 		</Dialog>
 	);
@@ -133,15 +124,14 @@ const Library = ({
 
 	return (
 		<>
-			<button
+			<Button
+				size="lg"
 				onClick={() => setOpen(true)}
-				className="bg-yellow p-4 w-full rounded-xl border-8 border-black cursor-pointer"
+				className="w-full justify-start"
 			>
-				<div className="flex items-center space-x-2">
-					<MdLibraryMusic size={32} />
-					<div className="text-xl">Library</div>
-				</div>
-			</button>
+				<LibraryIcon size={BIG_ICON} aria-hidden />
+				<span>Library</span>
+			</Button>
 
 			{open && (
 				<LibraryDialog
