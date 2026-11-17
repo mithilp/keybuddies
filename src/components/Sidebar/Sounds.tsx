@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import SoundButtons from "./SoundButtons";
-import { MdPiano } from "react-icons/md";
+import { IconType } from "react-icons";
+import { MdLibraryMusic, MdPiano } from "react-icons/md";
 import { FaDrum, FaTrash } from "react-icons/fa";
 import { Cell, Sound } from "@/utils/types";
 import { Placing } from "@/utils/placing";
@@ -11,6 +12,16 @@ import AddSound from "./AddSound";
 import Notice from "../Notice";
 import PlayLoop from "../PlayLoop";
 import { Tip } from "../ui/tooltip";
+
+// What a row is, as an icon: a piano sound, a drum sound or a loop. The
+// label is its tooltip, and what a screen reader says for it.
+const Kind = ({ label, icon: Icon }: { label: string; icon: IconType }) => (
+	<Tip label={label}>
+		<span role="img" aria-label={label} className="shrink-0">
+			<Icon size={32} aria-hidden />
+		</span>
+	</Tip>
+);
 
 // Everything in this studio that can go in a cell, in one list: the sounds
 // that were recorded here or added by code, and then the loops that were
@@ -57,7 +68,9 @@ const Sounds = ({
 			},
 			(error) => {
 				console.error(error);
-				setNotice("Couldn't load the recorded sounds. Reload to try again.");
+				setNotice(
+					"Couldn't load the sounds in this studio. Reload to try again."
+				);
 			}
 		);
 
@@ -91,7 +104,7 @@ const Sounds = ({
 
 	return (
 		<div className="px-4 pt-4 space-y-2">
-			<h3 className="text-lg font-medium">Recorded Sounds</h3>
+			<h3 className="text-lg font-medium">Sounds in this studio</h3>
 			{sounds.map((sound, index) => (
 				<div
 					key={index}
@@ -111,9 +124,9 @@ const Sounds = ({
 					<div className="w-full flex items-center justify-between space-x-2">
 						<div className="flex items-center space-x-2">
 							{sound.type == "drum" ? (
-								<FaDrum size={32} />
+								<Kind label="Drum sound" icon={FaDrum} />
 							) : (
-								<MdPiano size={32} />
+								<Kind label="Piano sound" icon={MdPiano} />
 							)}
 
 							<div className="text-xl">{sound.name}</div>
@@ -147,7 +160,11 @@ const Sounds = ({
 							: "border-black"
 					} ${busy ? "opacity-50" : "cursor-pointer"}`}
 				>
-					<div className="text-xl">{loop.name}</div>
+					<div className="flex items-center space-x-2">
+						<Kind label="Loop from the library" icon={MdLibraryMusic} />
+
+						<div className="text-xl">{loop.name}</div>
+					</div>
 
 					{/* a click on a button isn't a click on the loop */}
 					<div
