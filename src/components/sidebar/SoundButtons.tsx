@@ -9,13 +9,17 @@ import {
 	CopyIcon,
 	DeleteIcon,
 	EditIcon,
+	ICON,
+	MoreIcon,
 	ShareIcon,
 	SoundIcon,
 } from "../ui/icons";
+import { Menu, MenuItem } from "../ui/menu";
 import EditPianoSound from "./EditPianoSound";
 import { ConfirmDialog, PromptDialog, ShareDialog } from "../Dialog";
 
-// The buttons on a recorded sound's row in the sidebar. `playing` is the id
+// The buttons on a recorded sound's row in the sidebar: Play, and a menu
+// with the rest. `playing` is the id
 // of the sound being listened to, if one is. The other rows wait for it.
 const SoundButtons = ({
 	playing,
@@ -132,36 +136,49 @@ const SoundButtons = ({
 				onClick={listen}
 			/>
 
-			{/* only piano has an editor so far */}
-			{sound.type === "piano" && (
-				<IconButton
-					label={`Edit ${sound.name}`}
-					icon={EditIcon}
-					disabled={waiting}
-					onClick={edit}
-				/>
-			)}
+			{/* the rest are in a menu, with their names written out */}
+			<Menu
+				label={`More for ${sound.name}`}
+				buttonClassName="min-w-10 min-h-10 pointer-coarse:min-w-11 pointer-coarse:min-h-11 p-0"
+				button={<MoreIcon size={ICON} aria-hidden />}
+			>
+				{(close) => {
+					const item = (run: () => void) => () => {
+						close();
+						run();
+					};
 
-			<IconButton
-				label={`Duplicate ${sound.name}`}
-				icon={CopyIcon}
-				disabled={waiting}
-				onClick={() => setAsking("copy")}
-			/>
-
-			<IconButton
-				label={`Share ${sound.name}`}
-				icon={ShareIcon}
-				disabled={waiting}
-				onClick={share}
-			/>
-
-			<IconButton
-				label={`Delete ${sound.name}`}
-				icon={DeleteIcon}
-				disabled={waiting}
-				onClick={() => setAsking("delete")}
-			/>
+					return (
+						<>
+							{/* only piano has an editor so far */}
+							{sound.type === "piano" && (
+								<MenuItem disabled={waiting} onClick={item(edit)}>
+									<EditIcon size={ICON} aria-hidden />
+									Edit
+								</MenuItem>
+							)}
+							<MenuItem
+								disabled={waiting}
+								onClick={item(() => setAsking("copy"))}
+							>
+								<CopyIcon size={ICON} aria-hidden />
+								Duplicate
+							</MenuItem>
+							<MenuItem disabled={waiting} onClick={item(share)}>
+								<ShareIcon size={ICON} aria-hidden />
+								Share
+							</MenuItem>
+							<MenuItem
+								disabled={waiting}
+								onClick={item(() => setAsking("delete"))}
+							>
+								<DeleteIcon size={ICON} aria-hidden />
+								Delete
+							</MenuItem>
+						</>
+					);
+				}}
+			</Menu>
 
 			{asking === "share" && (
 				<ShareDialog

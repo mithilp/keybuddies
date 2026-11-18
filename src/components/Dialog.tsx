@@ -94,6 +94,7 @@ export const PromptDialog = ({
 	initial = "",
 	placeholder,
 	maxLength,
+	numeric = false,
 	submit,
 	onSubmit,
 	onCancel,
@@ -104,6 +105,8 @@ export const PromptDialog = ({
 	initial?: string;
 	placeholder?: string;
 	maxLength?: number;
+	// a code: a phone brings up the number pad for it
+	numeric?: boolean;
 	submit: string;
 	onSubmit: (value: string) => Promise<string | void> | string | void;
 	onCancel: () => void;
@@ -166,6 +169,8 @@ export const PromptDialog = ({
 					placeholder={placeholder}
 					maxLength={maxLength}
 					autoComplete="off"
+					inputMode={numeric ? "numeric" : undefined}
+					pattern={numeric ? "[0-9]*" : undefined}
 					className="w-full"
 				/>
 

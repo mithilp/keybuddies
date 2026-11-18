@@ -2,29 +2,35 @@ import { useCallback, useEffect, useState } from "react";
 import { clipAt, sameClip } from "./clips";
 import { putItem } from "./track-edits";
 import { Item, Slot, Track } from "./types";
-
-type PickedSlot = NonNullable<Slot>;
+import {
+	NOTHING,
+	Pick,
+	Picked,
+	PickedSlot,
+	pickItem as pickItemNext,
+	pickSlot as pickSlotNext,
+} from "./pick";
 
 export type Placing = {
 	// the clip or empty bar that's waiting for a loop or a sound, if one is
 	slot: Slot;
 	// the loop or the sound that's waiting for a place, if one is
 	item: Item | null;
-	// a click on a clip or an empty bar
-	pickSlot: (slot: PickedSlot) => void;
-	// a click on a loop or a sound in the sidebar
-	pickItem: (item: Item) => void;
+	// a tap on a clip or an empty bar. comes back with what it did.
+	pickSlot: (slot: PickedSlot) => Pick;
+	// a tap on a loop or a sound in the sidebar. comes back with what it did.
+	pickItem: (item: Item) => Pick;
 	// lets go of the loop or sound and keeps the slot
 	dropItem: () => void;
+	// lets go of whatever is waiting
+	cancel: () => void;
+	// the bar something was just put on, until its track has moved the focus
+	// to the clip there. the button that was picked is gone by then (an
+	// empty bar turns into a clip), so the focus would fall to the page.
+	placed: { track: string; bar: number } | null;
+	// the track calls this once it has the focus
+	focused: () => void;
 };
-
-const sameItem = (a: Item, b: Item) => a.type === b.type && a.id === b.id;
-
-const sameSlot = (a: PickedSlot, b: PickedSlot) =>
-	a.track === b.track &&
-	(a.clip && b.clip
-		? sameClip(a.clip, b.clip)
-		: !a.clip && !b.clip && a.bar === b.bar);
 
 // Putting loops and sounds on tracks. It works in both orders: pick a clip
 // or an empty bar and then what goes there, or pick what goes and then the
@@ -42,8 +48,10 @@ export const usePlacing = (
 	tracks: Track[],
 	failed: (message: string) => void
 ): Placing => {
-	const [slot, setSlot] = useState<Slot>(null);
-	const [item, setItem] = useState<Item | null>(null);
+	const [picked, setPicked] = useState<Picked>(NOTHING);
+	const { slot, item } = picked;
+
+	const [placed, setPlaced] = useState<Placing["placed"]>(null);
 
 	// A pick is for the clip or the empty bar it was made on. When that isn't
 	// there any more (someone else changed the clip, or put something on the
@@ -59,42 +67,42 @@ export const usePlacing = (
 				? now !== null && sameClip(now, slot.clip)
 				: now === null && slot.bar < track.bars);
 
-		if (!still) setSlot(null);
+		if (!still) setPicked({ slot: null, item });
 	}
 
-	const put = (into: PickedSlot, what: Item) => {
-		setSlot(null);
-		setItem(null);
+	// does what a pick says, and saves what it put in
+	const apply = (next: Pick) => {
+		setPicked({ slot: next.slot, item: next.item });
 
-		putItem(studio, into.track, into, what).catch((error) => {
-			console.error(error);
-			failed(
-				`Couldn't put the ${what.type === "loop" ? "loop" : "sound"} in. Try again.`
-			);
-		});
-	};
+		if (next.put) {
+			const { slot: into, item: what } = next.put;
 
-	const pickSlot = (target: PickedSlot) => {
-		if (item) {
-			put(target, item);
-		} else if (slot && sameSlot(slot, target)) {
-			setSlot(null);
-		} else {
-			setSlot(target);
+			setPlaced({ track: into.track, bar: into.bar });
+
+			putItem(studio, into.track, into, what).catch((error) => {
+				console.error(error);
+				setPlaced(null);
+				failed(
+					`Couldn't put the ${what.type === "loop" ? "loop" : "sound"} in. Try again.`
+				);
+			});
 		}
+
+		return next;
 	};
 
-	const pickItem = (next: Item) => {
-		if (slot) {
-			put(slot, next);
-		} else if (item && sameItem(item, next)) {
-			setItem(null);
-		} else {
-			setItem(next);
-		}
-	};
+	const pickSlot = (target: PickedSlot) => apply(pickSlotNext(picked, target));
 
-	const dropItem = useCallback(() => setItem(null), []);
+	const pickItem = (next: Item) => apply(pickItemNext(picked, next));
+
+	const dropItem = useCallback(
+		() => setPicked((now) => ({ slot: now.slot, item: null })),
+		[]
+	);
+
+	const cancel = useCallback(() => setPicked(NOTHING), []);
+
+	const focused = useCallback(() => setPlaced(null), []);
 
 	const waiting = slot !== null || item !== null;
 
@@ -106,13 +114,21 @@ export const usePlacing = (
 		const onKey = (event: KeyboardEvent) => {
 			if (event.key !== "Escape") return;
 
-			setSlot(null);
-			setItem(null);
+			setPicked(NOTHING);
 		};
 
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [waiting]);
 
-	return { slot, item, pickSlot, pickItem, dropItem };
+	return {
+		slot,
+		item,
+		pickSlot,
+		pickItem,
+		dropItem,
+		cancel,
+		placed,
+		focused,
+	};
 };

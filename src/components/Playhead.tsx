@@ -177,7 +177,10 @@ const Playhead = ({
 		>
 			<div
 				{...handle}
-				className="pointer-events-auto absolute inset-y-0 bg-accent border-x-hair border-ink cursor-ew-resize touch-none select-none"
+				// a finger going up or down on the line scrolls the tracks, only a
+				// sideways one drags it. under a finger it's easier to hit than
+				// it looks.
+				className="pointer-events-auto absolute inset-y-0 bg-accent border-x-hair border-ink cursor-ew-resize touch-pan-y select-none pointer-coarse:before:absolute pointer-coarse:before:inset-y-0 pointer-coarse:before:-inset-x-4 pointer-coarse:before:content-['']"
 				style={{ left: PLAYHEAD_LEFT, width: PLAYHEAD_WIDTH }}
 			></div>
 

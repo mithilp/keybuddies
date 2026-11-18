@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +13,16 @@ const font = Space_Grotesk({
 export const metadata: Metadata = {
 	title: "KeyBuddies",
 	description: "Learn and create music with friends in real-time!",
+};
+
+// phones draw the page at their own width instead of a shrunk desktop page.
+// cover lets the page go under the notch and the home bar, and the parts
+// that sit at the edges pad themselves with the safe area insets. pinch zoom
+// stays on.
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	viewportFit: "cover",
 };
 
 export default function RootLayout({

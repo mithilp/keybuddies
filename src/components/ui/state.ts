@@ -14,6 +14,9 @@ export const empty = "bg-paper/60 border-ink/30 text-ink/60";
 // recording, counting down: something is happening right now
 export const live = "bg-ink text-surface";
 
-// can't be used. a native disabled button doesn't respond on its own, anything
-// else also needs pointer-events-none.
-export const disabled = "opacity-50 cursor-not-allowed";
+// Can't be used. It keeps its own colors, only the ink goes faint and a
+// shadow goes, so a disabled pink button is still pink and not a pale one.
+// Button, IconButton and the inputs have the same classes behind disabled:
+// and aria-disabled:. A native disabled button doesn't respond on its own,
+// anything else also needs pointer-events-none.
+export const disabled = "text-ink/60 border-ink/40 shadow-none cursor-not-allowed";

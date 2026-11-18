@@ -42,8 +42,8 @@ export default async function Home({
 	}
 
 	return (
-		<main className="p-24 h-screen w-screen grid place-items-center">
-			<Card className="w-96 space-y-4 flex items-center flex-col p-10">
+		<main className="min-h-dvh p-4 sm:p-24 grid place-items-center">
+			<Card className="w-full max-w-96 space-y-4 flex items-center flex-col p-6 sm:p-10">
 				<Image alt={"Keybuddies"} src={logo} width={200} height={0} />
 				<form
 					action={joinStudio}
@@ -60,6 +60,9 @@ export default async function Home({
 						required
 						minLength={6}
 						name="pin"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						autoComplete="off"
 						aria-label="Studio code"
 						className="w-full text-center"
 						placeholder="Studio Code"

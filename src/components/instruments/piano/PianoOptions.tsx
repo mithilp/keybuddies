@@ -120,7 +120,8 @@ const PianoOptions = ({
 				</div>
 			</div>
 
-			<div className="flex gap-4 whitespace-nowrap">
+			{/* wraps on a phone instead of running off the side */}
+			<div className="flex flex-wrap gap-4">
 				<Metronome step={multiplier} />
 				{/* the one thing to do until there's a take, then Save is */}
 				<Button

@@ -48,10 +48,17 @@ const keyboardOnly = (event: React.FocusEvent<HTMLElement>) => {
 	if (!event.target.matches(":focus-visible")) event.preventDefault();
 };
 
+// how long a finger has to stay on a button before it says what it does
+const HOLD = 450;
+
 // The tooltip of a button that only has an icon on it. It goes around the
 // button:
 //
 //   <Tip label="Delete track"><button>...</button></Tip>
+//
+// A mouse gets it by hovering and the keyboard by focus. A touch screen has
+// neither, so there it shows while a finger is held on the button, and
+// letting go after that doesn't press it.
 //
 // A disabled button doesn't say when the mouse is over it, so a button that
 // can be disabled gets a span around it that does.
@@ -63,24 +70,72 @@ const Tip = ({
 	label: string;
 	side?: "top" | "right" | "bottom" | "left";
 	children: React.ReactElement<{ disabled?: boolean }>;
-}) => (
-	<Tooltip>
-		<TooltipTrigger asChild onFocus={keyboardOnly}>
-			{children.props.disabled === undefined ? (
-				children
-			) : (
-				<span
-					className={cn(
-						"inline-flex [&>:disabled]:pointer-events-none",
-						children.props.disabled && "cursor-not-allowed"
-					)}
-				>
-					{children}
-				</span>
-			)}
-		</TooltipTrigger>
-		<TooltipContent side={side}>{label}</TooltipContent>
-	</Tooltip>
-);
+}) => {
+	const [open, setOpen] = React.useState(false);
+	const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+	// the finger was held long enough, so the click that comes next is eaten
+	const held = React.useRef(false);
+
+	const wait = () => {
+		if (timer.current) clearTimeout(timer.current);
+		timer.current = null;
+	};
+
+	React.useEffect(() => wait, []);
+
+	return (
+		<Tooltip open={open} onOpenChange={setOpen}>
+			<TooltipTrigger
+				asChild
+				onFocus={keyboardOnly}
+				onPointerDown={(event) => {
+					if (event.pointerType !== "touch") return;
+
+					held.current = false;
+					wait();
+					timer.current = setTimeout(() => {
+						held.current = true;
+						setOpen(true);
+					}, HOLD);
+				}}
+				onPointerUp={() => {
+					wait();
+					// it stays up a moment after the finger lifts, then goes
+					if (held.current) {
+						timer.current = setTimeout(() => setOpen(false), 1500);
+					}
+				}}
+				onPointerCancel={() => {
+					wait();
+					setOpen(false);
+				}}
+				onClickCapture={(event) => {
+					if (!held.current) return;
+
+					held.current = false;
+					event.preventDefault();
+					event.stopPropagation();
+				}}
+				onContextMenu={(event) => {
+					if (held.current) event.preventDefault();
+				}}
+			>
+				{children.props.disabled === undefined ? (
+					children
+				) : (
+					<span
+						className={cn(
+							"inline-flex [&>:disabled]:pointer-events-none",
+							children.props.disabled && "cursor-not-allowed"
+						)}
+					>
+						{children}
+					</span>
+				)}
+			</TooltipTrigger>
+			<TooltipContent side={side}>{label}</TooltipContent>
+		</Tooltip>
+	);
+};
 
 export { Tip, TooltipProvider };

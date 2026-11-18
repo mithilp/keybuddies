@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
+import plugin from "tailwindcss/plugin";
 
 // The design tokens. Every value lives in a CSS variable in globals.css, and
 // components use the role names here, never a hue or a hex. Most scales are
@@ -78,6 +79,12 @@ const config: Config = {
 			toast: "50",
 		},
 	},
-	plugins: [],
+	plugins: [
+		// pointer-coarse: styles for a finger instead of a mouse, mostly to
+		// make things at least 44px to hit. it goes by the main pointer.
+		plugin(({ addVariant }) => {
+			addVariant("pointer-coarse", "@media (pointer: coarse)");
+		}),
+	],
 };
 export default config;

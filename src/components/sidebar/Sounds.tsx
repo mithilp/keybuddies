@@ -109,13 +109,22 @@ const Sounds = ({
 
 	// A row looks picked when it's what will go on the track. While a clip or
 	// an empty bar is picked instead, every row is something a click puts
-	// there, and they all say so.
+	// there, and they all say so. The picked one keeps its colors while it
+	// waits, the waiting look would be ink on ink.
 	const row = (picked: boolean, waiting: boolean) =>
 		cn(
 			"flex items-center justify-between gap-2 p-2 pl-4 rounded border-control border-ink",
 			picked ? selected : "bg-surface",
 			!picked && placing.slot && dropTarget,
-			waiting ? disabled : "cursor-pointer"
+			waiting && !picked && disabled
+		);
+
+	// The name side of a row is the button that picks it, so the keyboard can
+	// get to it. The buttons on the other side are their own.
+	const pick = (waiting: boolean) =>
+		cn(
+			"flex-1 min-w-0 self-stretch flex items-center gap-2 text-left rounded",
+			waiting ? "cursor-not-allowed" : "cursor-pointer"
 		);
 
 	return (
@@ -124,34 +133,34 @@ const Sounds = ({
 			{sounds.map((sound) => (
 				<div
 					key={sound.id}
-					onClick={() => {
-						placing.pickItem({
-							type: "sound",
-							name: sound.name,
-							id: sound.id,
-							bars: sound.bars,
-						});
-					}}
 					className={row(
 						item?.type === "sound" && item.id === sound.id,
 						busy && listening !== sound.id
 					)}
 				>
-					<div className="flex items-center gap-2 min-w-0">
+					<button
+						type="button"
+						className={pick(busy && listening !== sound.id)}
+						aria-pressed={item?.type === "sound" && item.id === sound.id}
+						onClick={() => {
+							placing.pickItem({
+								type: "sound",
+								name: sound.name,
+								id: sound.id,
+								bars: sound.bars,
+							});
+						}}
+					>
 						{sound.type === "drum" ? (
 							<Kind label="Drum sound" icon={DrumIcon} />
 						) : (
 							<Kind label="Piano sound" icon={PianoIcon} />
 						)}
 
-						<div className="text-lg truncate">{sound.name}</div>
-					</div>
+						<span className="text-lg truncate">{sound.name}</span>
+					</button>
 
-					{/* a click on a button isn't a click on the sound */}
-					<div
-						className="flex items-center"
-						onClick={(event) => event.stopPropagation()}
-					>
+					<div className="flex items-center">
 						<SoundButtons
 							playing={listening}
 							setPlaying={setPlaying}
@@ -167,20 +176,20 @@ const Sounds = ({
 			{loops.map((loop) => (
 				<div
 					key={loop.id}
-					onClick={() => placing.pickItem(loop)}
 					className={row(item?.type === "loop" && item.id === loop.id, busy)}
 				>
-					<div className="flex items-center gap-2 min-w-0">
+					<button
+						type="button"
+						className={pick(busy)}
+						aria-pressed={item?.type === "loop" && item.id === loop.id}
+						onClick={() => placing.pickItem(loop)}
+					>
 						<Kind label="Loop from the library" icon={LibraryIcon} />
 
-						<div className="text-lg truncate">{loop.name}</div>
-					</div>
+						<span className="text-lg truncate">{loop.name}</span>
+					</button>
 
-					{/* a click on a button isn't a click on the loop */}
-					<div
-						className="flex items-center"
-						onClick={(event) => event.stopPropagation()}
-					>
+					<div className="flex items-center">
 						<PlayLoop id={loop.id} name={loop.name} bpm={bpm} disabled={busy} />
 
 						<IconButton

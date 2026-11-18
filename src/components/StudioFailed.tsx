@@ -14,10 +14,10 @@ const StudioFailed = ({
 	retry: () => void;
 }) => {
 	return (
-		<main className="p-24 h-screen w-screen grid place-items-center">
+		<main className="min-h-dvh p-4 sm:p-24 grid place-items-center">
 			<Card
 				role="alert"
-				className="w-96 space-y-4 flex items-center flex-col p-10 text-center"
+				className="w-full max-w-96 space-y-4 flex items-center flex-col p-6 sm:p-10 text-center"
 			>
 				<Image alt="KeyBuddies Logo" src={logo} width={200} height={45} />
 				<h1 className="text-2xl font-bold">Couldn&apos;t load the studio</h1>

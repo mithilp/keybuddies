@@ -1,4 +1,4 @@
-import { BAR_BEATS } from "./tempo";
+import { BAR_BEATS } from "./tempo.ts";
 
 // How the song is laid out on screen, in px. The ruler, the bars on the
 // tracks and the playhead are all measured from these, so a border or a
@@ -11,7 +11,7 @@ export const BEAT_WIDTH = 28;
 export const BAR_WIDTH = BAR_BEATS * BEAT_WIDTH;
 
 // what's in a bar is this much narrower, so clips next to each other don't
-// touch
+// touch. it's as wide as the playhead's line, so the line fits in it.
 export const CLIP_GAP = 8;
 
 // the row of bar numbers above the ruler's line. the playhead starts right
@@ -26,6 +26,11 @@ export const TICK_HEIGHT = 16;
 // the middle of a tick
 export const PLAYHEAD_WIDTH = 8;
 export const PLAYHEAD_LEFT = TICK_WIDTH / 2 - PLAYHEAD_WIDTH / 2;
+
+// Where a bar's clip starts, from the start of the bar: right after the
+// playhead's line when it's on the bar's first beat. The line runs down the
+// gap between two clips and never covers a clip or a track's name.
+export const CLIP_LEFT = PLAYHEAD_LEFT + PLAYHEAD_WIDTH;
 
 // its arrow is one beat wide and on the same spot
 export const ARROW_LEFT = TICK_WIDTH / 2 - BEAT_WIDTH / 2;
