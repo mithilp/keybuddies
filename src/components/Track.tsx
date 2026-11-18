@@ -10,6 +10,7 @@ import {
 import { deleteTrack } from "@/utils/studio";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "./Dialog";
+import TrackName from "./TrackName";
 import { Tip } from "./ui/tooltip";
 import { IconButton } from "./ui/button";
 import {
@@ -93,7 +94,12 @@ const Track = ({
 				className="flex items-center gap-2"
 				style={{ paddingLeft: CLIP_LEFT }}
 			>
-				<h3 className="text-lg uppercase font-bold pl-1">{track.name}</h3>
+				<TrackName
+					studio={studio}
+					id={track.id}
+					name={track.name}
+					failed={couldnt(`Couldn't rename ${track.name}. Try again.`)}
+				/>
 
 				<IconButton
 					label={`Mute ${track.name}`}

@@ -126,7 +126,8 @@ service cloud.firestore {
           && (!('clips' in request.resource.data) || clips(request.resource.data.clips))
           && (!('bars' in request.resource.data) || trackBars(request.resource.data.bars));
 
-        // only the clips and the length change, see src/utils/track-edits.ts
+        // the clips and the length (src/utils/track-edits.ts), and the name
+        // (renameTrack in src/utils/studio.ts)
         allow update: if isCode(code) && trackChange(request.resource.data);
 
         // the delete button on a track
@@ -139,7 +140,8 @@ service cloud.firestore {
         // nowhere. `clips` can't be taken off, and `bars` only goes with it.
         function trackChange(data) {
           let keys = changed();
-          return keys.hasOnly(['notes', 'clips', 'bars'])
+          return keys.hasOnly(['notes', 'clips', 'bars', 'name'])
+            && (!('name' in keys) || text(data.name, 1, 100))
             && (!('notes' in keys)
               || (!('clips' in resource.data) && !('clips' in data) && cells(data.notes)))
             && (!('clips' in keys) || clips(data.clips))

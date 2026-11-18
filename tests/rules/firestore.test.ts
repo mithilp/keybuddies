@@ -387,6 +387,18 @@ describe("tracks", () => {
 		await assertSucceeds(edit([], 0));
 	});
 
+	test("a track can be renamed", async () => {
+		await seedStudio();
+		await seedTrack("t1");
+
+		await assertSucceeds(updateDoc(track("t1"), { name: "Right hand" }));
+		await assertSucceeds(updateDoc(track("t1"), { name: "x".repeat(100) }));
+		await assertFails(updateDoc(track("t1"), { name: "" }));
+		await assertFails(updateDoc(track("t1"), { name: "x".repeat(101) }));
+		await assertFails(updateDoc(track("t1"), { name: 1 }));
+		await assertFails(updateDoc(track("t1"), { name: "a", order: 3 }));
+	});
+
 	test("an old tab can't write cells once a track has clips", async () => {
 		await seedStudio();
 		await seedTrack("t1", {
@@ -455,11 +467,10 @@ describe("tracks", () => {
 		await assertFails(updateDoc(track("t1"), { bars: 8.5 }));
 	});
 
-	test("only the clips of a track change", async () => {
+	test("only the clips and the name of a track change", async () => {
 		await seedStudio();
 		await seedTrack("t1");
 
-		await assertFails(updateDoc(track("t1"), { name: "Renamed" }));
 		await assertFails(updateDoc(track("t1"), { order: 3 }));
 		await assertFails(updateDoc(track("t1"), { createdAt: Timestamp.now() }));
 		await assertFails(updateDoc(track("t1"), { notes: { 0: empty } }));
