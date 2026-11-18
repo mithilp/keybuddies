@@ -47,9 +47,8 @@ export const awake = async () => {
 // The audio session is set to playback, so a phone on silent still plays
 // the song, the same as a music app. Only Safari 17 and later have it.
 const unlock = (context: AudioContext) => {
-	const session = (
-		navigator as Navigator & { audioSession?: { type: string } }
-	).audioSession;
+	const session = (navigator as Navigator & { audioSession?: { type: string } })
+		.audioSession;
 
 	if (session) {
 		try {
@@ -82,5 +81,50 @@ const unlock = (context: AudioContext) => {
 };
 
 if (crunker) unlock(crunker.context);
+
+// Everything that plays goes out through one limiter. Notes that ring over
+// each other, a chord or a fast run, and tracks on top of each other add up
+// past what the speakers can take, and the browser clips them. The limiter
+// turns down only the loud parts. The download does the same with a gain,
+// see wav.ts.
+let limiter: DynamicsCompressorNode | null = null;
+
+export const output = () => {
+	const context = crunker!.context;
+
+	if (!limiter) {
+		limiter = context.createDynamicsCompressor();
+		limiter.threshold.value = -3;
+		limiter.knee.value = 0;
+		limiter.ratio.value = 20;
+		limiter.attack.value = 0.003;
+		limiter.release.value = 0.25;
+
+		// The limiter takes a few milliseconds to react, and a hit can slip
+		// past it in that time. This rounds off anything over 0.8 so it never
+		// reaches 1. The shaper only takes -1 to 1, so it gets half and the
+		// curve gives the doubled value back.
+		const half = context.createGain();
+		half.gain.value = 0.5;
+
+		const curve = new Float32Array(2049);
+		for (let i = 0; i < curve.length; i++) {
+			const x = (i / (curve.length - 1)) * 4 - 2;
+			const size = Math.abs(x);
+			const soft =
+				size <= 0.8 ? size : 0.8 + 0.2 * Math.tanh((size - 0.8) / 0.2);
+			curve[i] = Math.sign(x) * soft;
+		}
+
+		const ceiling = context.createWaveShaper();
+		ceiling.curve = curve;
+
+		limiter.connect(half);
+		half.connect(ceiling);
+		ceiling.connect(context.destination);
+	}
+
+	return limiter;
+};
 
 export default crunker;
