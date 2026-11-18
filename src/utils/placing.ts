@@ -24,6 +24,12 @@ export type Placing = {
 	dropItem: () => void;
 	// lets go of whatever is waiting
 	cancel: () => void;
+	// the bar something was just put on, until its track has moved the focus
+	// to the clip there. the button that was picked is gone by then (an
+	// empty bar turns into a clip), so the focus would fall to the page.
+	placed: { track: string; bar: number } | null;
+	// the track calls this once it has the focus
+	focused: () => void;
 };
 
 // Putting loops and sounds on tracks. It works in both orders: pick a clip
@@ -44,6 +50,8 @@ export const usePlacing = (
 ): Placing => {
 	const [picked, setPicked] = useState<Picked>(NOTHING);
 	const { slot, item } = picked;
+
+	const [placed, setPlaced] = useState<Placing["placed"]>(null);
 
 	// A pick is for the clip or the empty bar it was made on. When that isn't
 	// there any more (someone else changed the clip, or put something on the
@@ -69,8 +77,11 @@ export const usePlacing = (
 		if (next.put) {
 			const { slot: into, item: what } = next.put;
 
+			setPlaced({ track: into.track, bar: into.bar });
+
 			putItem(studio, into.track, into, what).catch((error) => {
 				console.error(error);
+				setPlaced(null);
 				failed(
 					`Couldn't put the ${what.type === "loop" ? "loop" : "sound"} in. Try again.`
 				);
@@ -91,6 +102,8 @@ export const usePlacing = (
 
 	const cancel = useCallback(() => setPicked(NOTHING), []);
 
+	const focused = useCallback(() => setPlaced(null), []);
+
 	const waiting = slot !== null || item !== null;
 
 	// A dialog or a recorder that's open takes Escape for itself before it gets
@@ -108,5 +121,14 @@ export const usePlacing = (
 		return () => window.removeEventListener("keydown", onKey);
 	}, [waiting]);
 
-	return { slot, item, pickSlot, pickItem, dropItem, cancel };
+	return {
+		slot,
+		item,
+		pickSlot,
+		pickItem,
+		dropItem,
+		cancel,
+		placed,
+		focused,
+	};
 };

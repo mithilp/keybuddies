@@ -8,7 +8,7 @@ import {
 	takeOutClip,
 } from "@/utils/track-edits";
 import { deleteTrack } from "@/utils/studio";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "./Dialog";
 import { Tip } from "./ui/tooltip";
 import { IconButton } from "./ui/button";
@@ -60,6 +60,23 @@ const Track = ({
 	// take it.
 	const look = (picked: boolean) =>
 		picked ? selected : placing.item ? dropTarget : "";
+
+	// Once something is put on a bar of this track, the focus goes to the
+	// clip it made. The clip shows up as soon as the change is saved here,
+	// before the server has it, so this waits for it to be drawn.
+	const bars = useRef<HTMLDivElement>(null);
+	const { placed, focused } = placing;
+	const landed =
+		placed?.track === track.id ? clipAt(track.clips, placed.bar) : null;
+
+	useEffect(() => {
+		if (!landed) return;
+
+		bars.current
+			?.querySelector<HTMLButtonElement>(`[data-clip="${landed.start}"]`)
+			?.focus();
+		focused();
+	}, [landed, focused]);
 
 	// whether the "delete this track?" dialog is open
 	const [deleting, setDeleting] = useState(false);
@@ -116,6 +133,7 @@ const Track = ({
 				/>
 			</div>
 			<div
+				ref={bars}
 				className="relative h-24"
 				style={{ width: track.bars * BAR_WIDTH }}
 			>
@@ -173,6 +191,7 @@ const Track = ({
 						>
 							<button
 								type="button"
+								data-clip={clip.start}
 								className="absolute inset-0 rounded cursor-pointer"
 								aria-label={`${clip.name} on bar ${clip.start + 1} of ${track.name}`}
 								aria-pressed={picked}
@@ -188,9 +207,7 @@ const Track = ({
 							></button>
 
 							<div className="relative h-full flex flex-col justify-between p-1 pointer-events-none">
-								<div className="truncate font-bold">
-									{clip.name}
-								</div>
+								<div className="truncate font-bold">{clip.name}</div>
 								<div className="flex items-center justify-between gap-1 [&>*]:pointer-events-auto">
 									<select
 										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0 pointer-coarse:min-w-11 pointer-coarse:min-h-11"
