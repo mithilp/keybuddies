@@ -193,7 +193,7 @@ const Track = ({
 								</div>
 								<div className="flex items-center justify-between gap-1 [&>*]:pointer-events-auto">
 									<select
-										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0 pointer-coarse:min-h-11"
+										className="appearance-none bg-transparent text-sm underline cursor-pointer min-w-0 pointer-coarse:min-w-11 pointer-coarse:min-h-11"
 										aria-label={`Length of ${clip.name} on bar ${clip.start + 1} of ${track.name}`}
 										value={clip.bars}
 										onChange={(event) => {

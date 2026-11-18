@@ -138,13 +138,13 @@ const Header = ({
 					<div
 						role="radiogroup"
 						aria-label="Tempo, in beats per minute"
-						className="flex h-12 sm:h-16 bg-surface border-control border-ink rounded overflow-hidden text-xl font-bold has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
+						className="flex h-12 sm:h-16 pointer-coarse:min-h-[calc(2.75rem_+_2*var(--border-control))] bg-surface border-control border-ink rounded overflow-hidden text-xl font-bold has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ink"
 					>
 						{TEMPOS.map((tempo, index) => (
 							<label
 								key={tempo}
 								className={cn(
-									"relative grid place-items-center px-2 sm:px-3 text-lg sm:text-xl cursor-pointer border-ink",
+									"relative grid place-items-center px-2 sm:px-3 pointer-coarse:min-w-11 text-lg sm:text-xl cursor-pointer border-ink",
 									index > 0 && "border-l-hair",
 									bpm === tempo ? selected : "hover:bg-paper"
 								)}
