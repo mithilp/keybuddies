@@ -18,6 +18,7 @@ import {
 } from "../ui/icons";
 import { disabled, dropTarget, selected } from "../ui/state";
 import { cn } from "@/utils/cn";
+import { barsLabel, soundBars } from "@/utils/clips";
 
 // What a row is, as an icon: a piano sound, a drum sound or a loop. The
 // label is its tooltip, and what a screen reader says for it.
@@ -27,6 +28,15 @@ const Kind = ({ label, icon: Icon }: { label: string; icon: IconType }) => (
 			<Icon size={ICON} aria-hidden />
 		</span>
 	</Tip>
+);
+
+// A row's name, with how long it is under it, so it's clear how many bars
+// it takes up on a track before it's put there.
+const Name = ({ name, bars }: { name: string; bars?: number }) => (
+	<span className="min-w-0 flex flex-col leading-tight">
+		<span className="text-lg truncate">{name}</span>
+		<span className="text-sm opacity-70">{barsLabel(soundBars(bars))}</span>
+	</span>
 );
 
 // Everything in this studio that can go on a track, in one list: the sounds
@@ -157,7 +167,7 @@ const Sounds = ({
 							<Kind label="Piano sound" icon={PianoIcon} />
 						)}
 
-						<span className="text-lg truncate">{sound.name}</span>
+						<Name name={sound.name} bars={sound.bars} />
 					</button>
 
 					<div className="flex items-center">
@@ -186,7 +196,7 @@ const Sounds = ({
 					>
 						<Kind label="Loop from the library" icon={LibraryIcon} />
 
-						<span className="text-lg truncate">{loop.name}</span>
+						<Name name={loop.name} bars={loop.bars} />
 					</button>
 
 					<div className="flex items-center">

@@ -31,6 +31,9 @@ const isClipBars = (value: unknown): value is ClipBars =>
 export const soundBars = (bars: unknown): ClipBars =>
 	isClipBars(bars) ? bars : DEFAULT_BARS;
 
+export const barsLabel = (bars: number) =>
+	bars === 1 ? "1 bar" : `${bars} bars`;
+
 export type TrackClips = { clips: Clip[]; bars: number };
 
 const count = (value: unknown): value is number =>

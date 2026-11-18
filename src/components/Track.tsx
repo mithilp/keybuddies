@@ -1,6 +1,6 @@
 import { Clip, ClipBars, Track } from "@/utils/types";
 import { Placing } from "@/utils/placing";
-import { CLIP_BARS, clipAt, fits } from "@/utils/clips";
+import { CLIP_BARS, barsLabel, clipAt, fits } from "@/utils/clips";
 import {
 	addTrackBar,
 	removeTrackBar,
@@ -23,8 +23,6 @@ import {
 import { dropTarget, empty, selected } from "./ui/state";
 import { cn } from "@/utils/cn";
 import { BAR_WIDTH, CLIP_GAP, CLIP_LEFT } from "@/utils/grid";
-
-const barsLabel = (bars: number) => (bars === 1 ? "1 bar" : `${bars} bars`);
 
 const Track = ({
 	track,
@@ -206,7 +204,7 @@ const Track = ({
 								}}
 							></button>
 
-							<div className="relative h-full flex flex-col justify-between p-1 pointer-events-none">
+							<div className="relative h-full flex flex-col justify-between p-2 pointer-events-none">
 								<div className="truncate font-bold">{clip.name}</div>
 								<div className="flex items-center justify-between gap-1 [&>*]:pointer-events-auto">
 									<select
@@ -230,7 +228,7 @@ const Track = ({
 									<Tip label="Take out">
 										<button
 											type="button"
-											className="grid place-items-center rounded min-w-8 min-h-8 pointer-coarse:min-w-11 pointer-coarse:min-h-11"
+											className="grid place-items-center rounded min-w-8 min-h-8 -mr-1.5 -mb-1.5 pointer-coarse:min-w-11 pointer-coarse:min-h-11 pointer-coarse:-mr-3 pointer-coarse:-mb-3"
 											aria-label={`Take ${clip.name} off bar ${clip.start + 1} of ${track.name}`}
 											onClick={() => {
 												takeOutClip(studio, track.id, clip).catch(unsaved);
