@@ -210,12 +210,14 @@ export const usePlayback = (
 	// leaving the studio stops the song
 	useEffect(() => silence, [silence]);
 
-	// Going to another tab or locking the phone pauses the song where it got
-	// to. iOS stops the audio in the background anyway, and the song would
-	// come back out of step with the playhead. Play picks it up again.
+	// On a phone or tablet, going to another tab or locking the screen pauses
+	// the song where it got to. iOS stops the audio in the background anyway,
+	// and the song would come back out of step with the playhead. Play picks
+	// it up again. Desktop keeps playing, since it doesn't cut the audio off.
 	useEffect(() => {
 		const away = () => {
 			if (document.visibilityState !== "hidden") return;
+			if (!matchMedia("(pointer: coarse)").matches) return;
 			if (transport.playing) {
 				halt(liveBeat());
 			} else if (playback === "loading") {
