@@ -37,10 +37,13 @@ const NoteLabel = ({
 	midiNumber: number;
 	isAccidental: boolean;
 }) => (
+	// the computer key that plays it. there's no keyboard under a finger, so
+	// it's hidden there, but it stays on the key since firstTouch reads it.
+	// small and tight to the bottom so it fits on a narrow black key.
 	<span
 		data-midi={midiNumber}
 		className={cn(
-			"block mb-1 text-center text-xs font-bold uppercase pointer-events-none",
+			"block mb-0.5 text-center text-[0.625rem] leading-none xl:text-xs font-bold uppercase pointer-events-none pointer-coarse:invisible",
 			isAccidental ? "text-paper" : "text-ink"
 		)}
 	>
