@@ -1,6 +1,6 @@
 "use client";
 
-import crunker from "./crunker";
+import crunker, { output } from "./crunker";
 import { Song } from "./song";
 
 // How far ahead of now the tracks are told to start, in seconds. It gives the
@@ -212,7 +212,7 @@ export class Transport {
 
 			const gain = context.createGain();
 			gain.gain.value = silent ? 0 : 1;
-			gain.connect(context.destination);
+			gain.connect(output());
 
 			voices.set(track, { gain: gain, source: null, muted: silent });
 		}

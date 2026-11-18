@@ -1,7 +1,7 @@
 "use client";
 
 import { Key, Sound } from "./types";
-import crunker, { wake } from "./crunker";
+import crunker, { output, wake } from "./crunker";
 import { drumBeat, drumSteps, mixDrums } from "./drum-synth";
 import { pianoNotes } from "./piano-notes";
 import { preview, stopPreview } from "./preview";
@@ -108,7 +108,7 @@ const start = (buffer: AudioBuffer) => {
 
 	const source = context.createBufferSource();
 	source.buffer = buffer;
-	source.connect(context.destination);
+	source.connect(output());
 	source.start();
 
 	return source;
@@ -189,7 +189,7 @@ export const pressKey = (note: number) => {
 			if (!down) return;
 
 			gain = context.createGain();
-			gain.connect(context.destination);
+			gain.connect(output());
 
 			source = context.createBufferSource();
 			source.buffer = buffer;

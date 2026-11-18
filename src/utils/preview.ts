@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import crunker, { wake } from "./crunker";
+import crunker, { output, wake } from "./crunker";
 import { loadLoop } from "./samples";
 
 // Listening to a loop or a recorded sound on its own, outside the song.
@@ -53,7 +53,7 @@ export const preview = async (
 
 		const source = context.createBufferSource();
 		source.buffer = buffer;
-		source.connect(context.destination);
+		source.connect(output());
 		source.onended = () => {
 			if (current === mine) {
 				current = null;
