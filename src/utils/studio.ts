@@ -115,5 +115,11 @@ export const addTrack = (studio: string, order: number) =>
 		bars: TRACK_BARS,
 	});
 
+// the most a track's name can be, the same as the rules
+export const TRACK_NAME_MAX = 100;
+
+export const renameTrack = (studio: string, id: string, name: string) =>
+	updateDoc(doc(tracksOf(studio), id), { name: name });
+
 export const deleteTrack = (studio: string, id: string) =>
 	deleteDoc(doc(tracksOf(studio), id));

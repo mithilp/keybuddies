@@ -13,6 +13,13 @@ const font = Space_Grotesk({
 export const metadata: Metadata = {
 	title: "KeyBuddies",
 	description: "Learn and create music with friends in real-time!",
+	openGraph: {
+		title: "KeyBuddies",
+		description: "Start a studio, share the code, and make music together.",
+		type: "website",
+		siteName: "KeyBuddies",
+	},
+	twitter: { card: "summary_large_image" },
 };
 
 // phones draw the page at their own width instead of a shrunk desktop page.
