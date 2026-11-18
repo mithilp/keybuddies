@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { cn } from "@/utils/cn";
 import { Placing } from "@/utils/placing";
 import { Track } from "@/utils/types";
@@ -20,10 +21,19 @@ const PickBar = ({
 
 	if (!slot && !item) return null;
 
-	let message = "";
+	let message: ReactNode = "";
 
 	if (item) {
-		message = `Placing ${item.name}. Tap a bar to put it there.`;
+		// a mouse clicks and a finger taps. the CSS picks, so the server and
+		// the first render agree.
+		message = (
+			<>
+				Placing {item.name}.{" "}
+				<span className="pointer-coarse:hidden">Click</span>
+				<span className="hidden pointer-coarse:inline">Tap</span> a bar to put
+				it there.
+			</>
+		);
 	} else if (slot) {
 		const track = tracks.find((track) => track.id === slot.track);
 		const where = `${track?.name ?? "the track"}, bar ${slot.bar + 1}`;
