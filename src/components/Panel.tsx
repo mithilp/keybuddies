@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useId, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useEscape } from "@/utils/escape";
 import { useFocusTrap } from "@/utils/focus";
 import { cn } from "@/utils/cn";
@@ -17,6 +18,10 @@ export const panelFooter =
 // behind it is dimmed, the X or Escape closes it, Tab stays inside it, and
 // the focus goes back to where it was once it's gone. A dialog or a popup
 // opened on top of it gets Escape first.
+//
+// It's drawn on the body, not where it's opened from. The recorders and
+// editors live in the sidebar, which small screens hide on the tracks tab,
+// so turning an iPad or shrinking the window would hide an open panel.
 //
 // On a phone it's the whole screen. On anything bigger it's a card as tall
 // as what's in it, up to the height of the window. Either way the title
@@ -40,7 +45,7 @@ const Panel = ({
 		box.current?.focus();
 	}, []);
 
-	return (
+	return createPortal(
 		<div className="fixed inset-0 z-dialog grid place-items-center bg-ink/50 sm:p-6 lg:p-12">
 			<Card
 				ref={box}
@@ -72,7 +77,8 @@ const Panel = ({
 					{children}
 				</div>
 			</Card>
-		</div>
+		</div>,
+		document.body
 	);
 };
 
