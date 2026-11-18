@@ -232,16 +232,19 @@ export const ConfirmDialog = ({
 	);
 };
 
-// Shows a code to pass on, with a button that copies it.
+// Shows a code to pass on, with a button that copies it. A link is longer
+// than a code, so it's drawn smaller and from the left.
 export const ShareDialog = ({
 	title,
 	hint,
 	code,
+	link = false,
 	onClose,
 }: {
 	title: string;
 	hint: string;
 	code: string;
+	link?: boolean;
 	onClose: () => void;
 }) => {
 	const [copied, setCopied] = useState<"no" | "yes" | "failed">("no");
@@ -270,14 +273,24 @@ export const ShareDialog = ({
 		<Dialog title={title} close={onClose}>
 			<p>{hint}</p>
 
-			<div className="flex space-x-4">
+			{/* a link gets the whole width, with Copy under it */}
+			<div className={link ? "flex flex-col gap-3" : "flex space-x-4"}>
 				<Input
 					ref={box}
 					readOnly
-					aria-label="Code"
+					aria-label={link ? "Link" : "Code"}
 					value={code}
-					onFocus={(event) => event.target.select()}
-					className="w-full min-w-0 text-center text-xl font-bold tracking-widest"
+					// iOS doesn't keep a plain select() in a box that can't be
+					// typed in, so the range is set too
+					onFocus={(event) => {
+						event.target.select();
+						event.target.setSelectionRange(0, event.target.value.length);
+					}}
+					className={
+						link
+							? "w-full min-w-0 text-sm sm:text-base font-bold"
+							: "w-full min-w-0 text-center text-xl font-bold tracking-widest"
+					}
 				/>
 				<Button ref={copyButton} variant="primary" onClick={copy}>
 					{copied === "yes" ? (
