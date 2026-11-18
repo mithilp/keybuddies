@@ -7,6 +7,7 @@ import { selected } from "./ui/state";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/spinner";
 import { Menu, MenuItem } from "./ui/menu";
+import ShareStudio from "./ShareStudio";
 import {
 	BIG_ICON,
 	CheckIcon,
@@ -121,12 +122,15 @@ const Header = ({
 				className
 			)}
 		>
-			<div>
-				<span className="text-sm sm:text-base uppercase font-bold">
-					Studio Code
-				</span>
-				<br />
-				<span className="text-2xl sm:text-3xl font-bold">{studio}</span>
+			<div className="flex items-center gap-3">
+				<div>
+					<span className="text-sm sm:text-base uppercase font-bold">
+						Studio Code
+					</span>
+					<br />
+					<span className="text-2xl sm:text-3xl font-bold">{studio}</span>
+				</div>
+				<ShareStudio studio={studio} />
 			</div>
 
 			<div className="flex gap-2 items-center">
