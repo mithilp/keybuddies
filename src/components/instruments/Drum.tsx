@@ -110,7 +110,9 @@ const Drum = ({
 			{open && (
 				// Escape closes it the same way the X does, the beat stops too
 				<Panel title="Record a Drum Sound" close={shut}>
-					<div className="flex-1 flex flex-col gap-4">
+					{/* as tall as the grid, so on a phone the footer comes right
+					    after it and not at the bottom of the screen */}
+					<div className="flex flex-col gap-4">
 						<LengthPicker
 							id="drumLength"
 							bars={bars}
@@ -120,8 +122,11 @@ const Drum = ({
 							}}
 						/>
 
-						{/* sideways scroll stays inside the panel on a narrow window */}
-						<div className="overflow-x-auto">
+						{/* sideways scroll stays inside the panel on a narrow window.
+						    the scrollbar sat right under the last drum's name and
+						    read as an underline, so it gets room below the grid, and
+						    a finger just swipes so it's hidden there. */}
+						<div className="overflow-x-auto pb-3 pointer-coarse:pb-0 pointer-coarse:[scrollbar-width:none] pointer-coarse:[&::-webkit-scrollbar]:hidden">
 							<div className="w-max">
 								{/* the beat numbers, over the first step of each beat */}
 								<div className="flex" aria-hidden>
@@ -163,7 +168,7 @@ const Drum = ({
 															onClick={() => toggle(sound.value, step)}
 															className={cn(
 																// bigger under a finger, the numbers above match
-															"w-6 h-8 pointer-coarse:w-11 pointer-coarse:h-11 border-hair border-ink",
+																"w-6 h-8 pointer-coarse:w-11 pointer-coarse:h-11 border-hair border-ink",
 																hit ? selected : "bg-paper hover:bg-surface"
 															)}
 														></button>
